@@ -6,18 +6,19 @@ After Steps 1–5 are working, pick **one** path and extend `oob.js` (or your cl
 
 **Use when:** page transitions, Osmo loader, Lenis smooth scroll, SPA-style navigation.
 
+**This repo (OOB site):** [BARBA-OSMO.md](./BARBA-OSMO.md) — overlapping parallax transition; `oob.js` v2.0.0.
+
 **Webflow**
 
-- Start from the **Osmo Webflow template**
-- Add Barba: `data-barba="wrapper"`, `data-barba="container"`, `data-barba-namespace` per page
-- Add loader markup: `data-load-wrap`, `data-load-logo`, `data-load-text`, etc.
-- Apply Osmo scaling CSS (see `osmo.css` in [msc-cursor-project](https://github.com/outofbounds-studio/msc-cursor-project))
+- Barba markup: `data-barba="wrapper"`, `data-barba="container"`, `data-barba-namespace` per page
+- Transition overlay: `data-transition-wrap`, `data-transition-dark` (see BARBA-OSMO.md)
+- Optional later: Osmo loader (`data-load-wrap`, …), scaling CSS from [msc-cursor-project](https://github.com/outofbounds-studio/msc-cursor-project)
 
 **JavaScript**
 
-- Copy patterns from `msc-cursor.js` in [msc-cursor-project](https://github.com/outofbounds-studio/msc-cursor-project)
-- `loadDependencies()` — GSAP, Barba, Lenis, etc. from **CDN only**
-- Barba init + hooks; `Webflow.destroy()` / `Webflow.ready()` on `afterEnter`
+- CDN scripts in Webflow **Head** (Osmo); logic in `oob.js` (GitHub Pages Footer)
+- `reinitWebflow()` on load + `afterEnter` (MSC pattern; already in `oob.js`)
+- Page inits: `initOnceFunctions` / `initBeforeEnterFunctions` / `initAfterEnterFunctions`
 - **Do not use Slater**
 
 ## B — Basic (smaller budget / scale)

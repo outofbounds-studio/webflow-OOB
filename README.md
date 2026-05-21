@@ -2,15 +2,16 @@
 
 Minimal starter for a new Webflow site. One JS file, hosted on GitHub Pages, linked from Webflow Custom Code (same pattern as [msc-cursor-project](https://github.com/outofbounds-studio/msc-cursor-project)).
 
-## Webflow script tag
+## Webflow custom code
 
-Paste in **Project Settings → Custom Code → Footer code** (end of `<body>`):
+1. **Head** — Osmo CDN scripts (Barba, GSAP, Lenis) + transition CSS. See [BARBA-OSMO.md](./BARBA-OSMO.md).
+2. **Footer** — site logic:
 
 ```html
 <script src="https://outofbounds-studio.github.io/webflow-OOB/oob.js"></script>
 ```
 
-Add CookieYes, GTM `noscript`, or other snippets in **Footer** or **Head** separately — not inside `oob.js`.
+Add CookieYes, GTM `noscript`, or other snippets separately — not inside `oob.js`.
 
 ## GitHub Pages (first-time)
 
@@ -26,8 +27,9 @@ oob.js       # Edit in Cursor, push to GitHub
 README.md    # This file
 .gitignore
 index.html   # Optional local test page
-SITE_TYPE.md # Step 6: Barba + Osmo vs basic
-WEBFLOW.md   # Webflow custom code checklist
+SITE_TYPE.md  # Step 6: Barba + Osmo vs basic
+BARBA-OSMO.md # Step 6 checklist (overlapping parallax)
+WEBFLOW.md    # Webflow custom code checklist
 ```
 
 ## Workflow
@@ -44,4 +46,6 @@ When starting a real client site, copy this folder to `~/webflow-{client}/`, ren
 
 ## Step 6 — Site type
 
-See [SITE_TYPE.md](./SITE_TYPE.md) for Barba + Osmo vs basic setup after this scaffold is in place.
+**Barba + Osmo (this site):** [BARBA-OSMO.md](./BARBA-OSMO.md) — overlapping parallax transitions in `oob.js` v2.0.0.
+
+Other paths: [SITE_TYPE.md](./SITE_TYPE.md).
