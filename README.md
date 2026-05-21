@@ -1,14 +1,23 @@
 # Webflow + Cursor + GitHub — OOB starter
 
-Minimal starter for a new Webflow site. One JS file, hosted on GitHub, linked from Webflow Custom Code.
+Minimal starter for a new Webflow site. One JS file, hosted on GitHub Pages, linked from Webflow Custom Code (same pattern as [msc-cursor-project](https://github.com/outofbounds-studio/msc-cursor-project)).
 
 ## Webflow script tag
 
-Paste in **Project Settings → Custom Code → Head code**:
+Paste in **Project Settings → Custom Code → Footer code** (end of `<body>`):
 
 ```html
-<script src="https://raw.githubusercontent.com/outofbounds-studio/webflow-OOB/main/oob.js"></script>
+<script src="https://outofbounds-studio.github.io/webflow-OOB/oob.js"></script>
 ```
+
+Add CookieYes, GTM `noscript`, or other snippets in **Footer** or **Head** separately — not inside `oob.js`.
+
+## GitHub Pages (first-time)
+
+1. Push this repo to `main` (the included GitHub Actions workflow deploys Pages).
+2. On GitHub: **Settings → Pages → Build and deployment → Source**: **GitHub Actions**.
+3. After the workflow succeeds, confirm the script URL loads in a browser:
+   `https://outofbounds-studio.github.io/webflow-OOB/oob.js`
 
 ## File structure
 
@@ -25,13 +34,13 @@ WEBFLOW.md   # Webflow custom code checklist
 
 1. Edit `oob.js` in Cursor.
 2. Commit and push to `main`.
-3. Publish or refresh Webflow staging — the raw GitHub URL serves the latest file.
+3. Wait for the Pages deploy workflow, then publish or hard-refresh Webflow staging.
 
-Do **not** put cookie banners, GTM, or CookieYes inside `oob.js`; add those as separate Head snippets in Webflow.
+Do **not** use `raw.githubusercontent.com` links in Webflow — use the `github.io` URL above.
 
 ## Renaming for a client project
 
-When starting a real client site, copy this folder to `~/webflow-{client}/`, rename `oob.js` → `{client}.js`, update log prefixes and README script URL, and create a dedicated GitHub repo.
+When starting a real client site, copy this folder to `~/webflow-{client}/`, rename `oob.js` → `{client}.js`, update log prefixes and the Pages script URL (`https://outofbounds-studio.github.io/{repo}/{client}.js`), and create a dedicated GitHub repo.
 
 ## Step 6 — Site type
 
