@@ -158,6 +158,8 @@ Do not use `data-link-hover` CSS on the same links if you use the blob (remove `
 
 `.nav-highlight` can sit before or after the `<ul>`; keep Head CSS so the blob is `position: absolute` and links stay `z-index: 1`.
 
+The blob stays on the current page link (`w--current` / `aria-current="page"`) after click and when the pointer leaves the nav; it only moves away while hovering other links.
+
 ---
 
 ## JavaScript (`oob.js`)
@@ -175,7 +177,7 @@ Set `debug: true` in `barba.init` inside `oob.js` while debugging transitions.
 ## Verify
 
 - [ ] Head CDNs load (Network: barba, gsap, lenis before `oob.js`)
-- [ ] Console: `[OOB] Script loaded v2.1.2`, `[OOB] Barba initialized`
+- [ ] Console: `[OOB] Script loaded v2.1.3`, `[OOB] Barba initialized`
 - [ ] No `[OOB] Barba structure error` (nav must be outside container)
 - [ ] Nav blob: `[OOB] Nav highlight blob initialized` (if `.nav-links-wrap` present)
 - [ ] Internal link: parallax leave/enter (or instant if reduced motion)

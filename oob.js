@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.2 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.3 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.2');
+console.log('[OOB] Script loaded v2.1.3');
 
 (function () {
     'use strict';
@@ -317,6 +317,8 @@ console.log('[OOB] Script loaded v2.1.2');
 
             curr.setAttribute('class', next.getAttribute('class') || '');
         });
+
+        refreshNavHighlightBlob();
     }
 
     function debounceOnWidthChange(fn, ms) {
@@ -402,6 +404,15 @@ console.log('[OOB] Script loaded v2.1.2');
         }
     }
 
+    function getActiveNavLink(links) {
+        if (!links?.length) return null;
+        return (
+            links.find((a) => a.classList.contains('w--current')) ||
+            links.find((a) => a.getAttribute('aria-current') === 'page') ||
+            links[0]
+        );
+    }
+
     function moveNavHighlightTo(el, show = true) {
         const { wrap, blob } = navHighlightState || getNavHighlightElements();
         if (!wrap || !blob || !el) return;
@@ -476,24 +487,20 @@ console.log('[OOB] Script loaded v2.1.2');
             pointerEvents: 'none',
         });
 
-        const activeLink =
-            links.find((a) => a.classList.contains('w--current')) || links[0];
+        const activeLink = getActiveNavLink(links);
 
         requestAnimationFrame(() => {
-            moveNavHighlightTo(activeLink, true);
+            if (activeLink) moveNavHighlightTo(activeLink, true);
         });
 
         links.forEach((link) => {
             link.addEventListener('mouseenter', () => moveNavHighlightTo(link, true));
+            link.addEventListener('click', () => moveNavHighlightTo(link, true));
         });
 
         wrap.addEventListener('mouseleave', () => {
-            gsap.to(blob, {
-                opacity: 0,
-                duration: reducedMotion ? 0 : 0.3,
-                ease,
-                overwrite: true,
-            });
+            const current = getActiveNavLink(links);
+            if (current) moveNavHighlightTo(current, true);
         });
 
         window.addEventListener(
@@ -502,8 +509,7 @@ console.log('[OOB] Script loaded v2.1.2');
                 const hovered = links.find((l) => l.matches(':hover'));
                 if (hovered) moveNavHighlightTo(hovered, true);
                 else {
-                    const current =
-                        links.find((a) => a.classList.contains('w--current')) || links[0];
+                    const current = getActiveNavLink(links);
                     if (current && document.contains(current)) moveNavHighlightTo(current, true);
                 }
             }, 200)
@@ -521,12 +527,12 @@ console.log('[OOB] Script loaded v2.1.2');
             return;
         }
 
-        const current =
-            links.find((a) => a.classList.contains('w--current')) ||
-            links.find((l) => l.matches(':hover')) ||
-            links[0];
+        const hovered = links.find((l) => l.matches(':hover'));
+        const current = hovered || getActiveNavLink(links);
 
-        requestAnimationFrame(() => moveNavHighlightTo(current, true));
+        requestAnimationFrame(() => {
+            if (current) moveNavHighlightTo(current, true);
+        });
     }
 
     // Run after layout (footer script); Barba once also calls initOnceFunctions
