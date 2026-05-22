@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.3');
+console.log('[OOB] Script loaded v2.1.4');
 
 (function () {
     'use strict';
@@ -76,8 +76,8 @@ console.log('[OOB] Script loaded v2.1.3');
         reinitWebflow();
         ensureNavStacking();
         initNavHighlightBlob();
+        scheduleButton038(document);
         // Runs once on first load
-        // if (has('[data-something]')) initSomething();
     }
 
     function initBeforeEnterFunctions(next) {
@@ -90,8 +90,8 @@ console.log('[OOB] Script loaded v2.1.3');
         nextPage = next || document;
         reinitWebflow();
         refreshNavHighlightBlob();
+        if (has('[data-button-038]')) scheduleButton038(nextPage);
         // Runs after enter animation completes
-        // if (has('[data-something]')) initSomething();
 
         if (hasLenis) lenis.resize();
         if (hasScrollTrigger) ScrollTrigger.refresh();
@@ -543,4 +543,60 @@ console.log('[OOB] Script loaded v2.1.3');
     // -----------------------------------------
     // YOUR FUNCTIONS GO BELOW HERE
     // -----------------------------------------
+
+    function initButton038(root = document) {
+        const buttons = root.querySelectorAll('[data-button-038]');
+        if (buttons.length === 0) return;
+
+        buttons.forEach((element) => {
+            if (element.dataset.button038Init === 'true') return;
+
+            const textElement = element.querySelector('[data-button-038-text]');
+            const widthHover =
+                Number(element.getAttribute('data-button-038-width-hover')) || 0;
+            const heightHover =
+                Number(element.getAttribute('data-button-038-height-hover')) || 0;
+            if (!textElement) return;
+
+            const setScale = (x, y) => {
+                element.style.setProperty('--button-038-scale-x', x);
+                element.style.setProperty('--button-038-scale-y', y);
+            };
+
+            const updateScale = () => {
+                const currentWidth = element.offsetWidth;
+                const currentHeight = element.offsetHeight;
+                if (!currentWidth || !currentHeight) return;
+                const scaleX = (currentWidth + widthHover) / currentWidth;
+                const scaleY = (currentHeight + heightHover) / currentHeight;
+                setScale(scaleX, scaleY);
+            };
+
+            updateScale();
+            const text = textElement.textContent;
+            textElement.innerHTML = '';
+
+            [...text].forEach((char, index) => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.style.setProperty('--index', index);
+
+                if (char === ' ') {
+                    span.style.whiteSpace = 'pre';
+                }
+
+                textElement.appendChild(span);
+            });
+
+            element.dataset.button038Init = 'true';
+        });
+    }
+
+    function scheduleButton038(root = document) {
+        const run = () => initButton038(root);
+        if (document.fonts?.ready) {
+            return document.fonts.ready.then(run);
+        }
+        run();
+    }
 })();
