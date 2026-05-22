@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.2 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.0');
+console.log('[OOB] Script loaded v2.1.2');
 
 (function () {
     'use strict';
@@ -74,6 +74,7 @@ console.log('[OOB] Script loaded v2.1.0');
         if (onceFunctionsInitialized) return;
         onceFunctionsInitialized = true;
         reinitWebflow();
+        ensureNavStacking();
         initNavHighlightBlob();
         // Runs once on first load
         // if (has('[data-something]')) initSomething();
@@ -88,6 +89,7 @@ console.log('[OOB] Script loaded v2.1.0');
     function initAfterEnterFunctions(next) {
         nextPage = next || document;
         reinitWebflow();
+        refreshNavHighlightBlob();
         // Runs after enter animation completes
         // if (has('[data-something]')) initSomething();
 
@@ -210,7 +212,7 @@ console.log('[OOB] Script loaded v2.1.0');
     });
 
     barba.init({
-        debug: false, // set true while debugging transitions
+        debug: false, // set true while debugging Barba in oob.js
         timeout: 7000,
         preventRunning: true,
         transitions: [
@@ -235,6 +237,7 @@ console.log('[OOB] Script loaded v2.1.0');
     });
 
     console.log('[OOB] Barba initialized (overlapping parallax)');
+    checkBarbaDom();
 
     // -----------------------------------------
     // GENERIC + HELPERS
@@ -284,11 +287,25 @@ console.log('[OOB] Script loaded v2.1.0');
         }
     }
 
+    function getPersistentNavUpdateLinks(root) {
+        const scope = root || document;
+        const selectors = [
+            '.nav [data-barba-update]',
+            '.navbar_wrap [data-barba-update]',
+            'nav [data-barba-update]',
+        ].join(', ');
+        const container = scope.querySelector?.('[data-barba="container"]');
+        return [...scope.querySelectorAll(selectors)].filter(
+            (el) => !container?.contains(el)
+        );
+    }
+
     function initBarbaNavUpdate(data) {
         const tpl = document.createElement('template');
         tpl.innerHTML = data.next.html.trim();
-        const nextNodes = tpl.content.querySelectorAll('[data-barba-update]');
-        const currentNodes = document.querySelectorAll('nav [data-barba-update]');
+        const nextRoot = tpl.content.querySelector('[data-barba="wrapper"]') || tpl.content;
+        const nextNodes = getPersistentNavUpdateLinks(nextRoot);
+        const currentNodes = getPersistentNavUpdateLinks(document);
 
         currentNodes.forEach((curr, index) => {
             const next = nextNodes[index];
@@ -317,17 +334,128 @@ console.log('[OOB] Script loaded v2.1.0');
     }
 
     /**
-     * One sliding highlight behind desktop nav links.
-     * Webflow: .nav-links-wrap (relative) > .nav-highlight + List > .nav-link
+     * Nav/header inside [data-barba="container"] is removed on leave — causes nav flash.
      */
-    function initNavHighlightBlob() {
+    function checkBarbaDom() {
+        const wrapper = document.querySelector('[data-barba="wrapper"]');
+        const containers = document.querySelectorAll('[data-barba="container"]');
+
+        if (!wrapper) {
+            console.error(
+                '[OOB] Missing body[data-barba="wrapper"]. Add to Body on all pages (or site template).'
+            );
+        }
+
+        if (containers.length !== 1) {
+            console.error(
+                '[OOB] Expected exactly one [data-barba="container"], found',
+                containers.length,
+                '— each page needs one container on the page content wrapper only.'
+            );
+        }
+
+        const container = containers[0];
+        if (!container) return;
+
+        const insideContainer = [
+            ...document.querySelectorAll('.navbar_wrap, .nav-links-wrap, [data-transition-wrap]'),
+        ].filter((el) => container.contains(el));
+
+        if (insideContainer.length) {
+            console.error(
+                '[OOB] Barba structure error: nav and/or transition overlay are INSIDE [data-barba="container"]. ' +
+                    'Barba deletes the container on each navigation — that is why the nav disappears. ' +
+                    'Fix in Webflow: body[wrapper] > nav (symbol) + transition (symbol) + div[container] (page content only). ' +
+                    'See BARBA-OSMO.md § Barba structure.',
+                insideContainer.map((el) => el.className || el.tagName)
+            );
+        }
+
+        if (!document.querySelector('[data-transition-wrap]')) {
+            console.warn(
+                '[OOB] Missing [data-transition-wrap] — parallax transition falls back to fade only.'
+            );
+        }
+    }
+
+    let navHighlightState = null;
+
+    const NAV_LINK_SELECTOR = '.nav-link, .navbar_link, ul a';
+
+    function getNavHighlightElements() {
         const wrap = document.querySelector('.nav-links-wrap');
         const blob = wrap?.querySelector('.nav-highlight');
-        const links = wrap ? [...wrap.querySelectorAll('.nav-link')] : [];
+        const links = wrap ? [...wrap.querySelectorAll(NAV_LINK_SELECTOR)] : [];
+        return { wrap, blob, links };
+    }
 
-        if (!wrap || !blob || !links.length) return;
+    /** Keep nav above Barba enter layer (container uses z-index 3 during parallax). */
+    function ensureNavStacking() {
+        const navEl = document.querySelector('.nav, .navbar_wrap, nav');
+        if (!navEl) return;
+        const style = getComputedStyle(navEl);
+        if (style.position === 'static') {
+            navEl.style.position = 'relative';
+        }
+        if (!navEl.style.zIndex || Number(navEl.style.zIndex) < 10) {
+            navEl.style.zIndex = '10';
+        }
+    }
+
+    function moveNavHighlightTo(el, show = true) {
+        const { wrap, blob } = navHighlightState || getNavHighlightElements();
+        if (!wrap || !blob || !el) return;
+
+        const parentRect = wrap.getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        const left = rect.left - parentRect.left + wrap.scrollLeft;
+        const top = rect.top - parentRect.top + wrap.scrollTop;
+        const width = rect.width;
+        const height = rect.height;
+
+        const duration = navHighlightState?.duration ?? (reducedMotion ? 0 : 0.45);
+        const ease = navHighlightState?.ease ?? 'power3.out';
+
+        gsap.to(blob, {
+            left,
+            top,
+            width,
+            height,
+            opacity: show ? 1 : 0,
+            duration,
+            ease,
+            overwrite: true,
+        });
+    }
+
+    /**
+     * One sliding highlight behind desktop nav links.
+     * Webflow: .nav-links-wrap (relative) > .nav-highlight + List > .navbar_link (or .nav-link)
+     */
+    function initNavHighlightBlob() {
+        const { wrap, blob, links } = getNavHighlightElements();
+
+        if (!wrap) {
+            console.warn('[OOB] Nav highlight: missing .nav-links-wrap');
+            return;
+        }
+        if (!blob) {
+            console.warn('[OOB] Nav highlight: missing .nav-highlight inside .nav-links-wrap');
+            return;
+        }
+        if (!links.length) {
+            console.warn(
+                '[OOB] Nav highlight: no nav links in .nav-links-wrap (expected .navbar_link or .nav-link)'
+            );
+            return;
+        }
         if (wrap.dataset.oobNavBlobInit === 'true') return;
-        wrap.dataset.oobNavBlobInit = 'true';
+
+        if (links.some((a) => a.hasAttribute('data-link-hover'))) {
+            console.warn(
+                '[OOB] Nav highlight: links use data-link-hover — remove it or drop the blob; both fight for the same hover.'
+            );
+        }
 
         const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
         if (!supportsHover) {
@@ -335,33 +463,28 @@ console.log('[OOB] Script loaded v2.1.0');
             return;
         }
 
+        wrap.dataset.oobNavBlobInit = 'true';
+
         const duration = reducedMotion ? 0 : 0.45;
         const ease = 'power3.out';
 
-        function moveBlobTo(el, show = true) {
-            const parentRect = wrap.getBoundingClientRect();
-            const rect = el.getBoundingClientRect();
-            const left = rect.left - parentRect.left + wrap.scrollLeft;
-            const width = rect.width;
+        navHighlightState = { wrap, blob, links, duration, ease };
 
-            gsap.to(blob, {
-                left,
-                width,
-                opacity: show ? 1 : 0,
-                duration,
-                ease,
-                overwrite: true,
-            });
-        }
+        gsap.set(blob, {
+            position: 'absolute',
+            opacity: 0,
+            pointerEvents: 'none',
+        });
 
         const activeLink =
             links.find((a) => a.classList.contains('w--current')) || links[0];
 
-        gsap.set(blob, { opacity: 0 });
-        moveBlobTo(activeLink, true);
+        requestAnimationFrame(() => {
+            moveNavHighlightTo(activeLink, true);
+        });
 
         links.forEach((link) => {
-            link.addEventListener('mouseenter', () => moveBlobTo(link, true));
+            link.addEventListener('mouseenter', () => moveNavHighlightTo(link, true));
         });
 
         wrap.addEventListener('mouseleave', () => {
@@ -377,15 +500,39 @@ console.log('[OOB] Script loaded v2.1.0');
             'resize',
             debounceOnWidthChange(() => {
                 const hovered = links.find((l) => l.matches(':hover'));
-                if (hovered) moveBlobTo(hovered, true);
-                else if (activeLink && document.contains(activeLink)) {
-                    moveBlobTo(activeLink, true);
+                if (hovered) moveNavHighlightTo(hovered, true);
+                else {
+                    const current =
+                        links.find((a) => a.classList.contains('w--current')) || links[0];
+                    if (current && document.contains(current)) moveNavHighlightTo(current, true);
                 }
             }, 200)
         );
 
-        console.log('[OOB] Nav highlight blob initialized');
+        console.log('[OOB] Nav highlight blob initialized', { links: links.length });
     }
+
+    function refreshNavHighlightBlob() {
+        const { wrap, links } = getNavHighlightElements();
+        if (!wrap || !links.length) return;
+
+        if (wrap.dataset.oobNavBlobInit !== 'true') {
+            initNavHighlightBlob();
+            return;
+        }
+
+        const current =
+            links.find((a) => a.classList.contains('w--current')) ||
+            links.find((l) => l.matches(':hover')) ||
+            links[0];
+
+        requestAnimationFrame(() => moveNavHighlightTo(current, true));
+    }
+
+    // Run after layout (footer script); Barba once also calls initOnceFunctions
+    requestAnimationFrame(() => {
+        requestAnimationFrame(initNavHighlightBlob);
+    });
 
     // -----------------------------------------
     // YOUR FUNCTIONS GO BELOW HERE

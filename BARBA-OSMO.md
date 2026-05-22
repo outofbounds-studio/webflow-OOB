@@ -55,25 +55,42 @@ Optional later (scroll animations): add ScrollTrigger CDN here too.
 
 ## Webflow structure (every page)
 
+### Correct (nav stays visible, transitions work)
+
 ```
 body [data-barba="wrapper"]
-├── nav (outside container — add data-barba-update on links)
-├── div.transition [data-transition-wrap]
+├── header.navbar (Symbol — global nav, OUTSIDE container)
+│   └── .nav-links-wrap > .nav-highlight + links.nav-link
+├── div.transition [data-transition-wrap]   ← Symbol, OUTSIDE container
 │   └── div.transition__dark [data-transition-dark]
-└── main [data-barba="container"] [data-barba-namespace="…"] [data-page-theme="light|dark"]
+└── div.page-content [data-barba="container"] [data-barba-namespace="home"] [data-page-theme="light"]
+    └── sections only (no navbar here)
+```
+
+### Wrong (nav flashes away on every click)
+
+```
+body [data-barba="wrapper"]
+└── div.page_wrap [data-barba="container"]     ← container too high in the tree
+    ├── header.navbar                          ← INSIDE container = destroyed on leave
     └── page sections
 ```
+
+If the navbar is inside `[data-barba="container"]`, Barba removes it when the old page leaves — that matches “nav disappears then appears again”. `oob.js` logs `[OOB] Barba structure error` in the console when this happens.
+
+**Fix:** On **every page template**, put `data-barba="container"` only on the **inner page content** div — not on `page_wrap`, not on `body`, not on a wrapper that includes the nav.
 
 | Element | Attributes |
 |---------|------------|
 | Body | `data-barba="wrapper"` |
+| Global nav | **No** `data-barba="container"` — lives as sibling above page content |
 | Page content wrapper | `data-barba="container"`, `data-barba-namespace` (unique per page), `data-page-theme` |
-| Transition overlay | `data-transition-wrap`, child `data-transition-dark` |
-| Nav links (optional) | `data-barba-update` |
+| Transition overlay | `data-transition-wrap`, child `data-transition-dark` — **outside** container |
+| Nav links (optional) | `data-barba-update` on links for active class sync |
 
 **Order:** nav → transition div → container (Osmo template).
 
-Put transition markup in a **Symbol** on all pages. Nav stays **outside** the Barba container.
+Put **nav** and **transition** in **Symbols** outside the Barba container. Only **page sections** go inside the container.
 
 ### Nav highlight blob (optional)
 
@@ -84,7 +101,7 @@ nav
 └── .nav-links-wrap (div — position relative, flex row)
     ├── .nav-highlight (empty div, first child)
     └── List (ul)
-        └── List item → Link.nav-link
+        └── List item → Link.navbar_link (or .nav-link)
 ```
 
 **Head CSS:**
@@ -110,17 +127,36 @@ nav
     opacity: 0;
   }
 
-  .nav-links,
-  .nav-link {
+  .nav-link,
+  .navbar_link {
     position: relative;
     z-index: 1;
+  }
+
+  /* Stay above Barba enter layer (container z-index 3 during transition) */
+  .nav,
+  .navbar_wrap {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Webflow List wrapper — keep flex so blob can measure link height */
+  .nav-links-wrap .w-list-unstyled,
+  .nav-links-wrap ul {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: inherit;
   }
 }
 ```
 
-Initialized in `oob.js` via `initNavHighlightBlob()` (runs once on first load). Console: `[OOB] Nav highlight blob initialized`.
+Initialized in `oob.js` via `initNavHighlightBlob()` (runs on first load + `refreshNavHighlightBlob` after each transition). Console: `[OOB] Nav highlight blob initialized`.
 
-Do not use `data-link-hover` CSS on the same links if you use the blob.
+Do not use `data-link-hover` CSS on the same links if you use the blob (remove `data-link-hover` from links in Webflow).
+
+`.nav-highlight` can sit before or after the `<ul>`; keep Head CSS so the blob is `position: absolute` and links stay `z-index: 1`.
 
 ---
 
@@ -139,7 +175,8 @@ Set `debug: true` in `barba.init` inside `oob.js` while debugging transitions.
 ## Verify
 
 - [ ] Head CDNs load (Network: barba, gsap, lenis before `oob.js`)
-- [ ] Console: `[OOB] Script loaded v2.1.0`, `[OOB] Barba initialized`
+- [ ] Console: `[OOB] Script loaded v2.1.2`, `[OOB] Barba initialized`
+- [ ] No `[OOB] Barba structure error` (nav must be outside container)
 - [ ] Nav blob: `[OOB] Nav highlight blob initialized` (if `.nav-links-wrap` present)
 - [ ] Internal link: parallax leave/enter (or instant if reduced motion)
 - [ ] Nav `data-barba-update` syncs active state
