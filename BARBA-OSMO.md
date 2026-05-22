@@ -75,6 +75,53 @@ body [data-barba="wrapper"]
 
 Put transition markup in a **Symbol** on all pages. Nav stays **outside** the Barba container.
 
+### Nav highlight blob (optional)
+
+Webflow List (`ul`) cannot contain a plain Div — wrap the list:
+
+```
+nav
+└── .nav-links-wrap (div — position relative, flex row)
+    ├── .nav-highlight (empty div, first child)
+    └── List (ul)
+        └── List item → Link.nav-link
+```
+
+**Head CSS:**
+
+```css
+@media (hover: hover) and (pointer: fine) {
+  .nav-links-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-highlight {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    border-radius: 0.25rem;
+    background-color: var(--nav-link-hover-bg, rgba(0, 0, 0, 0.08));
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+  }
+
+  .nav-links,
+  .nav-link {
+    position: relative;
+    z-index: 1;
+  }
+}
+```
+
+Initialized in `oob.js` via `initNavHighlightBlob()` (runs once on first load). Console: `[OOB] Nav highlight blob initialized`.
+
+Do not use `data-link-hover` CSS on the same links if you use the blob.
+
 ---
 
 ## JavaScript (`oob.js`)
@@ -92,7 +139,8 @@ Set `debug: true` in `barba.init` inside `oob.js` while debugging transitions.
 ## Verify
 
 - [ ] Head CDNs load (Network: barba, gsap, lenis before `oob.js`)
-- [ ] Console: `[OOB] Script loaded v2.0.0`, `[OOB] Barba initialized`
+- [ ] Console: `[OOB] Script loaded v2.1.0`, `[OOB] Barba initialized`
+- [ ] Nav blob: `[OOB] Nav highlight blob initialized` (if `.nav-links-wrap` present)
 - [ ] Internal link: parallax leave/enter (or instant if reduced motion)
 - [ ] Nav `data-barba-update` syncs active state
 - [ ] Webflow forms / native interactions work after 2+ page transitions

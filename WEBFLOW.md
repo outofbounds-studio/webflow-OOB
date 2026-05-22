@@ -39,7 +39,7 @@ Add transition CSS from [BARBA-OSMO.md](./BARBA-OSMO.md) in Head as well.
 
 1. Open the published or `*.webflow.io` staging URL.
 2. Open DevTools → **Network** → filter JS — confirm `oob.js` loads from `outofbounds-studio.github.io` with status **200**.
-3. Open DevTools → **Console** — confirm `[OOB] Script loaded v2.0.0` and `[OOB] Barba initialized`.
+3. Open DevTools → **Console** — confirm `[OOB] Script loaded v2.1.0`, `[OOB] Barba initialized`, and (if nav blob markup exists) `[OOB] Nav highlight blob initialized`.
 4. If using a cookie CMP: ensure it does not block `github.io` or your CDN deps before the user accepts cookies.
 
 ## Ongoing

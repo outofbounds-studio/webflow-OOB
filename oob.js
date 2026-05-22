@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.0.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.0.0');
+console.log('[OOB] Script loaded v2.1.0');
 
 (function () {
     'use strict';
@@ -74,6 +74,7 @@ console.log('[OOB] Script loaded v2.0.0');
         if (onceFunctionsInitialized) return;
         onceFunctionsInitialized = true;
         reinitWebflow();
+        initNavHighlightBlob();
         // Runs once on first load
         // if (has('[data-something]')) initSomething();
     }
@@ -299,6 +300,91 @@ console.log('[OOB] Script loaded v2.0.0');
 
             curr.setAttribute('class', next.getAttribute('class') || '');
         });
+    }
+
+    function debounceOnWidthChange(fn, ms) {
+        let last = innerWidth;
+        let timer;
+        return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                if (innerWidth !== last) {
+                    last = innerWidth;
+                    fn.apply(this, args);
+                }
+            }, ms);
+        };
+    }
+
+    /**
+     * One sliding highlight behind desktop nav links.
+     * Webflow: .nav-links-wrap (relative) > .nav-highlight + List > .nav-link
+     */
+    function initNavHighlightBlob() {
+        const wrap = document.querySelector('.nav-links-wrap');
+        const blob = wrap?.querySelector('.nav-highlight');
+        const links = wrap ? [...wrap.querySelectorAll('.nav-link')] : [];
+
+        if (!wrap || !blob || !links.length) return;
+        if (wrap.dataset.oobNavBlobInit === 'true') return;
+        wrap.dataset.oobNavBlobInit = 'true';
+
+        const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (!supportsHover) {
+            blob.style.display = 'none';
+            return;
+        }
+
+        const duration = reducedMotion ? 0 : 0.45;
+        const ease = 'power3.out';
+
+        function moveBlobTo(el, show = true) {
+            const parentRect = wrap.getBoundingClientRect();
+            const rect = el.getBoundingClientRect();
+            const left = rect.left - parentRect.left + wrap.scrollLeft;
+            const width = rect.width;
+
+            gsap.to(blob, {
+                left,
+                width,
+                opacity: show ? 1 : 0,
+                duration,
+                ease,
+                overwrite: true,
+            });
+        }
+
+        const activeLink =
+            links.find((a) => a.classList.contains('w--current')) || links[0];
+
+        gsap.set(blob, { opacity: 0 });
+        moveBlobTo(activeLink, true);
+
+        links.forEach((link) => {
+            link.addEventListener('mouseenter', () => moveBlobTo(link, true));
+        });
+
+        wrap.addEventListener('mouseleave', () => {
+            gsap.to(blob, {
+                opacity: 0,
+                duration: reducedMotion ? 0 : 0.3,
+                ease,
+                overwrite: true,
+            });
+        });
+
+        window.addEventListener(
+            'resize',
+            debounceOnWidthChange(() => {
+                const hovered = links.find((l) => l.matches(':hover'));
+                if (hovered) moveBlobTo(hovered, true);
+                else if (activeLink && document.contains(activeLink)) {
+                    moveBlobTo(activeLink, true);
+                }
+            }, 200)
+        );
+
+        console.log('[OOB] Nav highlight blob initialized');
     }
 
     // -----------------------------------------
