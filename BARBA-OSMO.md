@@ -40,6 +40,8 @@ Based on [Osmo Lenis Smooth Scroll Setup](https://www.osmo.supply/resource/lenis
 
 Barba: `lenis.stop()` before enter, `lenis.start()` + `lenis.resize()` after enter (already in `oob.js`).
 
+**Scrollbar:** `lenis.css` can show a native bar on the right; `oob.css` sets `html.lenis { overflow: hidden }` so only Lenis handles scroll.
+
 **Webflow tips (from Osmo):**
 
 - Nested scroll areas (modals, overflow panels): add `[data-lenis-prevent]`

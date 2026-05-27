@@ -1,6 +1,17 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.0.0 */
+/* Version: 1.0.1 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
+
+/* ── Lenis (after lenis.css) ── */
+/* lenis.css sets height:auto on html/body, which restores the native scrollbar track.
+   Hide it on html — Lenis still scrolls; wheel/touch unchanged. */
+html.lenis {
+  overflow: hidden;
+}
+
+html.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
 
 /* ── Font rendering (site-wide) ── */
 html {
