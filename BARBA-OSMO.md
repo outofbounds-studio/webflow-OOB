@@ -21,9 +21,31 @@ Based on [Overlapping Parallax Page Transition](https://www.osmo.supply/resource
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/CustomEase.min.js"></script>
 ```
 
-Optional later (scroll animations): add ScrollTrigger CDN here too.
+**ScrollTrigger** (optional — add when using scroll animations; `oob.js` switches Lenis to the Osmo GSAP integration):
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/ScrollTrigger.min.js"></script>
+```
 
 **Button 065** (`[data-button-065]`): requires [GSAP SplitText](https://gsap.com/docs/v3/Plugins/SplitText/) (Club). Load your SplitText build in Head **after** `gsap.min.js` and **before** `oob.js`.
+
+### Lenis smooth scroll
+
+Based on [Osmo Lenis Smooth Scroll Setup](https://www.osmo.supply/resource/lenis-smooth-scroll-setup). Lenis CSS + JS in Head above; init runs in `oob.js` on first load.
+
+| Setup | When |
+|--------|------|
+| `new Lenis({ autoRaf: true })` | ScrollTrigger **not** loaded |
+| `new Lenis()` + `lenis.on('scroll', ScrollTrigger.update)` + GSAP ticker | ScrollTrigger **loaded** |
+
+Barba: `lenis.stop()` before enter, `lenis.start()` + `lenis.resize()` after enter (already in `oob.js`).
+
+**Webflow tips (from Osmo):**
+
+- Nested scroll areas (modals, overflow panels): add `[data-lenis-prevent]`
+- Pause scroll: `lenis.stop()` (e.g. modal open) — global `window.lenis` is set after init
+- Resume: `lenis.start()`
+- Anchor scroll: see Osmo [Lenis Scroll-To Anchor Target](https://www.osmo.supply/resource/lenis-scroll-to-anchor-target)
 
 ### Head code — transition CSS
 
@@ -179,7 +201,7 @@ Set `debug: true` in `barba.init` inside `oob.js` while debugging transitions.
 ## Verify
 
 - [ ] Head CDNs load (Network: barba, gsap, lenis before `oob.js`)
-- [ ] Console: `[OOB] Script loaded v2.1.3`, `[OOB] Barba initialized`
+- [ ] Console: `[OOB] Script loaded`, `[OOB] Barba initialized`, `[OOB] Lenis initialized`
 - [ ] No `[OOB] Barba structure error` (nav must be outside container)
 - [ ] Nav blob: `[OOB] Nav highlight blob initialized` (if `.nav-links-wrap` present)
 - [ ] Internal link: parallax leave/enter (or instant if reduced motion)

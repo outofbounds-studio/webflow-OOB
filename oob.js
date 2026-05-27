@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.5 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.6 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.5');
+console.log('[OOB] Script loaded v2.1.6');
 
 (function () {
     'use strict';
@@ -29,6 +29,7 @@ console.log('[OOB] Script loaded v2.1.5');
     const hasSplitText = typeof SplitText !== 'undefined';
 
     gsap.registerPlugin(CustomEase);
+    if (hasScrollTrigger) gsap.registerPlugin(ScrollTrigger);
     if (hasSplitText) gsap.registerPlugin(SplitText);
 
     history.scrollRestoration = 'manual';
@@ -97,7 +98,7 @@ console.log('[OOB] Script loaded v2.1.5');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         // Runs after enter animation completes
 
-        if (hasLenis) lenis.resize();
+        if (lenis) lenis.resize();
         if (hasScrollTrigger) ScrollTrigger.refresh();
     }
 
@@ -212,7 +213,7 @@ console.log('[OOB] Script loaded v2.1.5');
     barba.hooks.afterEnter((data) => {
         initAfterEnterFunctions(data.next.container);
 
-        if (hasLenis) {
+        if (lenis) {
             lenis.resize();
             lenis.start();
         }
@@ -269,27 +270,50 @@ console.log('[OOB] Script loaded v2.1.5');
         if (nav) nav.dataset.themeNav = config.nav;
     }
 
+    /**
+     * Osmo Lenis Smooth Scroll Setup
+     * https://www.osmo.supply/resource/lenis-smooth-scroll-setup
+     * - With ScrollTrigger: GSAP ticker + lenis.on('scroll', ScrollTrigger.update)
+     * - Without ScrollTrigger: new Lenis({ autoRaf: true })
+     * Modals / nested scroll: [data-lenis-prevent], lenis.stop(), lenis.start()
+     */
+    function lenisRaf(time) {
+        lenis?.raf(time * 1000);
+    }
+
     function initLenis() {
         if (lenis) return;
-        if (!hasLenis) return;
+        if (!hasLenis) {
+            console.warn('[OOB] Lenis not loaded — add Lenis CDN to Head (see BARBA-OSMO.md).');
+            return;
+        }
+        if (reducedMotion) {
+            console.log('[OOB] Lenis skipped (prefers-reduced-motion)');
+            return;
+        }
 
-        lenis = new Lenis({
-            lerp: 0.165,
-            wheelMultiplier: 1.25,
-        });
+        if (hasScrollTrigger) {
+            lenis = new Lenis();
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add(lenisRaf);
+            gsap.ticker.lagSmoothing(0);
+            console.log('[OOB] Lenis initialized (Osmo + GSAP ScrollTrigger)');
+        } else {
+            lenis = new Lenis({ autoRaf: true });
+            console.log('[OOB] Lenis initialized (Osmo autoRaf)');
+        }
 
-        if (hasScrollTrigger) lenis.on('scroll', ScrollTrigger.update);
-
-        gsap.ticker.add((time) => {
-            lenis.raf(time * 1000);
-        });
-        gsap.ticker.lagSmoothing(0);
+        window.lenis = lenis;
     }
 
     function resetPage(container) {
-        window.scrollTo(0, 0);
+        if (lenis) {
+            lenis.scrollTo(0, { immediate: true });
+        } else {
+            window.scrollTo(0, 0);
+        }
         gsap.set(container, { clearProps: 'position,top,left,right' });
-        if (hasLenis) {
+        if (lenis) {
             lenis.resize();
             lenis.start();
         }

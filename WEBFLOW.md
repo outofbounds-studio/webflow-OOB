@@ -13,9 +13,11 @@ Same hosting pattern as MSC: **GitHub Pages** + **Footer** `oob.js`. Barba/Osmo 
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.17/dist/lenis.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/CustomEase.min.js"></script>
+<!-- Optional: scroll animations — enables Osmo Lenis + ScrollTrigger integration in oob.js -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/ScrollTrigger.min.js"></script> -->
 ```
 
-Add transition CSS from [BARBA-OSMO.md](./BARBA-OSMO.md) in Head as well.
+Add transition CSS from [BARBA-OSMO.md](./BARBA-OSMO.md) in Head as well. Lenis init follows [Osmo Lenis Smooth Scroll Setup](https://www.osmo.supply/resource/lenis-smooth-scroll-setup) in `oob.js`.
 
 **Custom styles:** `oob.css` (nav highlight, Button 038/065, font rendering) is hosted on GitHub Pages like `oob.js`. Edit `oob.css` in this repo → `git push` → no Webflow republish needed for CSS-only changes (GitHub cache ~10 min; hard-refresh while testing). Remove any duplicate `<style>` block from Site Settings once the link works.
 
