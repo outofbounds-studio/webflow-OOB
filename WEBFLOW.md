@@ -8,6 +8,7 @@ Same hosting pattern as MSC: **GitHub Pages** + **Footer** `oob.js`. Barba/Osmo 
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
+<link rel="stylesheet" href="https://outofbounds-studio.github.io/webflow-OOB/oob.css">
 <script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.17/dist/lenis.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js"></script>
@@ -15,6 +16,8 @@ Same hosting pattern as MSC: **GitHub Pages** + **Footer** `oob.js`. Barba/Osmo 
 ```
 
 Add transition CSS from [BARBA-OSMO.md](./BARBA-OSMO.md) in Head as well.
+
+**Custom styles:** `oob.css` (nav highlight, Button 038/065, font rendering) is hosted on GitHub Pages like `oob.js`. Edit `oob.css` in this repo → `git push` → no Webflow republish needed for CSS-only changes (GitHub cache ~10 min; hard-refresh while testing). Remove any duplicate `<style>` block from Site Settings once the link works.
 
 ### Footer code
 
@@ -33,7 +36,7 @@ Add transition CSS from [BARBA-OSMO.md](./BARBA-OSMO.md) in Head as well.
 
 1. Ensure `main` is pushed and the **Deploy GitHub Pages** workflow has run successfully.
 2. **Settings → Pages → Build and deployment → Source**: **GitHub Actions**.
-3. Verify: `https://outofbounds-studio.github.io/webflow-OOB/oob.js` returns the script in a browser tab.
+3. Verify: `https://outofbounds-studio.github.io/webflow-OOB/oob.js` and `oob.css` return **200** in a browser tab.
 
 ## Step 5 — Verify
 

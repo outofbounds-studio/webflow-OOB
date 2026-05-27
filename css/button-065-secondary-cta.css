@@ -1,0 +1,185 @@
+/* DEPRECATED — use oob.css at repo root (hosted on GitHub Pages). */
+/* ------------ Secondary CTA button (Button 065) ------------- */
+/*
+ * DOM (Osmo):
+ * .button-065
+ *   .button-065__bg
+ *   .button-065__inner
+ *     .button-065__text [data-button-065-text]
+ *     .button-065__dot
+ *
+ * Do NOT set display:flex on .button-065 — it breaks grid stacking of bg + inner.
+ */
+
+:root {
+  --button-065-color: #fff;
+  --button-065-color-background: #131313;
+  --button-065-color-focus: #fff;
+  --button-065-color-border: #ff4802;
+  --button-065-border-width: 1px;
+  --button-065-border-radius: 0.25em;
+  --button-065-padding: 1.125em 1.4em;
+  --button-065-focus-inset: -0.125em;
+  --button-065-hover-scale: 1.065 1.095;
+  --button-065-click-scale: 0.955 0.925;
+  --button-065-ease-click: cubic-bezier(0.4, 0, 0.2, 1);
+  --button-065-ease-hover: linear(
+    0,
+    0.5737 7.6%,
+    0.8382 11.87%,
+    0.9463 14.19%,
+    1.0292 16.54%,
+    1.0886 18.97%,
+    1.1258 21.53%,
+    1.137 22.97%,
+    1.1424 24.48%,
+    1.1423 26.1%,
+    1.1366 27.86%,
+    1.1165 31.01%,
+    1.0507 38.62%,
+    1.0219 42.57%,
+    0.9995 46.99%,
+    0.9872 51.63%,
+    0.9842 58.77%,
+    1.0011 81.26%,
+    1
+  );
+  --button-065-ease-focus: cubic-bezier(0.32, 0.72, 0, 1);
+  --button-065-arrow-size: 0.45em;
+  --button-065-arrow-stroke: 1.5px;
+  --button-065-char-shift: 0.375em;
+  --button-065-arrow-offset: 0.75em;
+}
+
+.button-065 {
+  -webkit-tap-highlight-color: transparent;
+  transition: scale 0.15s var(--button-065-ease-click);
+  /* Preserve Osmo: bg and inner share one grid cell */
+  display: inline-grid;
+  vertical-align: middle;
+}
+
+.button-065__bg,
+.button-065__inner {
+  grid-area: 1 / 1;
+}
+
+.button-065__bg {
+  border: var(--button-065-border-width) solid var(--button-065-color-border);
+  box-sizing: border-box;
+  transition: scale 0.75s var(--button-065-ease-hover);
+}
+
+/* Label + trailing arrow — shrink-wrap so icon sits after text, not button center */
+.button-065__inner {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.2em;
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  width: max-content;
+  max-width: 100%;
+  justify-self: center;
+  margin-inline: auto;
+}
+
+.button-065__inner .button-065__text,
+.button-065__inner [data-button-065-text] {
+  order: 1;
+  flex: 0 1 auto;
+}
+
+.button-065__inner .button-065__dot {
+  order: 2;
+  flex: 0 0 auto;
+}
+
+/* Dot slot → small arrow (override Osmo absolute centering) */
+.button-065__dot {
+  position: relative;
+  inset: auto;
+  left: auto;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+  flex-shrink: 0;
+  width: var(--button-065-arrow-size);
+  height: var(--button-065-arrow-size);
+  min-width: var(--button-065-arrow-size);
+  min-height: var(--button-065-arrow-size);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none !important;
+  box-shadow: none !important;
+  grid-area: auto;
+  align-self: center;
+  opacity: 0;
+  translate: none;
+  transform: translate3d(var(--button-065-arrow-offset), 0, 0) scale(0.5);
+  transition: opacity 0.15s ease-out, transform 0.75s var(--button-065-ease-hover);
+}
+
+.button-065__dot::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-right: var(--button-065-arrow-stroke) solid currentColor;
+  border-bottom: var(--button-065-arrow-stroke) solid currentColor;
+  transform: rotate(-45deg);
+  transform-origin: 50% 55%;
+  box-sizing: border-box;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .button-065:is(:hover, :focus-visible) .button-065__bg,
+  [data-hover]:is(:hover, :focus-visible) .button-065 .button-065__bg {
+    scale: var(--button-065-hover-scale);
+    transition-delay: 0.05s;
+  }
+
+  .button-065:is(:hover, :focus-visible) .button-065__dot,
+  [data-hover]:is(:hover, :focus-visible) .button-065 .button-065__dot {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-delay: calc(var(--char-count) * 0.012s + 0.05s);
+  }
+
+  .button-065:is(:hover, :focus-visible) .button-065__split-char,
+  [data-hover]:is(:hover, :focus-visible) .button-065 .button-065__split-char {
+    transform: translate3d(calc(var(--button-065-char-shift) * -1), 0, 0);
+    transition: transform 0.75s calc((var(--char-count) - var(--char)) * 0.012s + 0.05s)
+      var(--button-065-ease-hover);
+  }
+}
+
+.button-065:is(:focus-visible)::after {
+  box-shadow: 0 0 0 0.125em var(--button-065-color-focus);
+  scale: var(--button-065-hover-scale);
+}
+
+.button-065:active {
+  scale: var(--button-065-click-scale);
+}
+
+.button-065::after {
+  content: '';
+  display: block;
+  position: absolute;
+  inset: var(--button-065-focus-inset);
+  border-radius: var(--button-065-border-radius);
+  transition: box-shadow 0.2s var(--button-065-ease-focus), scale 0.75s var(--button-065-ease-hover);
+  scale: 1 1;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.button-065__split-char {
+  transition: transform 0.75s calc((var(--char) - 1) * 0.012s) var(--button-065-ease-hover);
+}

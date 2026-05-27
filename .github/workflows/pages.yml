@@ -1,5 +1,5 @@
 # Publish repo root to GitHub Pages (same pattern as msc-cursor-project).
-# Serves: https://outofbounds-studio.github.io/webflow-OOB/oob.js
+# Serves: https://outofbounds-studio.github.io/webflow-OOB/oob.js and oob.css
 
 name: Deploy GitHub Pages
 
