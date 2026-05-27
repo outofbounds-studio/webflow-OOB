@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.4 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.5 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.4');
+console.log('[OOB] Script loaded v2.1.5');
 
 (function () {
     'use strict';
@@ -24,16 +24,18 @@ console.log('[OOB] Script loaded v2.1.4');
     // + Overlapping Parallax (osmo.supply resource)
     // -----------------------------------------
 
+    const hasLenis = typeof window.Lenis !== 'undefined';
+    const hasScrollTrigger = typeof window.ScrollTrigger !== 'undefined';
+    const hasSplitText = typeof SplitText !== 'undefined';
+
     gsap.registerPlugin(CustomEase);
+    if (hasSplitText) gsap.registerPlugin(SplitText);
 
     history.scrollRestoration = 'manual';
 
     let lenis = null;
     let nextPage = document;
     let onceFunctionsInitialized = false;
-
-    const hasLenis = typeof window.Lenis !== 'undefined';
-    const hasScrollTrigger = typeof window.ScrollTrigger !== 'undefined';
 
     const rmMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reducedMotion = rmMQ.matches;
@@ -77,6 +79,7 @@ console.log('[OOB] Script loaded v2.1.4');
         ensureNavStacking();
         initNavHighlightBlob();
         scheduleButton038(document);
+        scheduleButton065(document);
         // Runs once on first load
     }
 
@@ -91,6 +94,7 @@ console.log('[OOB] Script loaded v2.1.4');
         reinitWebflow();
         refreshNavHighlightBlob();
         if (has('[data-button-038]')) scheduleButton038(nextPage);
+        if (has('[data-button-065]')) scheduleButton065(nextPage);
         // Runs after enter animation completes
 
         if (hasLenis) lenis.resize();
@@ -178,6 +182,10 @@ console.log('[OOB] Script loaded v2.1.4');
     // -----------------------------------------
     // BARBA HOOKS + INIT
     // -----------------------------------------
+
+    barba.hooks.beforeLeave((data) => {
+        if (data?.current?.container) revertButton065(data.current.container);
+    });
 
     barba.hooks.beforeEnter((data) => {
         gsap.set(data.next.container, {
@@ -594,6 +602,63 @@ console.log('[OOB] Script loaded v2.1.4');
 
     function scheduleButton038(root = document) {
         const run = () => initButton038(root);
+        if (document.fonts?.ready) {
+            return document.fonts.ready.then(run);
+        }
+        run();
+    }
+
+    /**
+     * Osmo Button 065 — char split via GSAP SplitText (Club plugin).
+     * Webflow: root [data-button-065] > [data-button-065-text]
+     */
+    function initButton065(root = document) {
+        if (!hasSplitText) {
+            if (root.querySelector('[data-button-065]')) {
+                console.warn(
+                    '[OOB] SplitText not loaded — [data-button-065] skipped. Add SplitText to Head before oob.js.'
+                );
+            }
+            return;
+        }
+
+        const buttons = root.querySelectorAll('[data-button-065]');
+        if (buttons.length === 0) return;
+
+        buttons.forEach((element) => {
+            if (element.dataset.button065Init === 'true') return;
+
+            const text = element.querySelector('[data-button-065-text]');
+            if (!text) return;
+
+            const splitText = new SplitText(text, {
+                type: 'chars',
+                tag: 'span',
+                charsClass: 'button-065__split-char',
+                propIndex: true,
+            });
+
+            const count = splitText.chars.length;
+            element.style.setProperty('--char-count', count);
+            gsap.set(splitText.chars, { display: 'inline-block' });
+
+            element._oobSplit065 = splitText;
+            element.dataset.button065Init = 'true';
+        });
+    }
+
+    function revertButton065(root = document) {
+        root.querySelectorAll('[data-button-065]').forEach((element) => {
+            if (element._oobSplit065) {
+                element._oobSplit065.revert();
+                delete element._oobSplit065;
+            }
+            delete element.dataset.button065Init;
+        });
+    }
+
+    function scheduleButton065(root = document) {
+        const run = () => initButton065(root);
         if (document.fonts?.ready) {
             return document.fonts.ready.then(run);
         }

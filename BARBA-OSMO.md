@@ -23,6 +23,8 @@ Based on [Overlapping Parallax Page Transition](https://www.osmo.supply/resource
 
 Optional later (scroll animations): add ScrollTrigger CDN here too.
 
+**Button 065** (`[data-button-065]`): requires [GSAP SplitText](https://gsap.com/docs/v3/Plugins/SplitText/) (Club). Load your SplitText build in Head **after** `gsap.min.js` and **before** `oob.js`.
+
 ### Head code — transition CSS
 
 ```css
