@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.6 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.7 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.6');
+console.log('[OOB] Script loaded v2.1.7');
 
 (function () {
     'use strict';
@@ -81,6 +81,7 @@ console.log('[OOB] Script loaded v2.1.6');
         initNavHighlightBlob();
         scheduleButton038(document);
         scheduleButton065(document);
+        initCopyButtons(document);
         // Runs once on first load
     }
 
@@ -96,6 +97,7 @@ console.log('[OOB] Script loaded v2.1.6');
         refreshNavHighlightBlob();
         if (has('[data-button-038]')) scheduleButton038(nextPage);
         if (has('[data-button-065]')) scheduleButton065(nextPage);
+        initCopyButtons(nextPage);
         // Runs after enter animation completes
 
         if (lenis) lenis.resize();
@@ -687,5 +689,61 @@ console.log('[OOB] Script loaded v2.1.6');
             return document.fonts.ready.then(run);
         }
         run();
+    }
+
+    /**
+     * Footer copy buttons (Ragged Edge-style).
+     * Markup options:
+     * - Preferred: <button data-copy-url="hello@site.com">Copy</button>
+     * - Legacy: <button data-copy-button data-url="hello@site.com">Copy</button>
+     */
+    function initCopyButtons(root = document) {
+        const buttons = root.querySelectorAll('[data-copy-url], [data-copy-button][data-url]');
+        if (!buttons.length) return;
+
+        buttons.forEach((button) => {
+            if (button.dataset.copyInit === 'true') return;
+
+            const value = button.getAttribute('data-copy-url') || button.getAttribute('data-url');
+            if (!value) return;
+
+            const defaultText = button.getAttribute('data-copy-default') || button.textContent?.trim() || 'Copy';
+            const successText = button.getAttribute('data-copy-success') || 'Copied!';
+            const errorText = button.getAttribute('data-copy-error') || 'Copy failed';
+            let timer = null;
+
+            button.addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                try {
+                    if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(value);
+                    } else {
+                        const area = document.createElement('textarea');
+                        area.value = value;
+                        area.setAttribute('readonly', '');
+                        area.style.position = 'fixed';
+                        area.style.opacity = '0';
+                        document.body.appendChild(area);
+                        area.select();
+                        const ok = document.execCommand('copy');
+                        document.body.removeChild(area);
+                        if (!ok) throw new Error('execCommand copy failed');
+                    }
+
+                    button.textContent = successText;
+                } catch (err) {
+                    console.warn('[OOB] Copy failed', err);
+                    button.textContent = errorText;
+                }
+
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    button.textContent = defaultText;
+                }, 1000);
+            });
+
+            button.dataset.copyInit = 'true';
+        });
     }
 })();
