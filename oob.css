@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.2.0 */
+/* Version: 1.2.1 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Lenis (after lenis.css) ── */
@@ -45,8 +45,11 @@ html.is-preloader-active body {
   position: fixed;
   z-index: 10002;
   pointer-events: none;
-  mix-blend-mode: normal;
-  color: #ffffff;
+}
+
+.oob-preloader__logo.is-hero-ready,
+.logotype-c.is-hero-ready {
+  mix-blend-mode: difference;
 }
 
 .oob-preloader__logo .oob-logotype,
@@ -70,10 +73,6 @@ html.is-preloader-active .hero-vimeo-background .logotype-c {
 html.is-preloader-active .hero-vimeo-background .vimeo-bg,
 html.is-preloader-active .hero-vimeo-background .vimeo-shadow {
   overflow: hidden;
-}
-
-.logotype-c.is-hero-ready {
-  mix-blend-mode: difference;
 }
 
 html.is-preloader-active [data-hero-intro],

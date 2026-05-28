@@ -99,7 +99,7 @@ body [data-barba="wrapper"]
 
 Runs on **first paint / refresh** of the homepage only (`barba` `once` + `data-barba-namespace="home"`). **Not** when navigating back to Home from another page.
 
-**Sequence:** centered logo clone on `#111` shade → logo moves up to final hero position → **clip-path only on `.vimeo-bg` / `.vimeo-shadow`** (curtain raise) → handoff to in-hero `.logotype-c` with `mix-blend-mode: difference`.
+**Sequence:** centered logo clone on `#111` shade (`mix-blend-mode: difference` from the start) → logo moves up to final hero position → **clip-path only on `.vimeo-bg` / `.vimeo-shadow`** (curtain raise) → seamless handoff to in-hero `.logotype-c` (same blend mode).
 
 **Webflow markup (homepage template):**
 

@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.1 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.3 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.1');
+console.log('[OOB] Script loaded v2.3.3');
 
 (function () {
     'use strict';
@@ -123,14 +123,14 @@ console.log('[OOB] Script loaded v2.3.1');
     const PRELOADER_CLIP_END = 'inset(0% 0% 0% 0% round 0px)';
     /** Set true to stretch timings for debugging */
     const PRELOADER_DEBUG_SLOW = false;
-    const PRELOADER_HOLD_MS = PRELOADER_DEBUG_SLOW ? 2500 : 550;
-    const PRELOADER_CLIP_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 1.05;
-    const PRELOADER_LOGO_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 1.15;
-    const PRELOADER_LOGO_DELAY = PRELOADER_DEBUG_SLOW ? 1 : 0.2;
-    const PRELOADER_SHADE_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.4;
+    const PRELOADER_HOLD_MS = PRELOADER_DEBUG_SLOW ? 2500 : 380;
+    const PRELOADER_CLIP_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 0.9;
+    const PRELOADER_LOGO_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 1;
+    const PRELOADER_LOGO_DELAY = PRELOADER_DEBUG_SLOW ? 1 : 0.08;
+    const PRELOADER_SHADE_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.35;
     const PRELOADER_SHADE_DELAY = PRELOADER_DEBUG_SLOW ? 1.5 : PRELOADER_CLIP_DURATION * 0.45;
-    const PRELOADER_VIDEO_DELAY = PRELOADER_DEBUG_SLOW ? 1.2 : 0.25;
-    const PRELOADER_HERO_INTRO_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.75;
+    const PRELOADER_VIDEO_DELAY = PRELOADER_DEBUG_SLOW ? 1.2 : 0.18;
+    const PRELOADER_HERO_INTRO_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.65;
     const PRELOADER_LOGO_START_SCALE = 0.9;
     /** Negative = higher in viewport at intro (px, from vertical center) */
     const PRELOADER_LOGO_START_Y_OFFSET = -48;
@@ -191,7 +191,7 @@ console.log('[OOB] Script loaded v2.3.1');
 
     function hideHeroLogotype(logotype) {
         gsap.set(logotype, { visibility: 'hidden', autoAlpha: 0 });
-        logotype.classList.remove('is-hero-ready');
+        logotype.classList.add('is-hero-ready');
     }
 
     function showHeroLogotype(logotype) {
@@ -212,6 +212,7 @@ console.log('[OOB] Script loaded v2.3.1');
     function clearPreloaderLogoSlot(slot) {
         if (!slot) return;
         slot.innerHTML = '';
+        slot.classList.remove('is-hero-ready');
         gsap.set(slot, {
             clearProps:
                 'position,top,left,width,height,margin,zIndex,transform,x,y,scale,xPercent,yPercent,display,autoAlpha',
@@ -219,6 +220,7 @@ console.log('[OOB] Script loaded v2.3.1');
     }
 
     function pinPreloaderLogoCentered(slot, width) {
+        slot.classList.add('is-hero-ready');
         gsap.set(slot, {
             display: 'block',
             position: 'fixed',
@@ -447,7 +449,6 @@ console.log('[OOB] Script loaded v2.3.1');
                         }
                         gsap.set(preloaderLogoSlot, { autoAlpha: 0 });
                         showHeroLogotype(logotype);
-                        logotype.classList.add('is-hero-ready');
                     }, PRELOADER_LOGO_DELAY + PRELOADER_LOGO_DURATION - 0.05);
                 });
             });
