@@ -399,3 +399,24 @@ h6,
     transition-delay: 0.3s;
   }
 }
+
+/* ------------ Contact/footer link hover + color lock ------------- */
+[data-underline-link] {
+  opacity: 0.6;
+  transition: opacity 0.25s ease;
+}
+
+[data-underline-link]:link,
+[data-underline-link]:visited,
+[data-underline-link]:hover,
+[data-underline-link]:active,
+[data-underline-link]:focus-visible {
+  color: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-hover]:hover [data-underline-link],
+  [data-underline-link]:hover {
+    opacity: 1;
+  }
+}
