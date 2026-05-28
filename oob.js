@@ -131,7 +131,7 @@ console.log('[OOB] Script loaded v2.3.0');
     const PRELOADER_SHADE_DELAY = PRELOADER_DEBUG_SLOW ? 1.5 : PRELOADER_CLIP_DURATION * 0.45;
     const PRELOADER_VIDEO_DELAY = PRELOADER_DEBUG_SLOW ? 1.2 : 0.25;
     const PRELOADER_HERO_INTRO_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.75;
-    const PRELOADER_LOGO_START_SCALE = 0.52;
+    const PRELOADER_LOGO_START_SCALE = 0.8;
 
     if (PRELOADER_DEBUG_SLOW) {
         console.warn('[OOB] PRELOADER_DEBUG_SLOW is ON — set to false before shipping');
