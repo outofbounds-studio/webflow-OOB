@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.2.1 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.2.2 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.2.1');
+console.log('[OOB] Script loaded v2.2.2');
 
 (function () {
     'use strict';
@@ -121,11 +121,20 @@ console.log('[OOB] Script loaded v2.2.1');
     const HOME_NAMESPACE = 'home';
     const PRELOADER_CLIP_START = 'inset(42% 42% 42% 42% round 0px)';
     const PRELOADER_CLIP_END = 'inset(0% 0% 0% 0% round 0px)';
-    const PRELOADER_HOLD_MS = 550;
-    const PRELOADER_CLIP_DURATION = 1.05;
-    const PRELOADER_LOGO_DURATION = 1.15;
-    const PRELOADER_LOGO_DELAY = 0.2;
+    /** TEMP: set false before shipping — stretches hold + reveal for debugging */
+    const PRELOADER_DEBUG_SLOW = true;
+    const PRELOADER_HOLD_MS = PRELOADER_DEBUG_SLOW ? 2500 : 550;
+    const PRELOADER_CLIP_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 1.05;
+    const PRELOADER_LOGO_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 1.15;
+    const PRELOADER_LOGO_DELAY = PRELOADER_DEBUG_SLOW ? 1 : 0.2;
+    const PRELOADER_SHADE_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.4;
+    const PRELOADER_SHADE_DELAY = PRELOADER_DEBUG_SLOW ? 1.5 : PRELOADER_CLIP_DURATION * 0.45;
+    const PRELOADER_HERO_INTRO_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.75;
     const PRELOADER_LOGO_START_SCALE = 0.52;
+
+    if (PRELOADER_DEBUG_SLOW) {
+        console.warn('[OOB] PRELOADER_DEBUG_SLOW is ON — set to false before shipping');
+    }
 
     function isHomeContainer(container) {
         const ns =
@@ -244,9 +253,9 @@ console.log('[OOB] Script loaded v2.2.1');
             {
                 autoAlpha: 1,
                 y: 0,
-                duration: 0.75,
+                duration: PRELOADER_HERO_INTRO_DURATION,
                 ease: 'power3.out',
-                stagger: 0.08,
+                stagger: PRELOADER_DEBUG_SLOW ? 0.2 : 0.08,
                 clearProps: 'transform',
             }
         );
@@ -285,6 +294,12 @@ console.log('[OOB] Script loaded v2.2.1');
             const logoWidth = finalRect.width || logotype.offsetWidth;
 
             pinLogotypeCentered(logotype, logoWidth);
+            if (PRELOADER_DEBUG_SLOW) {
+                console.log('[OOB] Preloader phase 1 — centered logo on shade', {
+                    logoWidth,
+                    finalRect,
+                });
+            }
 
             gsap.set(heroMedia, {
                 clipPath: PRELOADER_CLIP_START,
@@ -294,6 +309,9 @@ console.log('[OOB] Script loaded v2.2.1');
             });
 
             return waitForPreloaderReady(PRELOADER_HOLD_MS).then(() => {
+                if (PRELOADER_DEBUG_SLOW) {
+                    console.log('[OOB] Preloader phase 2 — hold complete, starting clip + logo');
+                }
                 gsap.set(heroMedia, { autoAlpha: 1, visibility: 'visible' });
 
                 return new Promise((resolve) => {
@@ -337,12 +355,19 @@ console.log('[OOB] Script loaded v2.2.1');
                     if (shade) {
                         tl.to(
                             shade,
-                            { autoAlpha: 0, duration: 0.4, ease: 'power2.out' },
-                            PRELOADER_CLIP_DURATION * 0.45
+                            {
+                                autoAlpha: 0,
+                                duration: PRELOADER_SHADE_DURATION,
+                                ease: 'power2.out',
+                            },
+                            PRELOADER_SHADE_DELAY
                         );
                     }
 
                     tl.add(() => {
+                        if (PRELOADER_DEBUG_SLOW) {
+                            console.log('[OOB] Preloader phase 3 — blend mode on, shade clearing');
+                        }
                         logotype.classList.add('is-hero-ready');
                         logotype.classList.remove('is-preloader-logo');
                     }, PRELOADER_LOGO_DELAY + PRELOADER_LOGO_DURATION - 0.15);
