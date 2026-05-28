@@ -328,3 +328,19 @@ h6,
 .button-065__split-char {
   transition: transform 0.75s calc((var(--char) - 1) * 0.012s) var(--button-065-ease-hover);
 }
+
+/* ------------ Secondary CTA link variant ------------- */
+[data-wf--button---secondary--variant='link'] {
+  --button-065-color: currentColor;
+  --button-065-color-background: transparent;
+  --button-065-hover-color: currentColor;
+  --button-065-hover-color-background: transparent;
+  --button-065-back-color-background: transparent;
+  --button-065-border-radius: 0em;
+  --button-065-padding: 0em;
+  color: inherit;
+}
+
+[data-wf--button---secondary--variant='link'] a {
+  color: inherit;
+}
