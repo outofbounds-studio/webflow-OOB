@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.3');
+console.log('[OOB] Script loaded v2.3.4');
 
 (function () {
     'use strict';
@@ -82,6 +82,7 @@ console.log('[OOB] Script loaded v2.3.3');
         scheduleButton038(document);
         scheduleButton065(document);
         initCopyButtons(document);
+        initDynamicCurrentYear(document);
         // Runs once on first load
     }
 
@@ -98,6 +99,7 @@ console.log('[OOB] Script loaded v2.3.3');
         if (has('[data-button-038]')) scheduleButton038(nextPage);
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
+        if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
         // Runs after enter animation completes
 
         if (lenis) lenis.resize();
@@ -1065,6 +1067,13 @@ console.log('[OOB] Script loaded v2.3.3');
     function setCopyLabelText(button, labelEl, text) {
         if (labelEl) labelEl.textContent = text;
         else button.textContent = text;
+    }
+
+    function initDynamicCurrentYear(root = document) {
+        const year = new Date().getFullYear();
+        root.querySelectorAll('[data-current-year]').forEach((el) => {
+            el.textContent = String(year);
+        });
     }
 
     function initCopyButtons(root = document) {

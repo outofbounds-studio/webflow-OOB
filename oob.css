@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.2.3 */
+/* Version: 1.2.4 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Lenis (after lenis.css) ── */
@@ -416,7 +416,7 @@ h6,
 
 /* outline-small: 0.75em type — ~30px total height (tighter than 6/7 scale) */
 [data-wf--button---secondary--variant='outline-small'] {
-  --button-065-padding: 0.42em 0.95em;
+  --button-065-padding: 0.5em 0.85em;
   --button-065-focus-inset: -0.08em;
   --button-065-arrow-size: 0.35em;
   --button-065-arrow-stroke: 1.25px;
