@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.2.1 */
+/* Version: 1.2.2 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Lenis (after lenis.css) ── */
@@ -412,6 +412,20 @@ h6,
 
 [data-wf--button---secondary--variant='link'] a {
   color: inherit;
+}
+
+/* outline-small: 0.75em type (was 0.875em) — scale padding + arrow by 6/7 */
+[data-wf--button---secondary--variant='outline-small'] {
+  --button-065-padding: calc(1.125em * 6 / 7) calc(1.4em * 6 / 7);
+  --button-065-focus-inset: calc(-0.125em * 6 / 7);
+  --button-065-arrow-size: calc(0.45em * 6 / 7);
+  --button-065-arrow-stroke: calc(1.5px * 6 / 7);
+  --button-065-char-shift: calc(0.375em * 6 / 7);
+  --button-065-arrow-offset: calc(0.75em * 6 / 7);
+}
+
+[data-wf--button---secondary--variant='outline-small'] .button-065__inner {
+  gap: calc(0.2em * 6 / 7);
 }
 
 /* ------------ Underline link animation ------------- */
