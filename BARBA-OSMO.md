@@ -85,6 +85,8 @@ Barba: `lenis.stop()` before enter, `lenis.start()` + `lenis.resize()` after ent
 
 ```
 body [data-barba="wrapper"]
+├── div[data-oob-preloader]                 ← homepage intro (OUTSIDE container)
+│   └── div.oob-preloader__shade            ← #111111 full viewport
 ├── header.navbar (Symbol — global nav, OUTSIDE container)
 │   └── .nav-links-wrap > .nav-highlight + links.nav-link
 ├── div.transition [data-transition-wrap]   ← Symbol, OUTSIDE container
@@ -92,6 +94,40 @@ body [data-barba="wrapper"]
 └── div.page-content [data-barba="container"] [data-barba-namespace="home"] [data-page-theme="light"]
     └── sections only (no navbar here)
 ```
+
+### Homepage preloader (clip-path reveal)
+
+Runs on **first paint / refresh** of the homepage only (`barba` `once` + `data-barba-namespace="home"`). **Not** when navigating back to Home from another page.
+
+**Webflow markup (homepage template):**
+
+```
+section.hero
+└── .hero-vimeo-background          ← clip-path animates here
+    ├── .logotype-c
+    │   └── .oob-logotype           ← SVG
+    ├── .vimeo-bg
+    └── .vimeo-shadow
+└── .container                      ← add data-hero-intro for post-preloader fade-in
+```
+
+Add outside the Barba container (or let `oob.js` inject `[data-oob-preloader]` with a console warning):
+
+```html
+<div data-oob-preloader aria-hidden="true">
+  <div class="oob-preloader__shade"></div>
+</div>
+```
+
+Optional Head anti-flash (before `oob.css`):
+
+```html
+<style>
+  html.is-preloader-pending [data-oob-preloader] { display: block; }
+</style>
+```
+
+After preloader: `oob:preloader:complete` fires — hero copy with `[data-hero-intro]` fades in via GSAP.
 
 ### Wrong (nav flashes away on every click)
 

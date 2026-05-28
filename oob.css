@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.0.1 */
+/* Version: 1.1.0 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Lenis (after lenis.css) ── */
@@ -11,6 +11,54 @@ html.lenis {
 
 html.lenis.lenis-smooth {
   scroll-behavior: auto !important;
+}
+
+/* ── Homepage preloader (clip-path reveal) ── */
+[data-oob-preloader] {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: all;
+}
+
+html.is-preloader-pending [data-oob-preloader],
+html.is-preloader-active [data-oob-preloader] {
+  display: block;
+}
+
+html.is-preloader-active {
+  overflow: hidden;
+}
+
+html.is-preloader-active body {
+  overflow: hidden;
+}
+
+.oob-preloader__shade {
+  position: absolute;
+  inset: 0;
+  background-color: #111111;
+}
+
+html.is-preloader-active .hero-vimeo-background {
+  overflow: hidden;
+}
+
+.is-preloader-logo,
+html.is-preloader-active .logotype-c.is-preloader-logo {
+  mix-blend-mode: normal;
+}
+
+.logotype-c.is-hero-ready {
+  mix-blend-mode: difference;
+}
+
+html.is-preloader-active [data-hero-intro],
+html.is-preloader-active section.hero .container,
+html.is-preloader-active .hero .container {
+  opacity: 0;
+  visibility: hidden;
 }
 
 /* ── Font rendering (site-wide) ── */

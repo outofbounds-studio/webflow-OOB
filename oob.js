@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.8 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.2.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.8');
+console.log('[OOB] Script loaded v2.2.0');
 
 (function () {
     'use strict';
@@ -112,6 +112,199 @@ console.log('[OOB] Script loaded v2.1.8');
         const tl = gsap.timeline();
         tl.call(() => resetPage(next), null, 0);
         return tl;
+    }
+
+    // -----------------------------------------
+    // HOMEPAGE PRELOADER — clip-path reveal (once / refresh only)
+    // -----------------------------------------
+
+    const HOME_NAMESPACE = 'home';
+    const PRELOADER_CLIP_START = 'inset(42% 42% 42% 42% round 0px)';
+    const PRELOADER_CLIP_END = 'inset(0% 0% 0% 0% round 0px)';
+
+    function isHomeContainer(container) {
+        const ns =
+            container?.getAttribute?.('data-barba-namespace') || container?.dataset?.barbaNamespace;
+        return ns === HOME_NAMESPACE;
+    }
+
+    function isHomeFirstPaint() {
+        return !!document.querySelector(
+            `[data-barba="container"][data-barba-namespace="${HOME_NAMESPACE}"]`
+        );
+    }
+
+    function ensurePreloaderMarkup() {
+        let el = document.querySelector('[data-oob-preloader]');
+        if (el) return el;
+
+        el = document.createElement('div');
+        el.setAttribute('data-oob-preloader', '');
+        el.setAttribute('aria-hidden', 'true');
+        el.innerHTML = '<div class="oob-preloader__shade"></div>';
+
+        const wrapper = document.querySelector('[data-barba="wrapper"]');
+        if (wrapper) wrapper.insertBefore(el, wrapper.firstChild);
+        else document.body.prepend(el);
+
+        console.warn(
+            '[OOB] [data-oob-preloader] was missing — injected by oob.js. Add it in Webflow outside [data-barba="container"] (see BARBA-OSMO.md).'
+        );
+        return el;
+    }
+
+    function setPreloaderActive(active) {
+        const root = document.documentElement;
+        if (active) {
+            root.classList.add('is-preloader-active');
+            root.classList.add('is-preloader-pending');
+        } else {
+            root.classList.remove('is-preloader-active', 'is-preloader-pending');
+        }
+    }
+
+    function waitForPreloaderReady(minMs = 400) {
+        const min = new Promise((resolve) => setTimeout(resolve, minMs));
+        const fonts = document.fonts?.ready ?? Promise.resolve();
+        return Promise.all([min, fonts]);
+    }
+
+    function getHeroIntroTargets(container) {
+        return container.querySelectorAll('[data-hero-intro], section.hero .container, .hero .container');
+    }
+
+    function dispatchPreloaderComplete() {
+        window.dispatchEvent(new CustomEvent('oob:preloader:complete'));
+    }
+
+    function finishHomePreloader({ container, heroMedia, logotype, preloader }) {
+        gsap.set(heroMedia, { clipPath: PRELOADER_CLIP_END, clearProps: 'clipPath' });
+        gsap.set(logotype, {
+            clearProps: 'position,top,left,width,height,margin,zIndex,transform,x,y,scale',
+        });
+        logotype.classList.add('is-hero-ready');
+        logotype.classList.remove('is-preloader-logo');
+
+        if (preloader) {
+            gsap.set(preloader, { autoAlpha: 0, display: 'none' });
+        }
+
+        setPreloaderActive(false);
+        dispatchPreloaderComplete();
+        resetPage(container);
+    }
+
+    function initHeroIntro(container) {
+        const targets = getHeroIntroTargets(container);
+        if (!targets.length) return;
+
+        gsap.set(targets, { visibility: 'visible' });
+        gsap.fromTo(
+            targets,
+            { autoAlpha: 0, y: 28 },
+            {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.75,
+                ease: 'power3.out',
+                stagger: 0.08,
+                clearProps: 'transform',
+            }
+        );
+    }
+
+    function runHomeClipPathPreloader(container) {
+        const heroMedia = container.querySelector('.hero-vimeo-background');
+        const logotype = container.querySelector('.logotype-c');
+
+        if (!heroMedia || !logotype) {
+            console.warn(
+                '[OOB] Homepage preloader skipped — missing .hero-vimeo-background or .logotype-c'
+            );
+            return runPageOnceAnimation(container);
+        }
+
+        if (lenis && typeof lenis.stop === 'function') lenis.stop();
+
+        const preloader = ensurePreloaderMarkup();
+        const shade = preloader.querySelector('.oob-preloader__shade');
+        const introTargets = getHeroIntroTargets(container);
+
+        setPreloaderActive(true);
+        gsap.set(preloader, { display: 'block', autoAlpha: 1 });
+        gsap.set(shade, { autoAlpha: 1 });
+        gsap.set(introTargets, { autoAlpha: 0 });
+
+        if (reducedMotion) {
+            finishHomePreloader({ container, heroMedia, logotype, preloader });
+            initHeroIntro(container);
+            return Promise.resolve();
+        }
+
+        return waitForPreloaderReady(400).then(() => {
+            const rect = logotype.getBoundingClientRect();
+            const viewCx = window.innerWidth / 2;
+            const viewCy = window.innerHeight / 2;
+            const elCx = rect.left + rect.width / 2;
+            const elCy = rect.top + rect.height / 2;
+            const fromX = viewCx - elCx;
+            const fromY = viewCy - elCy;
+            const startScale = 0.55;
+
+            logotype.classList.add('is-preloader-logo');
+            logotype.classList.remove('is-hero-ready');
+
+            gsap.set(heroMedia, { clipPath: PRELOADER_CLIP_START, overflow: 'hidden' });
+            gsap.set(logotype, {
+                position: 'fixed',
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                margin: 0,
+                zIndex: 10001,
+                mixBlendMode: 'normal',
+                transformOrigin: '50% 50%',
+                force3D: true,
+            });
+
+            return new Promise((resolve) => {
+                const tl = gsap.timeline({
+                    onComplete: () => {
+                        finishHomePreloader({ container, heroMedia, logotype, preloader });
+                        initHeroIntro(container);
+                        console.log('[OOB] Homepage clip-path preloader complete');
+                        resolve();
+                    },
+                });
+
+                tl.fromTo(
+                    heroMedia,
+                    { clipPath: PRELOADER_CLIP_START },
+                    {
+                        clipPath: PRELOADER_CLIP_END,
+                        duration: 0.85,
+                        ease: 'power3.inOut',
+                    },
+                    0
+                );
+
+                tl.fromTo(
+                    logotype,
+                    { x: fromX, y: fromY, scale: startScale },
+                    { x: 0, y: 0, scale: 1, duration: 1.05, ease: 'power3.inOut' },
+                    0.15
+                );
+
+                if (shade) {
+                    tl.to(shade, { autoAlpha: 0, duration: 0.35, ease: 'power2.out' }, 0.45);
+                }
+
+                tl.add(() => {
+                    logotype.classList.add('is-hero-ready');
+                    logotype.classList.remove('is-preloader-logo');
+                }, 0.9);
+            });
+        });
     }
 
     function runPageLeaveAnimation(current, next) {
@@ -233,7 +426,11 @@ console.log('[OOB] Script loaded v2.1.8');
 
                 async once(data) {
                     initOnceFunctions();
-                    return runPageOnceAnimation(data.next.container);
+                    const container = data.next.container;
+                    if (isHomeContainer(container)) {
+                        return runHomeClipPathPreloader(container);
+                    }
+                    return runPageOnceAnimation(container);
                 },
 
                 async leave(data) {
@@ -246,6 +443,10 @@ console.log('[OOB] Script loaded v2.1.8');
             },
         ],
     });
+
+    if (isHomeFirstPaint() && !rmMQ.matches) {
+        document.documentElement.classList.add('is-preloader-pending');
+    }
 
     console.log('[OOB] Barba initialized (overlapping parallax)');
     checkBarbaDom();
