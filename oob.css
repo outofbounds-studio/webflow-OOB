@@ -400,23 +400,44 @@ h6,
   }
 }
 
-/* ------------ Contact/footer link hover + color lock ------------- */
-[data-underline-link] {
+/* ------------ Copy URL buttons (footer contact) ------------- */
+.copy-url,
+[data-copy-url],
+[data-copy-button][data-url] {
   opacity: 0.6;
   transition: opacity 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+  color: inherit;
 }
 
-[data-underline-link]:link,
-[data-underline-link]:visited,
-[data-underline-link]:hover,
-[data-underline-link]:active,
-[data-underline-link]:focus-visible {
+a.copy-url:link,
+a.copy-url:visited,
+a.copy-url:hover,
+a.copy-url:active,
+a.copy-url:focus-visible,
+a[data-copy-url]:link,
+a[data-copy-url]:visited,
+a[data-copy-url]:hover,
+a[data-copy-url]:active,
+a[data-copy-url]:focus-visible,
+button[data-copy-url],
+button[data-copy-url]:hover,
+button[data-copy-url]:active,
+button[data-copy-url]:focus-visible,
+[data-copy-button][data-url],
+[data-copy-button][data-url]:hover,
+[data-copy-button][data-url]:active,
+[data-copy-button][data-url]:focus-visible {
   color: inherit;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-hover]:hover [data-underline-link],
-  [data-underline-link]:hover {
+  [data-hover]:hover .copy-url,
+  .copy-url:hover,
+  [data-hover]:hover [data-copy-url],
+  [data-copy-url]:hover,
+  [data-hover]:hover [data-copy-button][data-url],
+  [data-copy-button][data-url]:hover {
     opacity: 1;
   }
 }
