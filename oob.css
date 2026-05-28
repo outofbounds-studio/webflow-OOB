@@ -407,28 +407,28 @@ h6,
   opacity: 0.6;
   transition: opacity 0.25s ease;
   -webkit-tap-highlight-color: transparent;
-  color: inherit;
 }
 
+/* Keep Webflow .copy-url color on all interaction states (no visited purple/dark) */
+a.copy-url,
 a.copy-url:link,
 a.copy-url:visited,
 a.copy-url:hover,
 a.copy-url:active,
 a.copy-url:focus-visible,
+a[data-copy-url],
 a[data-copy-url]:link,
 a[data-copy-url]:visited,
 a[data-copy-url]:hover,
 a[data-copy-url]:active,
-a[data-copy-url]:focus-visible,
-button[data-copy-url],
-button[data-copy-url]:hover,
-button[data-copy-url]:active,
-button[data-copy-url]:focus-visible,
-[data-copy-button][data-url],
-[data-copy-button][data-url]:hover,
-[data-copy-button][data-url]:active,
-[data-copy-button][data-url]:focus-visible {
-  color: inherit;
+a[data-copy-url]:focus-visible {
+  color: var(--light);
+}
+
+.copy-url .detail,
+.copy-url .detail.light,
+[data-copy-url] .detail {
+  color: currentColor;
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.1.7 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.1.8 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.1.7');
+console.log('[OOB] Script loaded v2.1.8');
 
 (function () {
     'use strict';
@@ -697,6 +697,19 @@ console.log('[OOB] Script loaded v2.1.7');
      * - Preferred: <button data-copy-url="hello@site.com">Copy</button>
      * - Legacy: <button data-copy-button data-url="hello@site.com">Copy</button>
      */
+    function getCopyLabel(button) {
+        return (
+            button.querySelector('[data-copy-label]') ||
+            button.querySelector('.detail') ||
+            button.querySelector('p, span')
+        );
+    }
+
+    function setCopyLabelText(button, labelEl, text) {
+        if (labelEl) labelEl.textContent = text;
+        else button.textContent = text;
+    }
+
     function initCopyButtons(root = document) {
         const buttons = root.querySelectorAll('[data-copy-url], [data-copy-button][data-url]');
         if (!buttons.length) return;
@@ -707,7 +720,9 @@ console.log('[OOB] Script loaded v2.1.7');
             const value = button.getAttribute('data-copy-url') || button.getAttribute('data-url');
             if (!value) return;
 
-            const defaultText = button.getAttribute('data-copy-default') || button.textContent?.trim() || 'Copy';
+            const labelEl = getCopyLabel(button);
+            const defaultText =
+                button.getAttribute('data-copy-default') || labelEl?.textContent?.trim() || 'Copy';
             const successText = button.getAttribute('data-copy-success') || 'Copied!';
             const errorText = button.getAttribute('data-copy-error') || 'Copy failed';
             let timer = null;
@@ -731,15 +746,15 @@ console.log('[OOB] Script loaded v2.1.7');
                         if (!ok) throw new Error('execCommand copy failed');
                     }
 
-                    button.textContent = successText;
+                    setCopyLabelText(button, labelEl, successText);
                 } catch (err) {
                     console.warn('[OOB] Copy failed', err);
-                    button.textContent = errorText;
+                    setCopyLabelText(button, labelEl, errorText);
                 }
 
                 clearTimeout(timer);
                 timer = setTimeout(() => {
-                    button.textContent = defaultText;
+                    setCopyLabelText(button, labelEl, defaultText);
                 }, 1000);
             });
 
