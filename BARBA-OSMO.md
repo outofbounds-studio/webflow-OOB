@@ -95,19 +95,21 @@ body [data-barba="wrapper"]
     └── sections only (no navbar here)
 ```
 
-### Homepage preloader (clip-path reveal)
+### Homepage preloader (logo on shade + video curtain)
 
 Runs on **first paint / refresh** of the homepage only (`barba` `once` + `data-barba-namespace="home"`). **Not** when navigating back to Home from another page.
+
+**Sequence:** centered logo clone on `#111` shade → logo moves up to final hero position → **clip-path only on `.vimeo-bg` / `.vimeo-shadow`** (curtain raise) → handoff to in-hero `.logotype-c` with `mix-blend-mode: difference`.
 
 **Webflow markup (homepage template):**
 
 ```
 section.hero
-└── .hero-vimeo-background          ← clip-path animates here
-    ├── .logotype-c
-    │   └── .oob-logotype           ← SVG
-    ├── .vimeo-bg
-    └── .vimeo-shadow
+└── .hero-vimeo-background
+    ├── .logotype-c                 ← hidden during preloader; shown at end
+    │   └── .oob-logotype           ← SVG (cloned into preloader for intro)
+    ├── .vimeo-bg                   ← clip-path curtain here
+    └── .vimeo-shadow               ← clip-path curtain here
 └── .container                      ← add data-hero-intro for post-preloader fade-in
 ```
 
@@ -116,6 +118,7 @@ Add outside the Barba container (or let `oob.js` inject `[data-oob-preloader]` w
 ```html
 <div data-oob-preloader aria-hidden="true">
   <div class="oob-preloader__shade"></div>
+  <div class="oob-preloader__logo" aria-hidden="true"></div>
 </div>
 ```
 

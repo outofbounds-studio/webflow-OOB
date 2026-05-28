@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.2.2 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.2.2');
+console.log('[OOB] Script loaded v2.3.0');
 
 (function () {
     'use strict';
@@ -129,6 +129,7 @@ console.log('[OOB] Script loaded v2.2.2');
     const PRELOADER_LOGO_DELAY = PRELOADER_DEBUG_SLOW ? 1 : 0.2;
     const PRELOADER_SHADE_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.4;
     const PRELOADER_SHADE_DELAY = PRELOADER_DEBUG_SLOW ? 1.5 : PRELOADER_CLIP_DURATION * 0.45;
+    const PRELOADER_VIDEO_DELAY = PRELOADER_DEBUG_SLOW ? 1.2 : 0.25;
     const PRELOADER_HERO_INTRO_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.75;
     const PRELOADER_LOGO_START_SCALE = 0.52;
 
@@ -155,7 +156,8 @@ console.log('[OOB] Script loaded v2.2.2');
         el = document.createElement('div');
         el.setAttribute('data-oob-preloader', '');
         el.setAttribute('aria-hidden', 'true');
-        el.innerHTML = '<div class="oob-preloader__shade"></div>';
+        el.innerHTML =
+            '<div class="oob-preloader__shade"></div><div class="oob-preloader__logo" aria-hidden="true"></div>';
 
         const wrapper = document.querySelector('[data-barba="wrapper"]');
         if (wrapper) wrapper.insertBefore(el, wrapper.firstChild);
@@ -165,6 +167,74 @@ console.log('[OOB] Script loaded v2.2.2');
             '[OOB] [data-oob-preloader] was missing — injected by oob.js. Add it in Webflow outside [data-barba="container"] (see BARBA-OSMO.md).'
         );
         return el;
+    }
+
+    function ensurePreloaderLogoSlot(preloader) {
+        let slot = preloader.querySelector('.oob-preloader__logo');
+        if (!slot) {
+            slot = document.createElement('div');
+            slot.className = 'oob-preloader__logo';
+            slot.setAttribute('aria-hidden', 'true');
+            preloader.appendChild(slot);
+        }
+        return slot;
+    }
+
+    function getHeroVideoLayers(heroMedia) {
+        const layers = [...heroMedia.querySelectorAll('.vimeo-bg, .vimeo-shadow')];
+        if (layers.length) return layers;
+        const logotype = heroMedia.querySelector('.logotype-c');
+        return [...heroMedia.children].filter((child) => child !== logotype);
+    }
+
+    function hideHeroLogotype(logotype) {
+        gsap.set(logotype, { visibility: 'hidden', autoAlpha: 0 });
+        logotype.classList.remove('is-hero-ready');
+    }
+
+    function showHeroLogotype(logotype) {
+        gsap.set(logotype, { visibility: 'visible', autoAlpha: 1, clearProps: 'visibility,opacity' });
+    }
+
+    function mountPreloaderLogo(logotype, preloader) {
+        const slot = ensurePreloaderLogoSlot(preloader);
+        const svgSource = logotype.querySelector('.oob-logotype') || logotype.firstElementChild;
+        slot.innerHTML = '';
+        if (svgSource) {
+            slot.appendChild(svgSource.cloneNode(true));
+        }
+        hideHeroLogotype(logotype);
+        return slot;
+    }
+
+    function clearPreloaderLogoSlot(slot) {
+        if (!slot) return;
+        slot.innerHTML = '';
+        gsap.set(slot, {
+            clearProps:
+                'position,top,left,width,height,margin,zIndex,transform,x,y,scale,xPercent,yPercent,display,autoAlpha',
+        });
+    }
+
+    function pinPreloaderLogoCentered(slot, width) {
+        gsap.set(slot, {
+            display: 'block',
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            xPercent: -50,
+            yPercent: -50,
+            x: 0,
+            y: 0,
+            scale: PRELOADER_LOGO_START_SCALE,
+            width: width,
+            height: 'auto',
+            margin: 0,
+            zIndex: 10002,
+            transformOrigin: '50% 50%',
+            force3D: true,
+            autoAlpha: 1,
+        });
     }
 
     function setPreloaderActive(active) {
@@ -195,41 +265,24 @@ console.log('[OOB] Script loaded v2.2.2');
         return logotype.getBoundingClientRect();
     }
 
-    function pinLogotypeCentered(logotype, width) {
-        logotype.classList.add('is-preloader-logo');
-        logotype.classList.remove('is-hero-ready');
-        gsap.set(logotype, {
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            xPercent: -50,
-            yPercent: -50,
-            x: 0,
-            y: 0,
-            scale: PRELOADER_LOGO_START_SCALE,
-            width: width,
-            height: 'auto',
-            margin: 0,
-            zIndex: 10001,
-            mixBlendMode: 'normal',
-            transformOrigin: '50% 50%',
-            force3D: true,
-            autoAlpha: 1,
-            visibility: 'visible',
-        });
-    }
-
-    function finishHomePreloader({ container, heroMedia, logotype, preloader }) {
-        gsap.set(heroMedia, {
-            clipPath: PRELOADER_CLIP_END,
-            autoAlpha: 1,
-            visibility: 'visible',
-            clearProps: 'clipPath',
-        });
-        gsap.set(logotype, {
-            clearProps:
-                'position,top,left,width,height,margin,zIndex,transform,x,y,scale,xPercent,yPercent,visibility',
-        });
+    function finishHomePreloader({
+        container,
+        heroMedia,
+        logotype,
+        preloader,
+        videoLayers,
+        preloaderLogoSlot,
+    }) {
+        if (videoLayers?.length) {
+            gsap.set(videoLayers, {
+                clipPath: PRELOADER_CLIP_END,
+                autoAlpha: 1,
+                clearProps: 'clipPath',
+            });
+        }
+        gsap.set(heroMedia, { autoAlpha: 1, visibility: 'visible', clearProps: 'clipPath' });
+        clearPreloaderLogoSlot(preloaderLogoSlot);
+        showHeroLogotype(logotype);
         logotype.classList.add('is-hero-ready');
         logotype.classList.remove('is-preloader-logo');
 
@@ -283,8 +336,17 @@ console.log('[OOB] Script loaded v2.2.2');
         gsap.set(shade, { autoAlpha: 1 });
         gsap.set(introTargets, { autoAlpha: 0 });
 
+        const videoLayers = getHeroVideoLayers(heroMedia);
+
         if (reducedMotion) {
-            finishHomePreloader({ container, heroMedia, logotype, preloader });
+            finishHomePreloader({
+                container,
+                heroMedia,
+                logotype,
+                preloader,
+                videoLayers,
+                preloaderLogoSlot: null,
+            });
             initHeroIntro(container);
             return Promise.resolve();
         }
@@ -292,51 +354,53 @@ console.log('[OOB] Script loaded v2.2.2');
         const runReveal = () => {
             const finalRect = measureLogotypeFinalRect(logotype);
             const logoWidth = finalRect.width || logotype.offsetWidth;
+            const preloaderLogoSlot = mountPreloaderLogo(logotype, preloader);
 
-            pinLogotypeCentered(logotype, logoWidth);
+            pinPreloaderLogoCentered(preloaderLogoSlot, logoWidth);
+
             if (PRELOADER_DEBUG_SLOW) {
-                console.log('[OOB] Preloader phase 1 — centered logo on shade', {
+                console.log('[OOB] Preloader phase 1 — logo on shade (hero logotype hidden)', {
                     logoWidth,
                     finalRect,
+                    videoLayerCount: videoLayers.length,
                 });
             }
 
-            gsap.set(heroMedia, {
+            gsap.set(heroMedia, { overflow: 'hidden', autoAlpha: 1, visibility: 'visible' });
+            gsap.set(videoLayers, {
                 clipPath: PRELOADER_CLIP_START,
                 overflow: 'hidden',
                 autoAlpha: 0,
-                visibility: 'hidden',
             });
 
             return waitForPreloaderReady(PRELOADER_HOLD_MS).then(() => {
                 if (PRELOADER_DEBUG_SLOW) {
-                    console.log('[OOB] Preloader phase 2 — hold complete, starting clip + logo');
+                    console.log(
+                        '[OOB] Preloader phase 2 — logo up/out, then video curtain (clip-path on .vimeo-bg)'
+                    );
                 }
-                gsap.set(heroMedia, { autoAlpha: 1, visibility: 'visible' });
+
+                gsap.set(videoLayers, { autoAlpha: 1 });
 
                 return new Promise((resolve) => {
                     const tl = gsap.timeline({
                         onComplete: () => {
-                            finishHomePreloader({ container, heroMedia, logotype, preloader });
+                            finishHomePreloader({
+                                container,
+                                heroMedia,
+                                logotype,
+                                preloader,
+                                videoLayers,
+                                preloaderLogoSlot,
+                            });
                             initHeroIntro(container);
-                            console.log('[OOB] Homepage clip-path preloader complete');
+                            console.log('[OOB] Homepage preloader complete');
                             resolve();
                         },
                     });
 
-                    tl.fromTo(
-                        heroMedia,
-                        { clipPath: PRELOADER_CLIP_START },
-                        {
-                            clipPath: PRELOADER_CLIP_END,
-                            duration: PRELOADER_CLIP_DURATION,
-                            ease: 'power3.inOut',
-                        },
-                        0
-                    );
-
                     tl.to(
-                        logotype,
+                        preloaderLogoSlot,
                         {
                             top: finalRect.top,
                             left: finalRect.left,
@@ -350,6 +414,17 @@ console.log('[OOB] Script loaded v2.2.2');
                             ease: 'power3.inOut',
                         },
                         PRELOADER_LOGO_DELAY
+                    );
+
+                    tl.fromTo(
+                        videoLayers,
+                        { clipPath: PRELOADER_CLIP_START },
+                        {
+                            clipPath: PRELOADER_CLIP_END,
+                            duration: PRELOADER_CLIP_DURATION,
+                            ease: 'power3.inOut',
+                        },
+                        PRELOADER_VIDEO_DELAY
                     );
 
                     if (shade) {
@@ -366,11 +441,12 @@ console.log('[OOB] Script loaded v2.2.2');
 
                     tl.add(() => {
                         if (PRELOADER_DEBUG_SLOW) {
-                            console.log('[OOB] Preloader phase 3 — blend mode on, shade clearing');
+                            console.log('[OOB] Preloader phase 3 — handoff to hero logotype');
                         }
+                        gsap.set(preloaderLogoSlot, { autoAlpha: 0 });
+                        showHeroLogotype(logotype);
                         logotype.classList.add('is-hero-ready');
-                        logotype.classList.remove('is-preloader-logo');
-                    }, PRELOADER_LOGO_DELAY + PRELOADER_LOGO_DURATION - 0.15);
+                    }, PRELOADER_LOGO_DELAY + PRELOADER_LOGO_DURATION - 0.05);
                 });
             });
         };

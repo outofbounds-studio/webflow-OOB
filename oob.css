@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.1.1 */
+/* Version: 1.2.0 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Lenis (after lenis.css) ── */
@@ -41,23 +41,35 @@ html.is-preloader-active body {
   background-color: #111111;
 }
 
-html.is-preloader-active .hero-vimeo-background {
-  overflow: hidden;
-}
-
-html.is-preloader-active .logotype-c.is-preloader-logo {
-  visibility: visible;
-  opacity: 1;
-}
-
-.is-preloader-logo,
-html.is-preloader-active .logotype-c.is-preloader-logo {
+.oob-preloader__logo {
+  position: fixed;
+  z-index: 10002;
+  pointer-events: none;
   mix-blend-mode: normal;
   color: #ffffff;
 }
 
-html.is-preloader-active .logotype-c.is-preloader-logo .oob-logotype {
+.oob-preloader__logo .oob-logotype,
+.oob-preloader__logo svg {
+  display: block;
+  width: 100%;
+  height: auto;
   opacity: 1;
+}
+
+html.is-preloader-active .hero-vimeo-background {
+  overflow: hidden;
+}
+
+html.is-preloader-active .hero-vimeo-background .logotype-c {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+html.is-preloader-active .hero-vimeo-background .vimeo-bg,
+html.is-preloader-active .hero-vimeo-background .vimeo-shadow {
+  overflow: hidden;
 }
 
 .logotype-c.is-hero-ready {
