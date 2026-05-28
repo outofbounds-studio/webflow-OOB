@@ -404,7 +404,7 @@ h6,
 .copy-url,
 [data-copy-url],
 [data-copy-button][data-url] {
-  opacity: 0.6;
+  opacity: 0.4;
   transition: opacity 0.25s ease;
   -webkit-tap-highlight-color: transparent;
 }
