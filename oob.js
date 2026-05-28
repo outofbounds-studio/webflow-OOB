@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.1 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.0');
+console.log('[OOB] Script loaded v2.3.1');
 
 (function () {
     'use strict';
@@ -121,8 +121,8 @@ console.log('[OOB] Script loaded v2.3.0');
     const HOME_NAMESPACE = 'home';
     const PRELOADER_CLIP_START = 'inset(42% 42% 42% 42% round 0px)';
     const PRELOADER_CLIP_END = 'inset(0% 0% 0% 0% round 0px)';
-    /** TEMP: set false before shipping — stretches hold + reveal for debugging */
-    const PRELOADER_DEBUG_SLOW = true;
+    /** Set true to stretch timings for debugging */
+    const PRELOADER_DEBUG_SLOW = false;
     const PRELOADER_HOLD_MS = PRELOADER_DEBUG_SLOW ? 2500 : 550;
     const PRELOADER_CLIP_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 1.05;
     const PRELOADER_LOGO_DURATION = PRELOADER_DEBUG_SLOW ? 4 : 1.15;
@@ -131,7 +131,9 @@ console.log('[OOB] Script loaded v2.3.0');
     const PRELOADER_SHADE_DELAY = PRELOADER_DEBUG_SLOW ? 1.5 : PRELOADER_CLIP_DURATION * 0.45;
     const PRELOADER_VIDEO_DELAY = PRELOADER_DEBUG_SLOW ? 1.2 : 0.25;
     const PRELOADER_HERO_INTRO_DURATION = PRELOADER_DEBUG_SLOW ? 1.5 : 0.75;
-    const PRELOADER_LOGO_START_SCALE = 0.8;
+    const PRELOADER_LOGO_START_SCALE = 0.9;
+    /** Negative = higher in viewport at intro (px, from vertical center) */
+    const PRELOADER_LOGO_START_Y_OFFSET = -48;
 
     if (PRELOADER_DEBUG_SLOW) {
         console.warn('[OOB] PRELOADER_DEBUG_SLOW is ON — set to false before shipping');
@@ -225,7 +227,7 @@ console.log('[OOB] Script loaded v2.3.0');
             xPercent: -50,
             yPercent: -50,
             x: 0,
-            y: 0,
+            y: PRELOADER_LOGO_START_Y_OFFSET,
             scale: PRELOADER_LOGO_START_SCALE,
             width: width,
             height: 'auto',
