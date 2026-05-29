@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.5 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.6 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.5');
+console.log('[OOB] Script loaded v2.3.6');
 
 (function () {
     'use strict';
@@ -1103,6 +1103,9 @@ console.log('[OOB] Script loaded v2.3.5');
                 container._oobFooterLogotypeST.kill();
                 delete container._oobFooterLogotypeST;
             }
+            container._oobFooterLogotypeTween?.kill();
+            delete container._oobFooterLogotypeTween;
+            delete container._oobFooterLogotypeMaxProgress;
             gsap.set(getFooterLogotypeTarget(container), { clearProps: 'transform' });
             delete container.dataset.oobFooterLogotypeInit;
         });
@@ -1150,16 +1153,30 @@ console.log('[OOB] Script loaded v2.3.5');
             const tween = gsap.fromTo(
                 target,
                 { scale: scaleStart },
-                { scale: scaleEnd, ease: 'none', immediateRender: false }
+                { scale: scaleEnd, ease: 'none', paused: true, immediateRender: false }
             );
+
+            container._oobFooterLogotypeTween = tween;
+            container._oobFooterLogotypeMaxProgress = 0;
 
             container._oobFooterLogotypeST = ScrollTrigger.create({
                 trigger: container,
                 start: stStart,
                 end: stEnd,
-                scrub: true,
-                animation: tween,
                 invalidateOnRefresh: true,
+                onUpdate: (self) => {
+                    if (self.direction === 1) {
+                        container._oobFooterLogotypeMaxProgress = Math.max(
+                            container._oobFooterLogotypeMaxProgress || 0,
+                            self.progress
+                        );
+                        tween.progress(container._oobFooterLogotypeMaxProgress);
+                    }
+                },
+                onLeaveBack: () => {
+                    container._oobFooterLogotypeMaxProgress = 0;
+                    tween.progress(0);
+                },
             });
 
             container.dataset.oobFooterLogotypeInit = 'true';
