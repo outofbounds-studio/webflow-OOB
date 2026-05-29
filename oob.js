@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.8 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.9 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.8');
+console.log('[OOB] Script loaded v2.3.9');
 
 (function () {
     'use strict';
@@ -78,13 +78,13 @@ console.log('[OOB] Script loaded v2.3.8');
         onceFunctionsInitialized = true;
         reinitWebflow();
         ensureNavStacking();
+        syncNavActiveFromContainer(document);
         initNavHighlightBlob();
         scheduleButton038(document);
         scheduleButton065(document);
         initCopyButtons(document);
         initDynamicCurrentYear(document);
-        initFooterLogotypeScroll(document);
-        // Runs once on first load
+        // Footer logotype + ScrollTrigger init after once animation (see barba once)
     }
 
     function initBeforeEnterFunctions(next) {
@@ -96,6 +96,7 @@ console.log('[OOB] Script loaded v2.3.8');
     function initAfterEnterFunctions(next) {
         nextPage = next || document;
         reinitWebflow();
+        syncNavActiveFromContainer(nextPage);
         refreshNavHighlightBlob();
         if (has('[data-button-038]')) scheduleButton038(nextPage);
         if (has('[data-button-065]')) scheduleButton065(nextPage);
@@ -542,7 +543,7 @@ console.log('[OOB] Script loaded v2.3.8');
     barba.hooks.beforeLeave((data) => {
         if (data?.current?.container) {
             revertButton065(data.current.container);
-            revertFooterLogotypeScroll(data.current.container);
+            revertFooterLogotypeScroll(document);
         }
     });
 
@@ -591,9 +592,14 @@ console.log('[OOB] Script loaded v2.3.8');
                     initOnceFunctions();
                     const container = data.next.container;
                     if (isHomeContainer(container)) {
-                        return runHomeClipPathPreloader(container);
+                        await runHomeClipPathPreloader(container);
+                    } else {
+                        await runPageOnceAnimation(container);
                     }
-                    return runPageOnceAnimation(container);
+                    refreshFooterLogotypeScroll();
+                    syncNavActiveFromContainer(container);
+                    refreshNavHighlightBlob();
+                    if (hasScrollTrigger) ScrollTrigger.refresh();
                 },
 
                 async leave(data) {
@@ -685,37 +691,8 @@ console.log('[OOB] Script loaded v2.3.8');
         }
     }
 
-    function getPersistentNavUpdateLinks(root) {
-        const scope = root || document;
-        const selectors = [
-            '.nav [data-barba-update]',
-            '.navbar_wrap [data-barba-update]',
-            'nav [data-barba-update]',
-        ].join(', ');
-        const container = scope.querySelector?.('[data-barba="container"]');
-        return [...scope.querySelectorAll(selectors)].filter(
-            (el) => !container?.contains(el)
-        );
-    }
-
     function initBarbaNavUpdate(data) {
-        const tpl = document.createElement('template');
-        tpl.innerHTML = data.next.html.trim();
-        const nextRoot = tpl.content.querySelector('[data-barba="wrapper"]') || tpl.content;
-        const nextNodes = getPersistentNavUpdateLinks(nextRoot);
-        const currentNodes = getPersistentNavUpdateLinks(document);
-
-        currentNodes.forEach((curr, index) => {
-            const next = nextNodes[index];
-            if (!next) return;
-
-            const newStatus = next.getAttribute('aria-current');
-            if (newStatus !== null) curr.setAttribute('aria-current', newStatus);
-            else curr.removeAttribute('aria-current');
-
-            curr.setAttribute('class', next.getAttribute('class') || '');
-        });
-
+        syncNavActiveFromContainer(data.next.container);
         refreshNavHighlightBlob();
     }
 
@@ -780,13 +757,70 @@ console.log('[OOB] Script loaded v2.3.8');
 
     let navHighlightState = null;
 
-    const NAV_LINK_SELECTOR = '.nav-link, .navbar_link, ul a';
+    const NAV_LINK_SELECTOR = '.nav-link, .navbar_link';
+    const NAV_LINK_EXCLUDE =
+        '[data-nav-logo], [data-nav-home], .w-nav-brand, .w-nav-brand *';
 
     function getNavHighlightElements() {
         const wrap = document.querySelector('.nav-links-wrap');
         const blob = wrap?.querySelector('.nav-highlight');
-        const links = wrap ? [...wrap.querySelectorAll(NAV_LINK_SELECTOR)] : [];
+        const links = wrap
+            ? [...wrap.querySelectorAll(NAV_LINK_SELECTOR)].filter(
+                  (a) =>
+                      !a.matches(NAV_LINK_EXCLUDE) &&
+                      !a.closest('[data-nav-logo], [data-nav-home], .nav-logo, .w-nav-brand')
+              )
+            : [];
         return { wrap, blob, links };
+    }
+
+    function getBarbaContainer(root) {
+        if (root?.matches?.('[data-barba="container"]')) return root;
+        return (
+            root?.querySelector?.('[data-barba="container"]') ||
+            document.querySelector('[data-barba="container"]')
+        );
+    }
+
+    function linkMatchesPage(link, namespace, pathname) {
+        const linkNs = link.getAttribute('data-barba-namespace');
+        if (linkNs && namespace) return linkNs === namespace;
+
+        const href = link.getAttribute('href');
+        if (!href || href === '#' || href.startsWith('mailto:') || href.startsWith('tel:')) {
+            return false;
+        }
+
+        try {
+            const url = new URL(href, window.location.origin);
+            if (url.pathname.replace(/\/$/, '') === pathname.replace(/\/$/, '')) return true;
+            if (
+                namespace === 'home' &&
+                (pathname === '/' || pathname.endsWith('/index') || pathname.endsWith('/index.html'))
+            ) {
+                return url.pathname === '/' || url.pathname === '';
+            }
+        } catch {
+            return false;
+        }
+
+        return false;
+    }
+
+    function syncNavActiveFromContainer(container) {
+        const pageContainer = getBarbaContainer(container);
+        if (!pageContainer) return;
+
+        const namespace = pageContainer.getAttribute('data-barba-namespace') || '';
+        const pathname = window.location.pathname;
+        const { links } = getNavHighlightElements();
+
+        links.forEach((link) => {
+            const isCurrent = linkMatchesPage(link, namespace, pathname);
+            link.classList.toggle('w--current', isCurrent);
+            if (isCurrent) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+        });
     }
 
     /** Keep nav above Barba enter layer (container uses z-index 3 during parallax). */
@@ -807,8 +841,15 @@ console.log('[OOB] Script loaded v2.3.8');
         return (
             links.find((a) => a.classList.contains('w--current')) ||
             links.find((a) => a.getAttribute('aria-current') === 'page') ||
-            links[0]
+            null
         );
+    }
+
+    function hideNavHighlight() {
+        const { blob } = navHighlightState || getNavHighlightElements();
+        if (!blob) return;
+        const duration = navHighlightState?.duration ?? (reducedMotion ? 0 : 0.45);
+        gsap.to(blob, { opacity: 0, duration, ease: navHighlightState?.ease ?? 'power3.out' });
     }
 
     function moveNavHighlightTo(el, show = true) {
@@ -889,6 +930,7 @@ console.log('[OOB] Script loaded v2.3.8');
 
         requestAnimationFrame(() => {
             if (activeLink) moveNavHighlightTo(activeLink, true);
+            else hideNavHighlight();
         });
 
         links.forEach((link) => {
@@ -899,6 +941,7 @@ console.log('[OOB] Script loaded v2.3.8');
         wrap.addEventListener('mouseleave', () => {
             const current = getActiveNavLink(links);
             if (current) moveNavHighlightTo(current, true);
+            else hideNavHighlight();
         });
 
         window.addEventListener(
@@ -930,12 +973,16 @@ console.log('[OOB] Script loaded v2.3.8');
 
         requestAnimationFrame(() => {
             if (current) moveNavHighlightTo(current, true);
+            else hideNavHighlight();
         });
     }
 
     // Run after layout (footer script); Barba once also calls initOnceFunctions
     requestAnimationFrame(() => {
-        requestAnimationFrame(initNavHighlightBlob);
+        requestAnimationFrame(() => {
+            syncNavActiveFromContainer(document);
+            initNavHighlightBlob();
+        });
     });
 
     // -----------------------------------------
@@ -1123,7 +1170,10 @@ console.log('[OOB] Script loaded v2.3.8');
     function bindFooterLogotypeScrollReset() {
         if (footerLogotypeResetScrollBound) return;
         footerLogotypeResetScrollBound = true;
-        ScrollTrigger.addEventListener('scroll', checkFooterLogotypeResets);
+
+        const run = () => checkFooterLogotypeResets();
+        if (lenis) lenis.on('scroll', run);
+        else window.addEventListener('scroll', run, { passive: true });
     }
 
     function revertFooterLogotypeScroll(root = document) {
@@ -1196,15 +1246,9 @@ console.log('[OOB] Script loaded v2.3.8');
                 invalidateOnRefresh: true,
                 onUpdate: (self) => {
                     const held = container._oobFooterLogotypeMaxProgress || 0;
-
-                    if (self.direction === 1) {
-                        container._oobFooterLogotypeMaxProgress = Math.max(held, self.progress);
-                        tween.progress(container._oobFooterLogotypeMaxProgress);
-                        return;
-                    }
-
-                    // Scroll up: hold scale (reset runs on global scroll when out of view)
-                    tween.progress(held);
+                    const next = Math.max(held, self.progress);
+                    container._oobFooterLogotypeMaxProgress = next;
+                    tween.progress(next);
                 },
             });
 
@@ -1216,6 +1260,7 @@ console.log('[OOB] Script loaded v2.3.8');
     function refreshFooterLogotypeScroll() {
         revertFooterLogotypeScroll(document);
         initFooterLogotypeScroll(document);
+        if (hasScrollTrigger) ScrollTrigger.refresh();
     }
 
     function initCopyButtons(root = document) {

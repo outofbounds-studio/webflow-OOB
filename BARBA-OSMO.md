@@ -177,7 +177,7 @@ Optional tuning attributes on `.logotype-c-footer`:
 
 CSS `--footer-logotype-crop-ratio` default `0.92` (higher = less crop).
 
-Runs on every page via Barba `once` + `afterEnter` (rebuilt after transitions because `afterLeave` kills ScrollTriggers).
+Runs on every page via Barba `once` + `afterEnter`. Footer ScrollTrigger inits **after** the homepage preloader / once animation (layout must be settled first).
 
 **Scroll behavior:** scale only advances while scrolling **down** through the trigger; scrolling **up** holds the current scale until the footer block is fully out of view (above or below the viewport), then resets on the next scroll tick for the next downward pass. Reset uses a global `ScrollTrigger` scroll listener so it still runs after the scale trigger is inactive.
 
@@ -212,11 +212,14 @@ Webflow List (`ul`) cannot contain a plain Div — wrap the list:
 
 ```
 nav
+├── .nav-logo (or link with data-nav-logo)   ← home, NO highlight
 └── .nav-links-wrap (div — position relative, flex row)
     ├── .nav-highlight (empty div, first child)
     └── List (ul)
-        └── List item → Link.navbar_link (or .nav-link)
+        └── Link.navbar_link data-barba-namespace="results"
 ```
+
+**Active state:** `oob.js` sets `w--current` from the page `[data-barba-namespace]` — add matching `data-barba-namespace` on each nav link (e.g. `results`). **Home has no nav highlight** (logo is home; exclude with `data-nav-logo` on the logo link or wrapper).
 
 **Head CSS:**
 
