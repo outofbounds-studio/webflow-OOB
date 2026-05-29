@@ -53,7 +53,7 @@ Tune artboard widths on `:root`:
 
 | Breakpoint | `--size-container-ideal` | `--size-container-max` |
 |------------|--------------------------|------------------------|
-| Desktop (992+) | 1440 | 1920px |
+| Desktop (992+) | 1440 | 1680px |
 | Tablet (≤991) | 834 | 991px |
 | Mobile landscape (≤767) | 550 | 767px |
 | Mobile portrait (≤479) | 390 | 479px |
