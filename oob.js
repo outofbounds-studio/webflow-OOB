@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.6 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.7 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.6');
+console.log('[OOB] Script loaded v2.3.7');
 
 (function () {
     'use strict';
@@ -1096,6 +1096,15 @@ console.log('[OOB] Script loaded v2.3.6');
         return container.querySelector('.oob-logotype') || container;
     }
 
+    function isFooterLogotypeFullyAboveViewport(container) {
+        return container.getBoundingClientRect().bottom <= 0;
+    }
+
+    function resetFooterLogotypeScale(container, tween) {
+        container._oobFooterLogotypeMaxProgress = 0;
+        tween.progress(0);
+    }
+
     function revertFooterLogotypeScroll(root = document) {
         const scope = root?.querySelectorAll ? root : document;
         scope.querySelectorAll(FOOTER_LOGOTYPE_SELECTOR).forEach((container) => {
@@ -1165,17 +1174,20 @@ console.log('[OOB] Script loaded v2.3.6');
                 end: stEnd,
                 invalidateOnRefresh: true,
                 onUpdate: (self) => {
+                    const held = container._oobFooterLogotypeMaxProgress || 0;
+
                     if (self.direction === 1) {
-                        container._oobFooterLogotypeMaxProgress = Math.max(
-                            container._oobFooterLogotypeMaxProgress || 0,
-                            self.progress
-                        );
+                        container._oobFooterLogotypeMaxProgress = Math.max(held, self.progress);
                         tween.progress(container._oobFooterLogotypeMaxProgress);
+                        return;
                     }
-                },
-                onLeaveBack: () => {
-                    container._oobFooterLogotypeMaxProgress = 0;
-                    tween.progress(0);
+
+                    // Scroll up: hold scale until block is fully above the viewport
+                    if (isFooterLogotypeFullyAboveViewport(container)) {
+                        if (held > 0) resetFooterLogotypeScale(container, tween);
+                    } else {
+                        tween.progress(held);
+                    }
                 },
             });
 

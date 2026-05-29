@@ -161,7 +161,7 @@ CSS `--footer-logotype-crop-ratio` default `0.92` (higher = less crop).
 
 Runs on every page via Barba `once` + `afterEnter` (rebuilt after transitions because `afterLeave` kills ScrollTriggers).
 
-**Scroll behavior:** scale only advances while scrolling **down** through the trigger; scrolling **up** holds the current scale until the footer is fully above the viewport (`onLeaveBack`), then resets invisibly to the start size for the next downward pass.
+**Scroll behavior:** scale only advances while scrolling **down** through the trigger; scrolling **up** holds the current scale until the footer block is fully above the viewport (`getBoundingClientRect().bottom <= 0`), then resets invisibly for the next downward pass. (Reset does **not** run at the scroll `start` line — only when out of view.)
 
 ### Wrong (nav flashes away on every click)
 
