@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.10 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.9 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.10');
+console.log('[OOB] Script loaded v2.3.9');
 
 (function () {
     'use strict';
@@ -1138,8 +1138,6 @@ console.log('[OOB] Script loaded v2.3.10');
     const FOOTER_LOGOTYPE_SCALE_END = 1.02;
     const FOOTER_LOGOTYPE_SCROLL_START = 'top 88%';
     const FOOTER_LOGOTYPE_SCROLL_END = 'bottom bottom';
-    /** Scrub lag in seconds — smooth scroll-linked scale (0.25–0.5 typical) */
-    const FOOTER_LOGOTYPE_SCRUB = 0.35;
 
     function getFooterLogotypeTarget(container) {
         return container.querySelector('.oob-logotype') || container;
@@ -1222,12 +1220,12 @@ console.log('[OOB] Script loaded v2.3.10');
                 FOOTER_LOGOTYPE_SCROLL_END;
 
             gsap.set(target, {
+                scale: reducedMotion ? scaleEnd : scaleStart,
                 transformOrigin: '50% 0%',
                 force3D: true,
             });
 
             if (!hasScrollTrigger || reducedMotion) {
-                gsap.set(target, { scale: scaleEnd });
                 container.dataset.oobFooterLogotypeInit = 'true';
                 return;
             }
@@ -1235,27 +1233,22 @@ console.log('[OOB] Script loaded v2.3.10');
             const tween = gsap.fromTo(
                 target,
                 { scale: scaleStart },
-                { scale: scaleEnd, ease: 'none', paused: true }
+                { scale: scaleEnd, ease: 'none', paused: true, immediateRender: false }
             );
 
             container._oobFooterLogotypeTween = tween;
             container._oobFooterLogotypeMaxProgress = 0;
-            tween.progress(0);
 
             container._oobFooterLogotypeST = ScrollTrigger.create({
                 trigger: container,
                 start: stStart,
                 end: stEnd,
-                animation: tween,
-                scrub: FOOTER_LOGOTYPE_SCRUB,
                 invalidateOnRefresh: true,
                 onUpdate: (self) => {
                     const held = container._oobFooterLogotypeMaxProgress || 0;
-                    if (self.progress > held) {
-                        container._oobFooterLogotypeMaxProgress = self.progress;
-                    } else if (held > 0) {
-                        tween.progress(held);
-                    }
+                    const next = Math.max(held, self.progress);
+                    container._oobFooterLogotypeMaxProgress = next;
+                    tween.progress(next);
                 },
             });
 
