@@ -132,6 +132,31 @@ Optional Head anti-flash (before `oob.css`):
 
 After preloader: `oob:preloader:complete` fires — hero copy with `[data-hero-intro]` fades in via GSAP.
 
+### Footer logotype scroll scale (all pages)
+
+Separate from the hero — use **`.logotype-c-footer`** (not `.logotype-c`). Same SVG class **`.oob-logotype`** inside is fine; hero/preloader code never targets the footer wrapper.
+
+**Requires ScrollTrigger** in Head (see above).
+
+```
+footer (or site symbol)
+└── .logotype-c-footer          ← overflow hidden; optional data-footer-logotype
+    └── .oob-logotype           ← SVG, scales 95% → 102% on scroll
+```
+
+**Webflow:** keep horizontal crop (`margin: -0.7rem` left/right). Set the wrapper to align content to the **bottom** so at 102% scale the bottom edge crops inside `overflow: hidden`. `oob.css` sets `transform-origin: 50% 100%` so growth goes up and sideways.
+
+Optional tuning attributes on `.logotype-c-footer`:
+
+| Attribute | Default |
+|-----------|---------|
+| `data-footer-logotype-scale-start` | `0.95` |
+| `data-footer-logotype-scale-end` | `1.02` |
+| `data-footer-logotype-scroll-start` | `top bottom` |
+| `data-footer-logotype-scroll-end` | `bottom bottom` |
+
+Runs on every page via Barba `once` + `afterEnter` (rebuilt after transitions because `afterLeave` kills ScrollTriggers).
+
 ### Wrong (nav flashes away on every click)
 
 ```

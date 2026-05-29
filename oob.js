@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.4 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.5 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.4');
+console.log('[OOB] Script loaded v2.3.5');
 
 (function () {
     'use strict';
@@ -83,6 +83,7 @@ console.log('[OOB] Script loaded v2.3.4');
         scheduleButton065(document);
         initCopyButtons(document);
         initDynamicCurrentYear(document);
+        initFooterLogotypeScroll(document);
         // Runs once on first load
     }
 
@@ -100,6 +101,7 @@ console.log('[OOB] Script loaded v2.3.4');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
+        refreshFooterLogotypeScroll();
         // Runs after enter animation completes
 
         if (lenis) lenis.resize();
@@ -538,7 +540,10 @@ console.log('[OOB] Script loaded v2.3.4');
     // -----------------------------------------
 
     barba.hooks.beforeLeave((data) => {
-        if (data?.current?.container) revertButton065(data.current.container);
+        if (data?.current?.container) {
+            revertButton065(data.current.container);
+            revertFooterLogotypeScroll(data.current.container);
+        }
     });
 
     barba.hooks.beforeEnter((data) => {
@@ -1074,6 +1079,92 @@ console.log('[OOB] Script loaded v2.3.4');
         root.querySelectorAll('[data-current-year]').forEach((el) => {
             el.textContent = String(year);
         });
+    }
+
+    // -----------------------------------------
+    // FOOTER LOGOTYPE — scroll scale (all pages)
+    // Webflow: .logotype-c-footer > .oob-logotype (optional data-footer-logotype on wrapper)
+    // -----------------------------------------
+
+    const FOOTER_LOGOTYPE_SELECTOR = '.logotype-c-footer, [data-footer-logotype]';
+    const FOOTER_LOGOTYPE_SCALE_START = 0.95;
+    const FOOTER_LOGOTYPE_SCALE_END = 1.02;
+
+    function getFooterLogotypeTarget(container) {
+        return container.querySelector('.oob-logotype') || container;
+    }
+
+    function revertFooterLogotypeScroll(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        scope.querySelectorAll(FOOTER_LOGOTYPE_SELECTOR).forEach((container) => {
+            if (container._oobFooterLogotypeST) {
+                container._oobFooterLogotypeST.kill();
+                delete container._oobFooterLogotypeST;
+            }
+            gsap.set(getFooterLogotypeTarget(container), { clearProps: 'transform' });
+            delete container.dataset.oobFooterLogotypeInit;
+        });
+    }
+
+    function initFooterLogotypeScroll(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const blocks = scope.querySelectorAll(FOOTER_LOGOTYPE_SELECTOR);
+        if (!blocks.length) return;
+
+        if (!hasScrollTrigger && !reducedMotion) {
+            console.warn(
+                '[OOB] ScrollTrigger not loaded — footer logotype scroll scale skipped. Add ScrollTrigger to Head.'
+            );
+        }
+
+        blocks.forEach((container) => {
+            if (container.dataset.oobFooterLogotypeInit === 'true') return;
+
+            const target = getFooterLogotypeTarget(container);
+            const scaleStart =
+                parseFloat(container.getAttribute('data-footer-logotype-scale-start')) ||
+                FOOTER_LOGOTYPE_SCALE_START;
+            const scaleEnd =
+                parseFloat(container.getAttribute('data-footer-logotype-scale-end')) ||
+                FOOTER_LOGOTYPE_SCALE_END;
+            const stStart =
+                container.getAttribute('data-footer-logotype-scroll-start') || 'top bottom';
+            const stEnd =
+                container.getAttribute('data-footer-logotype-scroll-end') || 'bottom bottom';
+
+            gsap.set(target, {
+                scale: reducedMotion ? scaleEnd : scaleStart,
+                transformOrigin: '50% 100%',
+                force3D: true,
+            });
+
+            if (!hasScrollTrigger || reducedMotion) {
+                container.dataset.oobFooterLogotypeInit = 'true';
+                return;
+            }
+
+            const tween = gsap.fromTo(
+                target,
+                { scale: scaleStart },
+                { scale: scaleEnd, ease: 'none', immediateRender: false }
+            );
+
+            container._oobFooterLogotypeST = ScrollTrigger.create({
+                trigger: container,
+                start: stStart,
+                end: stEnd,
+                scrub: true,
+                animation: tween,
+                invalidateOnRefresh: true,
+            });
+
+            container.dataset.oobFooterLogotypeInit = 'true';
+        });
+    }
+
+    function refreshFooterLogotypeScroll() {
+        revertFooterLogotypeScroll(document);
+        initFooterLogotypeScroll(document);
     }
 
     function initCopyButtons(root = document) {

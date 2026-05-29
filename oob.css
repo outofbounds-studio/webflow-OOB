@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.2.4 */
+/* Version: 1.2.5 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Lenis (after lenis.css) ── */
@@ -486,6 +486,20 @@ h6,
     transform: scaleX(1) rotate(0.001deg);
     transition-delay: 0.3s;
   }
+}
+
+/* ------------ Footer logotype scroll scale ------------- */
+.logotype-c-footer,
+[data-footer-logotype] {
+  overflow: hidden;
+}
+
+.logotype-c-footer .oob-logotype,
+[data-footer-logotype] .oob-logotype {
+  display: block;
+  width: 100%;
+  transform-origin: 50% 100%;
+  will-change: transform;
 }
 
 /* ------------ Copy URL buttons (footer contact) ------------- */
