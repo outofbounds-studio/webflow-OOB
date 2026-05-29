@@ -144,7 +144,9 @@ footer (or site symbol)
     └── .oob-logotype           ← SVG, scales 95% → 102% on scroll
 ```
 
-**Webflow:** keep horizontal crop (`margin: -0.7rem` left/right). Set the wrapper to align content to the **bottom** so at 102% scale the bottom edge crops inside `overflow: hidden`. `oob.css` sets `transform-origin: 50% 100%` so growth goes up and sideways.
+**Webflow (minimal):** wrapper **`.logotype-c-footer`** + child **`.oob-logotype`** SVG only. Layout, side bleed, crop height, flex bottom-align, and `mix-blend-mode: difference` are in **`oob.css`** — remove duplicate flex/margin/overflow from Webflow if they conflict.
+
+Tune crop in CSS on the wrapper: `--footer-logotype-crop-ratio` (default `0.88`) and `--footer-logotype-side-bleed` (default `0.7rem`). SVG `viewBox` should be tight to the artwork (no extra space below the letters).
 
 Optional tuning attributes on `.logotype-c-footer`:
 
