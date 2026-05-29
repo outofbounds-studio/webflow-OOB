@@ -42,6 +42,24 @@ Barba: `lenis.stop()` before enter, `lenis.start()` + `lenis.resize()` after ent
 
 **Scrollbar:** `lenis.css` can show a native bar on the right; `oob.css` sets `html.lenis { overflow: hidden }` so only Lenis handles scroll.
 
+### Osmo Scaling System
+
+Fluid type + container width via CSS variables — **included in `oob.css`** (no extra JS). Based on [Osmo Scaling System](https://www.osmo.supply/resource/osmo-scaling-system).
+
+- **`body`** uses `font-size: var(--size-font)` — use **em/rem** in Webflow for spacing and type so everything scales
+- **`.container`** uses `max-width: var(--size-container)` (`.medium` 85%, `.small` 70%)
+
+Tune artboard widths on `:root`:
+
+| Breakpoint | `--size-container-ideal` | `--size-container-max` |
+|------------|--------------------------|------------------------|
+| Desktop (992+) | 1440 | 1920px |
+| Tablet (≤991) | 834 | 991px |
+| Mobile landscape (≤767) | 550 | 767px |
+| Mobile portrait (≤479) | 390 | 479px |
+
+If your Figma desktop frame is not 1440px wide, change `--size-container-ideal` (desktop) to match.
+
 **Webflow tips (from Osmo):**
 
 - Nested scroll areas (modals, overflow panels): add `[data-lenis-prevent]`
@@ -161,7 +179,7 @@ CSS `--footer-logotype-crop-ratio` default `0.92` (higher = less crop).
 
 Runs on every page via Barba `once` + `afterEnter` (rebuilt after transitions because `afterLeave` kills ScrollTriggers).
 
-**Scroll behavior:** scale only advances while scrolling **down** through the trigger; scrolling **up** holds the current scale until the footer block is fully above the viewport (`getBoundingClientRect().bottom <= 0`), then resets invisibly for the next downward pass. (Reset does **not** run at the scroll `start` line — only when out of view.)
+**Scroll behavior:** scale only advances while scrolling **down** through the trigger; scrolling **up** holds the current scale until the footer block is fully out of view (above or below the viewport), then resets on the next scroll tick for the next downward pass. Reset uses a global `ScrollTrigger` scroll listener so it still runs after the scale trigger is inactive.
 
 ### Wrong (nav flashes away on every click)
 
@@ -287,4 +305,4 @@ Set `debug: true` in `barba.init` inside `oob.js` while debugging transitions.
 
 - Osmo Page Transition Course (Barba attributes, boilerplate)
 - MSC: `Webflow.destroy()` / `Webflow.ready()` — already in `oob.js`
-- Loader / scaling CSS: optional later from `msc-cursor-project` (not required for this transition)
+- Loader: optional later (`data-load-wrap`, …). Scaling system: in `oob.css` (see Osmo Scaling System above).

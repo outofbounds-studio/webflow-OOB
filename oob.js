@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.3.7 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.3.8 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.3.7');
+console.log('[OOB] Script loaded v2.3.8');
 
 (function () {
     'use strict';
@@ -1096,13 +1096,34 @@ console.log('[OOB] Script loaded v2.3.7');
         return container.querySelector('.oob-logotype') || container;
     }
 
-    function isFooterLogotypeFullyAboveViewport(container) {
-        return container.getBoundingClientRect().bottom <= 0;
+    let footerLogotypeResetScrollBound = false;
+
+    function isFooterLogotypeOutOfView(container) {
+        const rect = container.getBoundingClientRect();
+        return rect.bottom <= 0 || rect.top >= window.innerHeight;
     }
 
     function resetFooterLogotypeScale(container, tween) {
         container._oobFooterLogotypeMaxProgress = 0;
         tween.progress(0);
+    }
+
+    function checkFooterLogotypeResets() {
+        document.querySelectorAll(FOOTER_LOGOTYPE_SELECTOR).forEach((container) => {
+            if (container.dataset.oobFooterLogotypeInit !== 'true') return;
+            const tween = container._oobFooterLogotypeTween;
+            if (!tween) return;
+            const held = container._oobFooterLogotypeMaxProgress || 0;
+            if (held > 0 && isFooterLogotypeOutOfView(container)) {
+                resetFooterLogotypeScale(container, tween);
+            }
+        });
+    }
+
+    function bindFooterLogotypeScrollReset() {
+        if (footerLogotypeResetScrollBound) return;
+        footerLogotypeResetScrollBound = true;
+        ScrollTrigger.addEventListener('scroll', checkFooterLogotypeResets);
     }
 
     function revertFooterLogotypeScroll(root = document) {
@@ -1182,15 +1203,12 @@ console.log('[OOB] Script loaded v2.3.7');
                         return;
                     }
 
-                    // Scroll up: hold scale until block is fully above the viewport
-                    if (isFooterLogotypeFullyAboveViewport(container)) {
-                        if (held > 0) resetFooterLogotypeScale(container, tween);
-                    } else {
-                        tween.progress(held);
-                    }
+                    // Scroll up: hold scale (reset runs on global scroll when out of view)
+                    tween.progress(held);
                 },
             });
 
+            bindFooterLogotypeScrollReset();
             container.dataset.oobFooterLogotypeInit = 'true';
         });
     }

@@ -1,6 +1,53 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.2.7 */
+/* Version: 1.3.0 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
+
+/* ── Osmo Scaling System ── */
+/* https://www.osmo.supply/resource/osmo-scaling-system */
+:root {
+  --size-unit: 16; /* body font-size in design — no px */
+  --size-container-ideal: 1440; /* artboard width in design — no px */
+  --size-container-min: 992px;
+  --size-container-max: 1920px;
+  --size-container: clamp(var(--size-container-min), 100vw, var(--size-container-max));
+  --size-font: calc(var(--size-container) / (var(--size-container-ideal) / var(--size-unit)));
+}
+
+@media screen and (max-width: 991px) {
+  :root {
+    --size-container-ideal: 834;
+    --size-container-min: 768px;
+    --size-container-max: 991px;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  :root {
+    --size-container-ideal: 550;
+    --size-container-min: 480px;
+    --size-container-max: 767px;
+  }
+}
+
+@media screen and (max-width: 479px) {
+  :root {
+    --size-container-ideal: 390;
+    --size-container-min: 320px;
+    --size-container-max: 479px;
+  }
+}
+
+.container {
+  max-width: var(--size-container);
+}
+
+.container.medium {
+  max-width: calc(var(--size-container) * 0.85);
+}
+
+.container.small {
+  max-width: calc(var(--size-container) * 0.7);
+}
 
 /* ── Lenis (after lenis.css) ── */
 /* lenis.css sets height:auto on html/body, which restores the native scrollbar track.
@@ -89,6 +136,7 @@ html {
 }
 
 body {
+  font-size: var(--size-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;

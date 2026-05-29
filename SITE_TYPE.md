@@ -12,7 +12,7 @@ After Steps 1–5 are working, pick **one** path and extend `oob.js` (or your cl
 
 - Barba markup: `data-barba="wrapper"`, `data-barba="container"`, `data-barba-namespace` per page
 - Transition overlay: `data-transition-wrap`, `data-transition-dark` (see BARBA-OSMO.md)
-- Optional later: Osmo loader (`data-load-wrap`, …), scaling CSS from [msc-cursor-project](https://github.com/outofbounds-studio/msc-cursor-project)
+- Optional later: Osmo loader (`data-load-wrap`, …). Scaling system: in hosted `oob.css` ([Osmo Scaling System](https://www.osmo.supply/resource/osmo-scaling-system)).
 
 **JavaScript**
 
