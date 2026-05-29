@@ -497,7 +497,7 @@ h6,
   --footer-logotype-crop-ratio: 0.88;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   box-sizing: border-box;
   width: calc(100% + var(--footer-logotype-side-bleed) * 2);
@@ -510,7 +510,7 @@ h6,
   overflow: hidden;
   position: relative;
   mix-blend-mode: difference;
-  /* Shorter than full logo at 102% → top/sides clip; bottom aligned via flex-end */
+  /* Shorter than full logo at 102% → bottom/sides clip; top aligned via flex-start */
   max-height: clamp(
     3rem,
     calc(100vw * 114 / 1474 * 1.02 * var(--footer-logotype-crop-ratio)),
@@ -526,9 +526,8 @@ h6,
   height: auto;
   margin: 0;
   padding: 0;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 0%;
   will-change: transform;
-  vertical-align: bottom;
 }
 
 /* ------------ Copy URL buttons (footer contact) ------------- */

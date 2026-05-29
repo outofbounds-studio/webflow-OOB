@@ -1134,7 +1134,7 @@ console.log('[OOB] Script loaded v2.3.5');
 
             gsap.set(target, {
                 scale: reducedMotion ? scaleEnd : scaleStart,
-                transformOrigin: '50% 100%',
+                transformOrigin: '50% 0%',
                 force3D: true,
             });
 
