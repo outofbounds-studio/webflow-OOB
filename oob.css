@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.2.6 */
+/* Version: 1.2.7 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Lenis (after lenis.css) ── */
@@ -494,7 +494,7 @@ h6,
 [data-footer-logotype] {
   --footer-logotype-side-bleed: 0.7rem;
   /* Share of full scaled SVG height (tune 0.82–0.95 if crop feels tight/loose) */
-  --footer-logotype-crop-ratio: 0.88;
+  --footer-logotype-crop-ratio: 0.92;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -514,7 +514,7 @@ h6,
   max-height: clamp(
     3rem,
     calc(100vw * 114 / 1474 * 1.02 * var(--footer-logotype-crop-ratio)),
-    6.75rem
+    7.25rem
   );
 }
 

@@ -1089,6 +1089,8 @@ console.log('[OOB] Script loaded v2.3.5');
     const FOOTER_LOGOTYPE_SELECTOR = '.logotype-c-footer, [data-footer-logotype]';
     const FOOTER_LOGOTYPE_SCALE_START = 0.95;
     const FOOTER_LOGOTYPE_SCALE_END = 1.02;
+    const FOOTER_LOGOTYPE_SCROLL_START = 'top 88%';
+    const FOOTER_LOGOTYPE_SCROLL_END = 'bottom bottom';
 
     function getFooterLogotypeTarget(container) {
         return container.querySelector('.oob-logotype') || container;
@@ -1128,9 +1130,11 @@ console.log('[OOB] Script loaded v2.3.5');
                 parseFloat(container.getAttribute('data-footer-logotype-scale-end')) ||
                 FOOTER_LOGOTYPE_SCALE_END;
             const stStart =
-                container.getAttribute('data-footer-logotype-scroll-start') || 'top bottom';
+                container.getAttribute('data-footer-logotype-scroll-start') ||
+                FOOTER_LOGOTYPE_SCROLL_START;
             const stEnd =
-                container.getAttribute('data-footer-logotype-scroll-end') || 'bottom bottom';
+                container.getAttribute('data-footer-logotype-scroll-end') ||
+                FOOTER_LOGOTYPE_SCROLL_END;
 
             gsap.set(target, {
                 scale: reducedMotion ? scaleEnd : scaleStart,

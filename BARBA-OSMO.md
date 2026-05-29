@@ -154,8 +154,10 @@ Optional tuning attributes on `.logotype-c-footer`:
 |-----------|---------|
 | `data-footer-logotype-scale-start` | `0.95` |
 | `data-footer-logotype-scale-end` | `1.02` |
-| `data-footer-logotype-scroll-start` | `top bottom` |
+| `data-footer-logotype-scroll-start` | `top 88%` (later than `top bottom`) |
 | `data-footer-logotype-scroll-end` | `bottom bottom` |
+
+CSS `--footer-logotype-crop-ratio` default `0.92` (higher = less crop).
 
 Runs on every page via Barba `once` + `afterEnter` (rebuilt after transitions because `afterLeave` kills ScrollTriggers).
 
