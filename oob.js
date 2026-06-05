@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.2 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.3 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.2');
+console.log('[OOB] Script loaded v2.4.3');
 
 (function () {
     'use strict';
@@ -1275,11 +1275,10 @@ console.log('[OOB] Script loaded v2.4.2');
     const BELIEVE_SCROLL_END_DEFAULT = '+=450%';
     const BELIEVE_SCROLL_END_MOBILE = '+=280%';
     const BELIEVE_SCROLL_END_REDUCE = '+=120%';
-    const BELIEVE_REVEAL_IN = 0.7;
-    const BELIEVE_REVEAL_OUT = 0.6;
-    const BELIEVE_REVEAL_STAGGER_IN = 0.4;
-    const BELIEVE_REVEAL_STAGGER_OUT = 0.25;
-    const BELIEVE_REVEAL_OVERLAP = 0.3;
+    // Osmo line-reveal-testimonials goTo() timings
+    const BELIEVE_LINE_OUT = { yPercent: -110, duration: 0.6, ease: 'power4.inOut', stagger: { amount: 0.25 } };
+    const BELIEVE_LINE_IN = { yPercent: 0, duration: 0.7, ease: 'power4.inOut', stagger: { amount: 0.4 } };
+    const BELIEVE_LINE_IN_OFFSET = '>-=0.3';
 
     function setBelieveSlideState(slides, activeIndex) {
         slides.forEach((slide, i) => {
@@ -1303,27 +1302,9 @@ console.log('[OOB] Script loaded v2.4.2');
         return Math.min(count - 1, Math.max(0, Math.round(progress * (count - 1))));
     }
 
-    function believeRevealIn(lines) {
-        if (!lines.length) return gsap.timeline();
-        gsap.set(lines, { yPercent: 110, opacity: 1 });
-        return gsap.to(lines, {
-            yPercent: 0,
-            duration: BELIEVE_REVEAL_IN,
-            ease: 'power4.inOut',
-            stagger: { amount: BELIEVE_REVEAL_STAGGER_IN },
-        });
-    }
-
-    function believeRevealOut(lines) {
-        if (!lines.length) return gsap.timeline();
-        return gsap.to(lines, {
-            yPercent: -110,
-            duration: BELIEVE_REVEAL_OUT,
-            ease: 'power4.inOut',
-            stagger: { amount: BELIEVE_REVEAL_STAGGER_OUT },
-        });
-    }
-
+    /**
+     * Osmo line-reveal-testimonials goTo() — outgoing stays visible until timeline end.
+     */
     function playBelieveStepTransition(wrap, slides, fromIndex, toIndex) {
         wrap._oobBelieveAnimTl?.kill();
 
@@ -1332,14 +1313,15 @@ console.log('[OOB] Script loaded v2.4.2');
         const outLines = outgoing.getLines();
         const inLines = incoming.getLines();
 
-        setBelieveSlideState(slides, toIndex);
         gsap.set(incoming.item, { autoAlpha: 1, pointerEvents: 'auto' });
-        setBelieveLineInitialState(inLines, true);
+        if (inLines.length) {
+            gsap.set(inLines, { yPercent: 110, opacity: 1 });
+        }
 
         const tl = gsap.timeline({
             onComplete: () => {
                 gsap.set(outgoing.item, { autoAlpha: 0, pointerEvents: 'none' });
-                setBelieveLineInitialState(outLines, true);
+                setBelieveSlideState(slides, toIndex);
                 wrap._oobBelieveState.currentIndex = toIndex;
                 wrap._oobBelieveState.isAnimating = false;
                 wrap._oobBelieveProcessQueue?.();
@@ -1347,16 +1329,21 @@ console.log('[OOB] Script loaded v2.4.2');
         });
 
         if (outLines.length) {
-            tl.add(believeRevealOut(outLines), 0);
+            tl.to(outLines, BELIEVE_LINE_OUT, 0);
         }
 
         if (inLines.length) {
-            tl.add(believeRevealIn(inLines), BELIEVE_REVEAL_OVERLAP);
-        } else {
-            tl.set(incoming.item, { autoAlpha: 1 }, 0);
+            tl.to(inLines, BELIEVE_LINE_IN, outLines.length ? BELIEVE_LINE_IN_OFFSET : 0);
         }
 
         wrap._oobBelieveAnimTl = tl;
+    }
+
+    function playBelieveInitialReveal(wrap, lines, onComplete) {
+        wrap._oobBelieveAnimTl?.kill();
+        gsap.set(lines, { yPercent: 110, opacity: 1 });
+        wrap._oobBelieveAnimTl = gsap.timeline({ onComplete });
+        wrap._oobBelieveAnimTl.to(lines, BELIEVE_LINE_IN, 0);
     }
 
     function playBelieveReduceTransition(wrap, slides, toIndex) {
@@ -1440,9 +1427,7 @@ console.log('[OOB] Script loaded v2.4.2');
             if (!lines.length) return;
             state.hasInitialReveal = true;
             state.isAnimating = true;
-            wrap._oobBelieveAnimTl?.kill();
-            wrap._oobBelieveAnimTl = believeRevealIn(lines);
-            wrap._oobBelieveAnimTl.eventCallback('onComplete', () => {
+            playBelieveInitialReveal(wrap, lines, () => {
                 state.isAnimating = false;
                 processQueue();
             });
