@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.1 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.2 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.1');
+console.log('[OOB] Script loaded v2.4.2');
 
 (function () {
     'use strict';
@@ -1268,14 +1268,18 @@ console.log('[OOB] Script loaded v2.4.1');
 
     // -----------------------------------------
     // ABOUT — What We Believe (pinned scroll statements)
-    // Osmo line-reveal transitions + scroll highlight progress
+    // Scroll-triggered line reveals (time-based, not scrubbed)
     // -----------------------------------------
 
     const BELIEVE_SELECTOR = '[data-believe-wrap]';
-    const BELIEVE_FADE_DEFAULT = 0.2;
     const BELIEVE_SCROLL_END_DEFAULT = '+=450%';
     const BELIEVE_SCROLL_END_MOBILE = '+=280%';
     const BELIEVE_SCROLL_END_REDUCE = '+=120%';
+    const BELIEVE_REVEAL_IN = 0.7;
+    const BELIEVE_REVEAL_OUT = 0.6;
+    const BELIEVE_REVEAL_STAGGER_IN = 0.4;
+    const BELIEVE_REVEAL_STAGGER_OUT = 0.25;
+    const BELIEVE_REVEAL_OVERLAP = 0.3;
 
     function setBelieveSlideState(slides, activeIndex) {
         slides.forEach((slide, i) => {
@@ -1289,18 +1293,112 @@ console.log('[OOB] Script loaded v2.4.1');
         });
     }
 
-    function setBelieveLineInitialState(slide, lines, fadedValue, visibleOnLoad) {
+    function setBelieveLineInitialState(lines, belowMask) {
         if (!lines?.length) return;
-        gsap.set(lines, {
-            yPercent: visibleOnLoad ? 0 : 110,
-            opacity: fadedValue,
+        gsap.set(lines, { yPercent: belowMask ? 110 : 0, opacity: 1 });
+    }
+
+    function getBelieveTargetIndex(progress, count) {
+        if (count <= 1) return 0;
+        return Math.min(count - 1, Math.max(0, Math.round(progress * (count - 1))));
+    }
+
+    function believeRevealIn(lines) {
+        if (!lines.length) return gsap.timeline();
+        gsap.set(lines, { yPercent: 110, opacity: 1 });
+        return gsap.to(lines, {
+            yPercent: 0,
+            duration: BELIEVE_REVEAL_IN,
+            ease: 'power4.inOut',
+            stagger: { amount: BELIEVE_REVEAL_STAGGER_IN },
         });
     }
 
-    function buildBelievePinTimeline(wrap, slides, pinEnd, fadedValue) {
-        wrap._oobBelievePinTl?.scrollTrigger?.kill();
-        wrap._oobBelievePinTl?.kill();
-        wrap._oobBelievePinTl = null;
+    function believeRevealOut(lines) {
+        if (!lines.length) return gsap.timeline();
+        return gsap.to(lines, {
+            yPercent: -110,
+            duration: BELIEVE_REVEAL_OUT,
+            ease: 'power4.inOut',
+            stagger: { amount: BELIEVE_REVEAL_STAGGER_OUT },
+        });
+    }
+
+    function playBelieveStepTransition(wrap, slides, fromIndex, toIndex) {
+        wrap._oobBelieveAnimTl?.kill();
+
+        const outgoing = slides[fromIndex];
+        const incoming = slides[toIndex];
+        const outLines = outgoing.getLines();
+        const inLines = incoming.getLines();
+
+        setBelieveSlideState(slides, toIndex);
+        gsap.set(incoming.item, { autoAlpha: 1, pointerEvents: 'auto' });
+        setBelieveLineInitialState(inLines, true);
+
+        const tl = gsap.timeline({
+            onComplete: () => {
+                gsap.set(outgoing.item, { autoAlpha: 0, pointerEvents: 'none' });
+                setBelieveLineInitialState(outLines, true);
+                wrap._oobBelieveState.currentIndex = toIndex;
+                wrap._oobBelieveState.isAnimating = false;
+                wrap._oobBelieveProcessQueue?.();
+            },
+        });
+
+        if (outLines.length) {
+            tl.add(believeRevealOut(outLines), 0);
+        }
+
+        if (inLines.length) {
+            tl.add(believeRevealIn(inLines), BELIEVE_REVEAL_OVERLAP);
+        } else {
+            tl.set(incoming.item, { autoAlpha: 1 }, 0);
+        }
+
+        wrap._oobBelieveAnimTl = tl;
+    }
+
+    function playBelieveReduceTransition(wrap, slides, toIndex) {
+        wrap._oobBelieveAnimTl?.kill();
+
+        const tl = gsap.timeline({
+            onComplete: () => {
+                wrap._oobBelieveState.currentIndex = toIndex;
+                wrap._oobBelieveState.isAnimating = false;
+                wrap._oobBelieveProcessQueue?.();
+            },
+        });
+
+        slides.forEach((slide, i) => {
+            tl.to(
+                slide.item,
+                {
+                    autoAlpha: i === toIndex ? 1 : 0,
+                    duration: 0.35,
+                    ease: 'power2.inOut',
+                },
+                0
+            );
+        });
+
+        setBelieveSlideState(slides, toIndex);
+        wrap._oobBelieveAnimTl = tl;
+    }
+
+    function buildBelieveStepController(wrap, slides, pinEnd, isReduce) {
+        wrap._oobBelievePinST?.kill();
+        wrap._oobBelieveAnimTl?.kill();
+        wrap._oobBelievePinST = null;
+        wrap._oobBelieveAnimTl = null;
+
+        const state = {
+            currentIndex: 0,
+            isAnimating: false,
+            pendingIndex: null,
+            hasInitialReveal: false,
+        };
+        wrap._oobBelieveState = state;
 
         slides.forEach((slide, i) => {
             const lines = slide.getLines();
@@ -1308,115 +1406,74 @@ console.log('[OOB] Script loaded v2.4.1');
                 autoAlpha: i === 0 ? 1 : 0,
                 pointerEvents: i === 0 ? 'auto' : 'none',
             });
-            setBelieveLineInitialState(slide, lines, fadedValue, i === 0);
+            setBelieveLineInitialState(lines, true);
         });
+        setBelieveSlideState(slides, 0);
 
-        const tl = gsap.timeline({
-            scrollTrigger: {
-                trigger: wrap,
-                start: 'top top',
-                end: pinEnd,
-                pin: true,
-                scrub: true,
-                invalidateOnRefresh: true,
-                anticipatePin: 1,
+        const requestStep = (targetIndex) => {
+            state.pendingIndex = targetIndex;
+            processQueue();
+        };
+
+        const processQueue = () => {
+            if (state.isAnimating) return;
+
+            const targetIndex = state.pendingIndex;
+            if (targetIndex === null || targetIndex === state.currentIndex) return;
+
+            state.pendingIndex = null;
+            state.isAnimating = true;
+
+            if (isReduce) {
+                playBelieveReduceTransition(wrap, slides, targetIndex);
+                return;
+            }
+
+            playBelieveStepTransition(wrap, slides, state.currentIndex, targetIndex);
+        };
+
+        wrap._oobBelieveProcessQueue = processQueue;
+
+        const runInitialReveal = () => {
+            if (state.hasInitialReveal || isReduce) return;
+            const lines = slides[0].getLines();
+            if (!lines.length) return;
+            state.hasInitialReveal = true;
+            state.isAnimating = true;
+            wrap._oobBelieveAnimTl?.kill();
+            wrap._oobBelieveAnimTl = believeRevealIn(lines);
+            wrap._oobBelieveAnimTl.eventCallback('onComplete', () => {
+                state.isAnimating = false;
+                processQueue();
+            });
+        };
+
+        wrap._oobBelievePinST = ScrollTrigger.create({
+            trigger: wrap,
+            start: 'top top',
+            end: pinEnd,
+            pin: true,
+            invalidateOnRefresh: true,
+            anticipatePin: 1,
+            snap:
+                slides.length > 1
+                    ? {
+                          snapTo: (value) =>
+                              Math.round(value * (slides.length - 1)) / (slides.length - 1),
+                          duration: { min: 0.15, max: 0.45 },
+                          delay: 0.05,
+                          ease: 'power2.inOut',
+                      }
+                    : false,
+            onEnter: runInitialReveal,
+            onEnterBack: runInitialReveal,
+            onUpdate(self) {
+                requestStep(getBelieveTargetIndex(self.progress, slides.length));
             },
         });
-
-        const n = slides.length;
-        const slideDur = 1 / n;
-        const revealFrac = 0.18;
-        const dwellFrac = 0.57;
-        const transFrac = 0.25;
-
-        slides.forEach((slide, i) => {
-            const lines = slide.getLines();
-            if (!lines.length) return;
-
-            const base = i * slideDur;
-            const rIn = i === 0 ? 0 : slideDur * revealFrac;
-            const rDwell =
-                slideDur *
-                (i === n - 1
-                    ? 1 - revealFrac
-                    : i === 0
-                      ? dwellFrac + revealFrac
-                      : dwellFrac);
-            const rTrans = i === n - 1 ? 0 : slideDur * transFrac;
-
-            const tDwellStart = i === 0 ? base : base + rIn;
-            const tDwellEnd = tDwellStart + rDwell;
-            const tTransStart = tDwellEnd;
-
-            if (i > 0) {
-                tl.to(
-                    lines,
-                    {
-                        yPercent: 0,
-                        opacity: fadedValue,
-                        duration: rIn,
-                        ease: 'power4.inOut',
-                        stagger: { amount: rIn * 0.55 },
-                    },
-                    base
-                );
-            }
-
-            tl.to(
-                lines,
-                {
-                    opacity: 1,
-                    duration: rDwell,
-                    ease: 'none',
-                    stagger: { each: rDwell / lines.length },
-                },
-                tDwellStart
-            );
-
-            if (i < n - 1) {
-                const next = slides[i + 1];
-                const nextLines = next.getLines();
-
-                tl.call(
-                    () => {
-                        setBelieveSlideState(slides, i + 1);
-                        setBelieveLineInitialState(next, nextLines, fadedValue, false);
-                    },
-                    null,
-                    tTransStart
-                );
-
-                tl.to(
-                    lines,
-                    {
-                        yPercent: -110,
-                        duration: rTrans * 0.55,
-                        ease: 'power4.inOut',
-                        stagger: { amount: rTrans * 0.35 },
-                    },
-                    tTransStart
-                );
-
-                if (nextLines.length) {
-                    tl.to(
-                        nextLines,
-                        {
-                            yPercent: 0,
-                            opacity: fadedValue,
-                            duration: rTrans * 0.65,
-                            ease: 'power4.inOut',
-                            stagger: { amount: rTrans * 0.45 },
-                        },
-                        tTransStart + rTrans * 0.28
-                    );
-                }
-            }
-        });
-
-        wrap._oobBelievePinTl = tl;
     }
 
-    function createBelieveLineSplits(wrap, slides, fadedValue, onAllReady) {
+    function createBelieveLineSplits(wrap, slides, onAllReady) {
         const totalTargets = slides.reduce((n, slide) => n + slide.splitTargets.length, 0);
         if (!totalTargets) {
             console.warn('[OOB] [data-believe-wrap] has no [data-believe-split] targets.');
@@ -1446,13 +1503,8 @@ console.log('[OOB] Script loaded v2.4.1');
                         autoSplit: true,
                         onSplit(self) {
                             const lines = self.lines || [];
-                            if (!wrap._oobBelievePinTl) {
-                                setBelieveLineInitialState(
-                                    slide,
-                                    lines,
-                                    fadedValue,
-                                    slide.slideIndex === 0
-                                );
+                            if (!wrap._oobBelievePinST) {
+                                setBelieveLineInitialState(lines, true);
                             }
                             scheduleTimelineBuild();
                         },
@@ -1460,12 +1512,7 @@ console.log('[OOB] Script loaded v2.4.1');
                     slide.splitInstances.push(split);
                     wrap._oobBelieveSplits.push(split);
                     if (split.lines?.length) {
-                        setBelieveLineInitialState(
-                            slide,
-                            split.lines,
-                            fadedValue,
-                            slide.slideIndex === 0
-                        );
+                        setBelieveLineInitialState(split.lines, true);
                         scheduleTimelineBuild();
                     }
                     return;
@@ -1477,7 +1524,7 @@ console.log('[OOB] Script loaded v2.4.1');
                 });
                 slide.splitInstances.push(split);
                 wrap._oobBelieveSplits.push(split);
-                setBelieveLineInitialState(slide, split.lines || [], fadedValue, slide.slideIndex === 0);
+                setBelieveLineInitialState(split.lines || [], true);
                 scheduleTimelineBuild();
             });
         });
@@ -1501,9 +1548,14 @@ console.log('[OOB] Script loaded v2.4.1');
             wrap._oobBelieveMM?.revert();
             delete wrap._oobBelieveMM;
 
-            wrap._oobBelievePinTl?.scrollTrigger?.kill();
-            wrap._oobBelievePinTl?.kill();
-            delete wrap._oobBelievePinTl;
+            wrap._oobBelievePinST?.kill();
+            delete wrap._oobBelievePinST;
+
+            wrap._oobBelieveAnimTl?.kill();
+            delete wrap._oobBelieveAnimTl;
+
+            delete wrap._oobBelieveState;
+            delete wrap._oobBelieveProcessQueue;
 
             wrap.querySelectorAll('[data-believe-split]').forEach((el) => {
                 gsap.set(el, { clearProps: 'opacity' });
@@ -1542,8 +1594,6 @@ console.log('[OOB] Script loaded v2.4.1');
             const items = Array.from(list.querySelectorAll('[data-believe-item]'));
             if (!items.length) return;
 
-            const fadedValue =
-                parseFloat(wrap.getAttribute('data-believe-fade')) || BELIEVE_FADE_DEFAULT;
             const scrollEndDesktop =
                 wrap.getAttribute('data-believe-scroll') || BELIEVE_SCROLL_END_DEFAULT;
 
@@ -1598,50 +1648,12 @@ console.log('[OOB] Script loaded v2.4.1');
                         setBelieveSlideState(slides, activeIndex);
 
                         if (isReduce) {
-                            slides.forEach((slide, i) => {
-                                gsap.set(slide.item, { autoAlpha: i === 0 ? 1 : 0 });
-                            });
-
-                            const tl = gsap.timeline({
-                                scrollTrigger: {
-                                    trigger: wrap,
-                                    start: 'top top',
-                                    end: pinEnd,
-                                    pin: true,
-                                    scrub: true,
-                                    invalidateOnRefresh: true,
-                                    anticipatePin: 1,
-                                },
-                            });
-
-                            const n = slides.length;
-                            const seg = 1 / n;
-                            slides.forEach((slide, i) => {
-                                const t0 = i * seg;
-                                const t1 = (i + 1) * seg;
-                                if (i > 0) {
-                                    tl.call(() => setBelieveSlideState(slides, i), null, t0);
-                                }
-                                if (i < n - 1) {
-                                    tl.to(
-                                        slide.item,
-                                        { autoAlpha: 0, duration: seg * 0.12, ease: 'power2.inOut' },
-                                        t1 - seg * 0.12
-                                    );
-                                    tl.fromTo(
-                                        slides[i + 1].item,
-                                        { autoAlpha: 0 },
-                                        { autoAlpha: 1, duration: seg * 0.12, ease: 'power2.inOut' },
-                                        t1 - seg * 0.12
-                                    );
-                                }
-                            });
-
+                            buildBelieveStepController(wrap, slides, pinEnd, true);
                             return;
                         }
 
-                        createBelieveLineSplits(wrap, slides, fadedValue, () => {
-                            buildBelievePinTimeline(wrap, slides, pinEnd, fadedValue);
+                        createBelieveLineSplits(wrap, slides, () => {
+                            buildBelieveStepController(wrap, slides, pinEnd, false);
                             if (hasScrollTrigger) ScrollTrigger.refresh();
                         });
                     }, wrap);

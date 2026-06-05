@@ -281,7 +281,7 @@ The blob stays on the current page link (`w--current` / `aria-current="page"`) a
 
 ## About — What We Believe (pinned scroll statements)
 
-Scroll-pinned section on the About page. Cycles **3 statements** as the user scrolls: line-reveal transitions between statements (Osmo [Line Reveal Testimonials](https://www.osmo.supply/resource/line-reveal-testimonials)) + scroll-linked highlight progress during each statement (adapted from Osmo [Highlight Text on Scroll](https://www.osmo.supply/resource/highlight-text-on-scroll) — line opacity stagger, one SplitText split).
+Scroll-pinned section on the About page. Cycles **3 statements** as the user scrolls: each scroll step **triggers** a time-based line-reveal (Osmo [Line Reveal Testimonials](https://www.osmo.supply/resource/line-reveal-testimonials)) that plays to completion, holds on screen, then advances on the next step. Animations are **not** scrubbed — stopping mid-scroll never leaves half-visible text.
 
 **Requires:** ScrollTrigger + SplitText in Head (already used for Button 065).
 
@@ -313,9 +313,8 @@ Build inside the About page `[data-barba="container"]`. Use a **Section** (or Di
 | Attribute | Default | Purpose |
 |-----------|---------|---------|
 | `data-believe-scroll` | `+=450%` (desktop) | ScrollTrigger `end` — increase if copy is long |
-| `data-believe-fade` | `0.2` | Opacity before highlight scrub |
 
-Mobile uses `+=280%`; `prefers-reduced-motion` uses crossfade + `+=120%` (no line animation).
+Mobile uses `+=280%`; `prefers-reduced-motion` uses crossfade steps + `+=120%` (no line animation). Scroll snaps to each statement position after a step.
 
 ### Example markup
 
