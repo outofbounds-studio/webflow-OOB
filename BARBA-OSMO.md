@@ -361,7 +361,7 @@ Mobile uses `+=280%`; `prefers-reduced-motion` uses crossfade steps + `+=120%` (
 - Set section / inner **text colour** and **background** in Webflow (e.g. black bg, white text).
 - Rules: 1px div height, `opacity: 0.2` (already in `oob.css`).
 - **Layout:** `believe__main` is a 12-column grid — counter spans cols 1–2, `believe__list` spans cols 3–10 (full width on mobile).
-- **Counter:** add `data-believe-current` + `data-believe-total` inside `believe__counter`; JS updates on each step (Osmo testimonials pattern). Style size/weight in Webflow.
+- **Counter:** add `data-believe-current` + `data-believe-total` on the **spans only** (not the parent `<p>`). Putting attrs on the paragraph will break the span layout when JS updates. Style size/weight in Webflow.
 - Do **not** add prev/next buttons or autoplay — scroll drives everything.
 
 ### JS

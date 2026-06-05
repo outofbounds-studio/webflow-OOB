@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.4 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.5 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.4');
+console.log('[OOB] Script loaded v2.4.5');
 
 (function () {
     'use strict';
@@ -1285,8 +1285,12 @@ console.log('[OOB] Script loaded v2.4.4');
     }
 
     function updateBelieveCounter(wrap, activeIndex, total) {
-        const elCurrent = wrap.querySelector('[data-believe-current]');
-        const elTotal = wrap.querySelector('[data-believe-total]');
+        const counter = wrap.querySelector('.believe__counter');
+        if (!counter) return;
+
+        // Target spans only — attrs on the <p> would make textContent wipe child spans
+        const elCurrent = counter.querySelector('span[data-believe-current]');
+        const elTotal = counter.querySelector('span[data-believe-total]');
         if (elCurrent) elCurrent.textContent = formatBelieveCount(activeIndex + 1);
         if (elTotal) elTotal.textContent = formatBelieveCount(total);
     }
