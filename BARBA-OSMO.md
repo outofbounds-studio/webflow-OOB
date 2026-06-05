@@ -352,9 +352,7 @@ Mobile uses `+=280%`; `prefers-reduced-motion` uses crossfade + `+=120%` (no lin
 
 ### Webflow styling tips
 
-- Set section / inner **text colour** and **background** in Webflow (e.g. black bg, white text).
-- Rules: 1px div height, `opacity: 0.2` (already in `oob.css`).
-- Typography sizes in `oob.css` use **em** — tune in Webflow or override classes.
+- Set **typography**, colours, spacing, and rules entirely in Webflow — `oob.css` only provides layout/animation structure.
 - Do **not** add prev/next buttons or autoplay — scroll drives everything.
 
 ### JS

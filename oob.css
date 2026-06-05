@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.0 */
+/* Version: 1.4.1 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -639,27 +639,8 @@ a[data-copy-url]:focus-visible {
   padding: 4em 0;
 }
 
-.believe__header {
-  margin-bottom: 2em;
-}
-
-.believe__label {
-  margin: 0;
-  font-size: 0.75em;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 .believe__rule {
   width: 100%;
-  height: 1px;
-  margin: 0 0 3em;
-  background-color: currentColor;
-  opacity: 0.2;
-}
-
-.believe__rule--bottom {
-  margin: 3em 0 0;
 }
 
 .believe__main {
@@ -679,7 +660,6 @@ a[data-copy-url]:focus-visible {
   justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  gap: 1.5em;
   opacity: 0;
   visibility: hidden;
 }
@@ -689,65 +669,9 @@ a[data-copy-url]:focus-visible {
   visibility: visible;
 }
 
-.believe__lead,
-.believe__body,
-.believe__close {
-  width: 100%;
-  margin: 0;
-}
-
-.believe__lead {
-  font-size: 2em;
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.believe__body {
-  font-size: 1.25em;
-  line-height: 1.35;
-  max-width: 42em;
-}
-
-.believe__close {
-  font-size: 1.5em;
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
 /* SplitText line masks (Osmo line-reveal pattern) */
 .believe-line-mask {
   padding-bottom: 0.2em;
   margin-bottom: -0.2em;
 }
 
-@media screen and (max-width: 767px) {
-  .believe__inner {
-    padding: 3em 0;
-  }
-
-  .believe__rule {
-    margin-bottom: 2em;
-  }
-
-  .believe__rule--bottom {
-    margin-top: 2em;
-  }
-
-  .believe__item {
-    gap: 1.25em;
-  }
-
-  .believe__lead {
-    font-size: 1.5em;
-  }
-
-  .believe__body {
-    font-size: 1em;
-  }
-
-  .believe__close {
-    font-size: 1.25em;
-  }
-}
