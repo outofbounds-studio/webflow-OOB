@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.0 */
+/* Version: 1.4.1 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -623,6 +623,14 @@ a[data-copy-url]:focus-visible {
 /* ── About: What We Believe (pinned scroll statements) ── */
 /* Structure + data attrs: see BARBA-OSMO.md */
 
+.believe,
+.believe__inner,
+.believe__main,
+.believe__list,
+.believe__item {
+  overflow: visible;
+}
+
 .believe {
   position: relative;
   width: 100%;
@@ -697,22 +705,22 @@ a[data-copy-url]:focus-visible {
 }
 
 .believe__lead {
-  font-size: 2em;
+  font-size: 2.125em;
   font-weight: 500;
-  line-height: 1.1;
+  line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
 .believe__body {
-  font-size: 1.25em;
-  line-height: 1.35;
+  font-size: 2.125em;
+  line-height: 1.2;
   max-width: 42em;
 }
 
 .believe__close {
-  font-size: 1.5em;
+  font-size: 2.125em;
   font-weight: 500;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -0.02em;
 }
 

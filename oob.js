@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.1 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.0');
+console.log('[OOB] Script loaded v2.4.1');
 
 (function () {
     'use strict';
@@ -1289,6 +1289,200 @@ console.log('[OOB] Script loaded v2.4.0');
         });
     }
 
+    function setBelieveLineInitialState(slide, lines, fadedValue, visibleOnLoad) {
+        if (!lines?.length) return;
+        gsap.set(lines, {
+            yPercent: visibleOnLoad ? 0 : 110,
+            opacity: fadedValue,
+        });
+    }
+
+    function buildBelievePinTimeline(wrap, slides, pinEnd, fadedValue) {
+        wrap._oobBelievePinTl?.scrollTrigger?.kill();
+        wrap._oobBelievePinTl?.kill();
+        wrap._oobBelievePinTl = null;
+
+        slides.forEach((slide, i) => {
+            const lines = slide.getLines();
+            gsap.set(slide.item, {
+                autoAlpha: i === 0 ? 1 : 0,
+                pointerEvents: i === 0 ? 'auto' : 'none',
+            });
+            setBelieveLineInitialState(slide, lines, fadedValue, i === 0);
+        });
+
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: wrap,
+                start: 'top top',
+                end: pinEnd,
+                pin: true,
+                scrub: true,
+                invalidateOnRefresh: true,
+                anticipatePin: 1,
+            },
+        });
+
+        const n = slides.length;
+        const slideDur = 1 / n;
+        const revealFrac = 0.18;
+        const dwellFrac = 0.57;
+        const transFrac = 0.25;
+
+        slides.forEach((slide, i) => {
+            const lines = slide.getLines();
+            if (!lines.length) return;
+
+            const base = i * slideDur;
+            const rIn = i === 0 ? 0 : slideDur * revealFrac;
+            const rDwell =
+                slideDur *
+                (i === n - 1
+                    ? 1 - revealFrac
+                    : i === 0
+                      ? dwellFrac + revealFrac
+                      : dwellFrac);
+            const rTrans = i === n - 1 ? 0 : slideDur * transFrac;
+
+            const tDwellStart = i === 0 ? base : base + rIn;
+            const tDwellEnd = tDwellStart + rDwell;
+            const tTransStart = tDwellEnd;
+
+            if (i > 0) {
+                tl.to(
+                    lines,
+                    {
+                        yPercent: 0,
+                        opacity: fadedValue,
+                        duration: rIn,
+                        ease: 'power4.inOut',
+                        stagger: { amount: rIn * 0.55 },
+                    },
+                    base
+                );
+            }
+
+            tl.to(
+                lines,
+                {
+                    opacity: 1,
+                    duration: rDwell,
+                    ease: 'none',
+                    stagger: { each: rDwell / lines.length },
+                },
+                tDwellStart
+            );
+
+            if (i < n - 1) {
+                const next = slides[i + 1];
+                const nextLines = next.getLines();
+
+                tl.call(
+                    () => {
+                        setBelieveSlideState(slides, i + 1);
+                        setBelieveLineInitialState(next, nextLines, fadedValue, false);
+                    },
+                    null,
+                    tTransStart
+                );
+
+                tl.to(
+                    lines,
+                    {
+                        yPercent: -110,
+                        duration: rTrans * 0.55,
+                        ease: 'power4.inOut',
+                        stagger: { amount: rTrans * 0.35 },
+                    },
+                    tTransStart
+                );
+
+                if (nextLines.length) {
+                    tl.to(
+                        nextLines,
+                        {
+                            yPercent: 0,
+                            opacity: fadedValue,
+                            duration: rTrans * 0.65,
+                            ease: 'power4.inOut',
+                            stagger: { amount: rTrans * 0.45 },
+                        },
+                        tTransStart + rTrans * 0.28
+                    );
+                }
+            }
+        });
+
+        wrap._oobBelievePinTl = tl;
+    }
+
+    function createBelieveLineSplits(wrap, slides, fadedValue, onAllReady) {
+        const totalTargets = slides.reduce((n, slide) => n + slide.splitTargets.length, 0);
+        if (!totalTargets) {
+            console.warn('[OOB] [data-believe-wrap] has no [data-believe-split] targets.');
+            return;
+        }
+
+        let buildQueued = false;
+
+        const scheduleTimelineBuild = () => {
+            if (buildQueued) return;
+            buildQueued = true;
+            requestAnimationFrame(() => {
+                buildQueued = false;
+                const lineCount = slides.reduce((n, slide) => n + slide.getLines().length, 0);
+                if (lineCount === 0) return;
+                onAllReady();
+            });
+        };
+
+        slides.forEach((slide) => {
+            slide.splitTargets.forEach((el) => {
+                if (typeof SplitText.create === 'function') {
+                    const split = SplitText.create(el, {
+                        type: 'lines',
+                        mask: 'lines',
+                        linesClass: 'believe-line',
+                        autoSplit: true,
+                        onSplit(self) {
+                            const lines = self.lines || [];
+                            if (!wrap._oobBelievePinTl) {
+                                setBelieveLineInitialState(
+                                    slide,
+                                    lines,
+                                    fadedValue,
+                                    slide.slideIndex === 0
+                                );
+                            }
+                            scheduleTimelineBuild();
+                        },
+                    });
+                    slide.splitInstances.push(split);
+                    wrap._oobBelieveSplits.push(split);
+                    if (split.lines?.length) {
+                        setBelieveLineInitialState(
+                            slide,
+                            split.lines,
+                            fadedValue,
+                            slide.slideIndex === 0
+                        );
+                        scheduleTimelineBuild();
+                    }
+                    return;
+                }
+
+                const split = new SplitText(el, {
+                    type: 'lines',
+                    linesClass: 'believe-line',
+                });
+                slide.splitInstances.push(split);
+                wrap._oobBelieveSplits.push(split);
+                setBelieveLineInitialState(slide, split.lines || [], fadedValue, slide.slideIndex === 0);
+                scheduleTimelineBuild();
+            });
+        });
+    }
+
     function revertBelieveScroll(root = document) {
         const scope = root?.querySelectorAll ? root : document;
         scope.querySelectorAll(BELIEVE_SELECTOR).forEach((wrap) => {
@@ -1306,6 +1500,10 @@ console.log('[OOB] Script loaded v2.4.0');
 
             wrap._oobBelieveMM?.revert();
             delete wrap._oobBelieveMM;
+
+            wrap._oobBelievePinTl?.scrollTrigger?.kill();
+            wrap._oobBelievePinTl?.kill();
+            delete wrap._oobBelievePinTl;
 
             wrap.querySelectorAll('[data-believe-split]').forEach((el) => {
                 gsap.set(el, { clearProps: 'opacity' });
@@ -1334,6 +1532,7 @@ console.log('[OOB] Script loaded v2.4.0');
             return;
         }
 
+        const runInit = () => {
         wraps.forEach((wrap) => {
             if (wrap.dataset.oobBelieveInit === 'true') return;
 
@@ -1441,130 +1640,9 @@ console.log('[OOB] Script loaded v2.4.0');
                             return;
                         }
 
-                        slides.forEach((slide) => {
-                            slide.splitInstances = slide.splitTargets.map((el) => {
-                                const split = SplitText.create(el, {
-                                    type: 'lines',
-                                    mask: 'lines',
-                                    linesClass: 'believe-line',
-                                    autoSplit: true,
-                                    onSplit(self) {
-                                        gsap.set(self.lines, {
-                                            yPercent: 110,
-                                            opacity: fadedValue,
-                                        });
-                                    },
-                                });
-                                wrap._oobBelieveSplits.push(split);
-                                return split;
-                            });
-                        });
-
-                        slides.forEach((slide, i) => {
-                            const lines = slide.getLines();
-                            gsap.set(slide.item, {
-                                autoAlpha: i === 0 ? 1 : 0,
-                                pointerEvents: i === 0 ? 'auto' : 'none',
-                            });
-                            gsap.set(lines, { yPercent: 110, opacity: fadedValue });
-                        });
-
-                        const tl = gsap.timeline({
-                            scrollTrigger: {
-                                trigger: wrap,
-                                start: 'top top',
-                                end: pinEnd,
-                                pin: true,
-                                scrub: true,
-                                invalidateOnRefresh: true,
-                                anticipatePin: 1,
-                            },
-                        });
-
-                        const n = slides.length;
-                        const slideDur = 1 / n;
-                        const revealFrac = 0.18;
-                        const dwellFrac = 0.57;
-                        const transFrac = 0.25;
-
-                        slides.forEach((slide, i) => {
-                            const lines = slide.getLines();
-                            const base = i * slideDur;
-                            const rIn = slideDur * revealFrac;
-                            const rDwell = slideDur * (i === n - 1 ? 1 - revealFrac : dwellFrac);
-                            const rTrans = i === n - 1 ? 0 : slideDur * transFrac;
-
-                            const tDwellStart = i === 0 ? base + rIn : base;
-                            const tDwellEnd = tDwellStart + rDwell;
-                            const tTransStart = tDwellEnd;
-
-                            if (i === 0) {
-                                tl.to(
-                                    lines,
-                                    {
-                                        yPercent: 0,
-                                        opacity: fadedValue,
-                                        duration: rIn,
-                                        ease: 'power4.inOut',
-                                        stagger: { amount: rIn * 0.55 },
-                                    },
-                                    base
-                                );
-                            }
-
-                            tl.to(
-                                lines,
-                                {
-                                    opacity: 1,
-                                    duration: rDwell,
-                                    ease: 'none',
-                                    stagger: {
-                                        each:
-                                            rDwell / Math.max(lines.length, 1),
-                                    },
-                                },
-                                tDwellStart
-                            );
-
-                            if (i < n - 1) {
-                                const next = slides[i + 1];
-                                const nextLines = next.getLines();
-
-                                tl.call(
-                                    () => {
-                                        setBelieveSlideState(slides, i + 1);
-                                        gsap.set(nextLines, {
-                                            yPercent: 110,
-                                            opacity: fadedValue,
-                                        });
-                                    },
-                                    null,
-                                    tTransStart
-                                );
-
-                                tl.to(
-                                    lines,
-                                    {
-                                        yPercent: -110,
-                                        duration: rTrans * 0.55,
-                                        ease: 'power4.inOut',
-                                        stagger: { amount: rTrans * 0.35 },
-                                    },
-                                    tTransStart
-                                );
-
-                                tl.to(
-                                    nextLines,
-                                    {
-                                        yPercent: 0,
-                                        opacity: fadedValue,
-                                        duration: rTrans * 0.65,
-                                        ease: 'power4.inOut',
-                                        stagger: { amount: rTrans * 0.45 },
-                                    },
-                                    tTransStart + rTrans * 0.28
-                                );
-                            }
+                        createBelieveLineSplits(wrap, slides, fadedValue, () => {
+                            buildBelievePinTimeline(wrap, slides, pinEnd, fadedValue);
+                            if (hasScrollTrigger) ScrollTrigger.refresh();
                         });
                     }, wrap);
 
@@ -1574,6 +1652,13 @@ console.log('[OOB] Script loaded v2.4.0');
 
             wrap.dataset.oobBelieveInit = 'true';
         });
+        };
+
+        if (document.fonts?.ready) {
+            document.fonts.ready.then(runInit);
+        } else {
+            runInit();
+        }
 
         console.log('[OOB] Believe scroll initialized');
     }
