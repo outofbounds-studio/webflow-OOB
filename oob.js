@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.3');
+console.log('[OOB] Script loaded v2.4.4');
 
 (function () {
     'use strict';
@@ -1280,7 +1280,18 @@ console.log('[OOB] Script loaded v2.4.3');
     const BELIEVE_LINE_IN = { yPercent: 0, duration: 0.7, ease: 'power4.inOut', stagger: { amount: 0.4 } };
     const BELIEVE_LINE_IN_OFFSET = '>-=0.3';
 
-    function setBelieveSlideState(slides, activeIndex) {
+    function formatBelieveCount(value) {
+        return String(value).padStart(2, '0');
+    }
+
+    function updateBelieveCounter(wrap, activeIndex, total) {
+        const elCurrent = wrap.querySelector('[data-believe-current]');
+        const elTotal = wrap.querySelector('[data-believe-total]');
+        if (elCurrent) elCurrent.textContent = formatBelieveCount(activeIndex + 1);
+        if (elTotal) elTotal.textContent = formatBelieveCount(total);
+    }
+
+    function setBelieveSlideState(wrap, slides, activeIndex) {
         slides.forEach((slide, i) => {
             const isActive = i === activeIndex;
             slide.item.classList.toggle('is--active', isActive);
@@ -1290,6 +1301,7 @@ console.log('[OOB] Script loaded v2.4.3');
                 pointerEvents: isActive ? 'auto' : 'none',
             });
         });
+        updateBelieveCounter(wrap, activeIndex, slides.length);
     }
 
     function setBelieveLineInitialState(lines, belowMask) {
@@ -1321,12 +1333,14 @@ console.log('[OOB] Script loaded v2.4.3');
         const tl = gsap.timeline({
             onComplete: () => {
                 gsap.set(outgoing.item, { autoAlpha: 0, pointerEvents: 'none' });
-                setBelieveSlideState(slides, toIndex);
+                setBelieveSlideState(wrap, slides, toIndex);
                 wrap._oobBelieveState.currentIndex = toIndex;
                 wrap._oobBelieveState.isAnimating = false;
                 wrap._oobBelieveProcessQueue?.();
             },
         });
+
+        updateBelieveCounter(wrap, toIndex, slides.length);
 
         if (outLines.length) {
             tl.to(outLines, BELIEVE_LINE_OUT, 0);
@@ -1369,7 +1383,7 @@ console.log('[OOB] Script loaded v2.4.3');
             );
         });
 
-        setBelieveSlideState(slides, toIndex);
+        setBelieveSlideState(wrap, slides, toIndex);
         wrap._oobBelieveAnimTl = tl;
     }
 
@@ -1395,7 +1409,7 @@ console.log('[OOB] Script loaded v2.4.3');
             });
             setBelieveLineInitialState(lines, true);
         });
-        setBelieveSlideState(slides, 0);
+        setBelieveSlideState(wrap, slides, 0);
 
         const requestStep = (targetIndex) => {
             state.pendingIndex = targetIndex;
@@ -1630,7 +1644,7 @@ console.log('[OOB] Script loaded v2.4.3');
                     });
 
                     const ctx = gsap.context(() => {
-                        setBelieveSlideState(slides, activeIndex);
+                        updateBelieveCounter(wrap, activeIndex, slides.length);
 
                         if (isReduce) {
                             buildBelieveStepController(wrap, slides, pinEnd, true);

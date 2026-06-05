@@ -298,8 +298,12 @@ Build inside the About page `[data-barba="container"]`. Use a **Section** (or Di
 | Div | `believe__header` | — | Static label row |
 | Paragraph | `believe__label` | — | e.g. “What we believe” (style uppercase in Webflow) |
 | Div | `believe__rule` | — | 1px horizontal rule |
-| Div | `believe__main` | — | Statement stack |
-| Div | `believe__list` | `data-believe-list` | CSS grid stack (all items same cell) |
+| Div | `believe__main` | — | 12-col grid row (counter + statements) |
+| Div | `believe__counter` | — | Cols 1–2 — step counter `01/03` |
+| Span | — | `data-believe-current` | Current step (JS updates, zero-padded) |
+| Span | `believe__counter-sep` | — | `/` separator |
+| Span | — | `data-believe-total` | Total steps (JS sets from item count) |
+| Div | `believe__list` | `data-believe-list` | Cols 3–10 — stacked statement items |
 | Div × 3 | `believe__item` | `data-believe-item` | Statement 1: add `is--active` |
 | Paragraph | `believe__lead` | `data-believe-split` | Short opener line |
 | Paragraph | `believe__body` | `data-believe-split` | Body copy |
@@ -326,6 +330,9 @@ Mobile uses `+=280%`; `prefers-reduced-motion` uses crossfade steps + `+=120%` (
     </div>
     <div class="believe__rule"></div>
     <div class="believe__main">
+      <p class="believe__counter">
+        <span data-believe-current>01</span><span class="believe__counter-sep">/</span><span data-believe-total>03</span>
+      </p>
       <div data-believe-list class="believe__list">
         <div data-believe-item class="believe__item is--active" aria-hidden="false">
           <p data-believe-split class="believe__lead">The era of attention is ending.</p>
@@ -353,7 +360,8 @@ Mobile uses `+=280%`; `prefers-reduced-motion` uses crossfade steps + `+=120%` (
 
 - Set section / inner **text colour** and **background** in Webflow (e.g. black bg, white text).
 - Rules: 1px div height, `opacity: 0.2` (already in `oob.css`).
-- Typography sizes in `oob.css` use **em** — tune in Webflow or override classes.
+- **Layout:** `believe__main` is a 12-column grid — counter spans cols 1–2, `believe__list` spans cols 3–10 (full width on mobile).
+- **Counter:** add `data-believe-current` + `data-believe-total` inside `believe__counter`; JS updates on each step (Osmo testimonials pattern). Style size/weight in Webflow.
 - Do **not** add prev/next buttons or autoplay — scroll drives everything.
 
 ### JS

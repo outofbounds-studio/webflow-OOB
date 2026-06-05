@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.1 */
+/* Version: 1.4.2 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -671,10 +671,37 @@ a[data-copy-url]:focus-visible {
 }
 
 .believe__main {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 1.25em;
+  align-items: start;
   width: 100%;
 }
 
+.believe__counter {
+  grid-column: 1 / 3;
+  display: flex;
+  align-items: baseline;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.believe__counter-sep {
+  opacity: 0.5;
+}
+
+[data-believe-current] {
+  display: inline-block;
+  min-width: 2ch;
+}
+
+[data-believe-total] {
+  display: inline-block;
+  min-width: 2ch;
+}
+
 .believe__list {
+  grid-column: 3 / 11;
   display: grid;
   position: relative;
   width: 100%;
@@ -741,6 +768,15 @@ a[data-copy-url]:focus-visible {
 
   .believe__rule--bottom {
     margin-top: 2em;
+  }
+
+  .believe__counter {
+    grid-column: 1 / -1;
+    margin-bottom: 1.5em;
+  }
+
+  .believe__list {
+    grid-column: 1 / -1;
   }
 
   .believe__item {
