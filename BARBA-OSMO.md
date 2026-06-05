@@ -279,6 +279,90 @@ The blob stays on the current page link (`w--current` / `aria-current="page"`) a
 
 ---
 
+## About — What We Believe (pinned scroll statements)
+
+Scroll-pinned section on the About page. Cycles **3 statements** as the user scrolls: line-reveal transitions between statements (Osmo [Line Reveal Testimonials](https://www.osmo.supply/resource/line-reveal-testimonials)) + scroll-linked highlight progress during each statement (adapted from Osmo [Highlight Text on Scroll](https://www.osmo.supply/resource/highlight-text-on-scroll) — line opacity stagger, one SplitText split).
+
+**Requires:** ScrollTrigger + SplitText in Head (already used for Button 065).
+
+### Webflow structure
+
+Build inside the About page `[data-barba="container"]`. Use a **Section** (or Div block) as the outer wrapper.
+
+**Hierarchy (top → bottom):**
+
+| Element | Class | Data attribute | Notes |
+|---------|-------|----------------|-------|
+| Section | `believe` | `data-believe-wrap` | Pin trigger; optional `data-believe-scroll="+=500%"` |
+| Div | `believe__inner` | — | Full-viewport column; use `.container` inside or on this |
+| Div | `believe__header` | — | Static label row |
+| Paragraph | `believe__label` | — | e.g. “What we believe” (style uppercase in Webflow) |
+| Div | `believe__rule` | — | 1px horizontal rule |
+| Div | `believe__main` | — | Statement stack |
+| Div | `believe__list` | `data-believe-list` | CSS grid stack (all items same cell) |
+| Div × 3 | `believe__item` | `data-believe-item` | Statement 1: add `is--active` |
+| Paragraph | `believe__lead` | `data-believe-split` | Short opener line |
+| Paragraph | `believe__body` | `data-believe-split` | Body copy |
+| Paragraph | `believe__close` | `data-believe-split` | Closing line |
+| Div | `believe__rule believe__rule--bottom` | — | Bottom rule (optional) |
+
+**Statement 1** must have class `is--active` and `aria-hidden="false"`. Statements 2–3: no `is--active`, `aria-hidden="true"`.
+
+### Optional attributes on `[data-believe-wrap]`
+
+| Attribute | Default | Purpose |
+|-----------|---------|---------|
+| `data-believe-scroll` | `+=450%` (desktop) | ScrollTrigger `end` — increase if copy is long |
+| `data-believe-fade` | `0.2` | Opacity before highlight scrub |
+
+Mobile uses `+=280%`; `prefers-reduced-motion` uses crossfade + `+=120%` (no line animation).
+
+### Example markup
+
+```html
+<section data-believe-wrap class="believe">
+  <div class="believe__inner container">
+    <div class="believe__header">
+      <p class="believe__label">What we believe</p>
+    </div>
+    <div class="believe__rule"></div>
+    <div class="believe__main">
+      <div data-believe-list class="believe__list">
+        <div data-believe-item class="believe__item is--active" aria-hidden="false">
+          <p data-believe-split class="believe__lead">The era of attention is ending.</p>
+          <p data-believe-split class="believe__body">For fifteen years, the primary driver of business growth was reach…</p>
+          <p data-believe-split class="believe__close">What is replacing it is differentiation. And differentiation is a fundamentally different game.</p>
+        </div>
+        <div data-believe-item class="believe__item" aria-hidden="true">
+          <p data-believe-split class="believe__lead">Statement two opener.</p>
+          <p data-believe-split class="believe__body">Statement two body.</p>
+          <p data-believe-split class="believe__close">Statement two closer.</p>
+        </div>
+        <div data-believe-item class="believe__item" aria-hidden="true">
+          <p data-believe-split class="believe__lead">Statement three opener.</p>
+          <p data-believe-split class="believe__body">Statement three body.</p>
+          <p data-believe-split class="believe__close">Statement three closer.</p>
+        </div>
+      </div>
+    </div>
+    <div class="believe__rule believe__rule--bottom"></div>
+  </div>
+</section>
+```
+
+### Webflow styling tips
+
+- Set section / inner **text colour** and **background** in Webflow (e.g. black bg, white text).
+- Rules: 1px div height, `opacity: 0.2` (already in `oob.css`).
+- Typography sizes in `oob.css` use **em** — tune in Webflow or override classes.
+- Do **not** add prev/next buttons or autoplay — scroll drives everything.
+
+### JS
+
+`initBelieveScroll()` in `oob.js` — runs on first load (after once) and every `afterEnter`; reverted on `beforeLeave`. Console: `[OOB] Believe scroll initialized`.
+
+---
+
 ## JavaScript (`oob.js`)
 
 - Full Osmo boilerplate + overlapping parallax `runPage*Animation` functions
