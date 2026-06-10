@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.6 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.7 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.6');
+console.log('[OOB] Script loaded v2.4.7');
 
 (function () {
     'use strict';
@@ -102,8 +102,10 @@ console.log('[OOB] Script loaded v2.4.6');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
-        refreshFooterLogotypeScroll();
         refreshBelieveScroll(nextPage);
+        if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
+            refreshFooterLogotypeScroll();
+        }
         // Runs after enter animation completes
 
         if (lenis) lenis.resize();
@@ -598,8 +600,10 @@ console.log('[OOB] Script loaded v2.4.6');
                     } else {
                         await runPageOnceAnimation(container);
                     }
-                    refreshFooterLogotypeScroll();
                     refreshBelieveScroll(container);
+                    if (!container.querySelector(BELIEVE_SELECTOR)) {
+                        refreshFooterLogotypeScroll();
+                    }
                     syncNavActiveFromContainer(container);
                     refreshNavHighlightBlob();
                     if (hasScrollTrigger) ScrollTrigger.refresh();
@@ -1266,6 +1270,11 @@ console.log('[OOB] Script loaded v2.4.6');
         if (hasScrollTrigger) ScrollTrigger.refresh();
     }
 
+    /** Footer ST must init after believe pin spacer exists (About page layout). */
+    function onBelieveScrollReady() {
+        refreshFooterLogotypeScroll();
+    }
+
     // -----------------------------------------
     // ABOUT — What We Believe (pinned scroll statements)
     // Scroll-triggered line reveals (time-based, not scrubbed)
@@ -1631,12 +1640,13 @@ console.log('[OOB] Script loaded v2.4.6');
 
                         if (isReduce) {
                             buildBelieveStepController(wrap, slides, pinEnd, true);
+                            onBelieveScrollReady();
                             return;
                         }
 
                         createBelieveLineSplits(wrap, slides, () => {
                             buildBelieveStepController(wrap, slides, pinEnd, false);
-                            if (hasScrollTrigger) ScrollTrigger.refresh();
+                            onBelieveScrollReady();
                         });
                     }, wrap);
 
@@ -1660,7 +1670,6 @@ console.log('[OOB] Script loaded v2.4.6');
     function refreshBelieveScroll(root = document) {
         revertBelieveScroll(root);
         initBelieveScroll(root);
-        if (hasScrollTrigger) ScrollTrigger.refresh();
     }
 
     function initCopyButtons(root = document) {
