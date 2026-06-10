@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.3 */
+/* Version: 1.4.4 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -644,7 +644,7 @@ a[data-copy-url]:focus-visible {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 0em 0;
+  padding: 0;
 }
 
 .believe__header {
@@ -667,7 +667,7 @@ a[data-copy-url]:focus-visible {
 }
 
 .believe__rule--bottom {
-  margin: 3em 0 0;
+  margin: 0;
 }
 
 .believe__main {
@@ -758,16 +758,8 @@ a[data-copy-url]:focus-visible {
 }
 
 @media screen and (max-width: 767px) {
-  .believe__inner {
-    padding: 3em 0;
-  }
-
   .believe__rule {
     margin-bottom: 2em;
-  }
-
-  .believe__rule--bottom {
-    margin-top: 2em;
   }
 
   .believe__counter {
