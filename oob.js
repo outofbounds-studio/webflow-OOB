@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.7 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.8 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.7');
+console.log('[OOB] Script loaded v2.4.8');
 
 (function () {
     'use strict';
@@ -102,6 +102,7 @@ console.log('[OOB] Script loaded v2.4.7');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
+        if (has('[data-read-time-article]')) initDisplayReadTime(nextPage);
         refreshBelieveScroll(nextPage);
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
@@ -603,6 +604,9 @@ console.log('[OOB] Script loaded v2.4.7');
                     refreshBelieveScroll(container);
                     if (!container.querySelector(BELIEVE_SELECTOR)) {
                         refreshFooterLogotypeScroll();
+                    }
+                    if (container.querySelector('[data-read-time-article]')) {
+                        initDisplayReadTime(container);
                     }
                     syncNavActiveFromContainer(container);
                     refreshNavHighlightBlob();
@@ -1132,6 +1136,39 @@ console.log('[OOB] Script loaded v2.4.7');
         const year = new Date().getFullYear();
         root.querySelectorAll('[data-current-year]').forEach((el) => {
             el.textContent = String(year);
+        });
+    }
+
+    // -----------------------------------------
+    // BLOG — Display Read Time (Osmo resource)
+    // Webflow: data-read-time-article on post body, data-read-time-target on display span
+    // -----------------------------------------
+
+    const READ_TIME_WPM = 200;
+
+    function initDisplayReadTime(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const articles = scope.querySelectorAll('[data-read-time-article]');
+        if (!articles.length) return;
+
+        articles.forEach((article, index) => {
+            const matchValue = article.getAttribute('data-read-time-article');
+            const wordCount = article.textContent.trim().split(/\s+/).filter(Boolean).length;
+            const minutes = Math.max(1, Math.ceil(wordCount / READ_TIME_WPM));
+
+            let targets;
+            if (matchValue) {
+                targets = scope.querySelectorAll(`[data-read-time-target="${matchValue}"]`);
+            } else {
+                const emptyTargets = scope.querySelectorAll(
+                    '[data-read-time-target=""], [data-read-time-target]:not([data-read-time-target*="-"])'
+                );
+                targets = emptyTargets[index] ? [emptyTargets[index]] : [];
+            }
+
+            targets.forEach((target) => {
+                target.textContent = String(minutes);
+            });
         });
     }
 

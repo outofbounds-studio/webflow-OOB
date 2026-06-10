@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.4 */
+/* Version: 1.4.5 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -786,4 +786,24 @@ a[data-copy-url]:focus-visible {
   .believe__close {
     font-size: 1.25em;
   }
+}
+
+/* ── Blog post body (Rich Text) — section dividers ── */
+/* Webflow: class post-body on Post Body Rich Text element */
+
+.post-body.w-richtext h2:not(:first-child),
+.post-body .w-richtext h2:not(:first-child),
+.post-body h2:not(:first-child) {
+  margin-top: 3em;
+  padding-top: 3em;
+  border-top: 1px solid rgba(248, 244, 244, 0.3);
+}
+
+.post-body.w-richtext hr,
+.post-body .w-richtext hr,
+.post-body hr {
+  border: none;
+  height: 1px;
+  margin: 3em 0;
+  background-color: rgba(248, 244, 244, 0.3);
 }
