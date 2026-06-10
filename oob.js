@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.2 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.3 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.2');
+console.log('[OOB] Script loaded v2.5.3');
 
 (function () {
     'use strict';
@@ -49,6 +49,80 @@ console.log('[OOB] Script loaded v2.5.2');
 
     CustomEase.create('osmo', '0.625, 0.05, 0, 1');
     gsap.defaults({ ease: 'osmo', duration: durationDefault });
+
+    // -----------------------------------------
+    // BLOG — Display Read Time (Osmo resource)
+    // Webflow: data-read-time-article on post body, data-read-time-target on display span
+    // Defined early — boot runs before later const blocks (avoid TDZ on READ_TIME_WPM).
+    // -----------------------------------------
+
+    const READ_TIME_WPM = 200;
+
+    function getReadTimeMatchValue(el, attr) {
+        const raw = el.getAttribute(attr);
+        if (!raw) return null;
+        const trimmed = raw.trim();
+        if (!trimmed || trimmed === 'true' || trimmed === attr) return null;
+        return trimmed;
+    }
+
+    function initDisplayReadTime(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const articles = scope.querySelectorAll('[data-read-time-article]');
+        if (!articles.length) return;
+
+        const allTargets = Array.from(scope.querySelectorAll('[data-read-time-target]'));
+        if (!allTargets.length) return;
+
+        articles.forEach((article, index) => {
+            const matchValue = getReadTimeMatchValue(article, 'data-read-time-article');
+            const wordCount = article.textContent.trim().split(/\s+/).filter(Boolean).length;
+            const minutes = Math.max(1, Math.ceil(wordCount / READ_TIME_WPM));
+
+            let targets = [];
+            if (matchValue) {
+                targets = allTargets.filter(
+                    (target) => getReadTimeMatchValue(target, 'data-read-time-target') === matchValue
+                );
+            }
+            if (!targets.length && allTargets[index]) {
+                targets = [allTargets[index]];
+            } else if (!targets.length && articles.length === 1 && allTargets.length === 1) {
+                targets = [allTargets[0]];
+            }
+
+            targets.forEach((target) => {
+                target.textContent = String(minutes);
+            });
+        });
+
+        console.log('[OOB] Read time initialized');
+    }
+
+    /** Re-run after Webflow.ready() — it can reset text blocks to Designer placeholders. */
+    function scheduleDisplayReadTime(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const run = () => {
+            if (!scope.querySelector('[data-read-time-article]')) return;
+            initDisplayReadTime(scope);
+        };
+        run();
+        requestAnimationFrame(() => requestAnimationFrame(run));
+        [50, 250, 500, 1000, 2000].forEach((ms) => window.setTimeout(run, ms));
+    }
+
+    /** Run after Webflow interaction init (fixes cold load / hard refresh on CMS templates). */
+    function scheduleDisplayReadTimeAfterWebflow(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const run = () => {
+            if (!scope.querySelector('[data-read-time-article]')) return;
+            initDisplayReadTime(scope);
+        };
+        if (typeof Webflow !== 'undefined' && typeof Webflow.push === 'function') {
+            Webflow.push(run);
+        }
+        scheduleDisplayReadTime(scope);
+    }
 
     // -----------------------------------------
     // WEBFLOW RE-INIT (MSC pattern)
@@ -1170,79 +1244,6 @@ console.log('[OOB] Script loaded v2.5.2');
         root.querySelectorAll('[data-current-year]').forEach((el) => {
             el.textContent = String(year);
         });
-    }
-
-    // -----------------------------------------
-    // BLOG — Display Read Time (Osmo resource)
-    // Webflow: data-read-time-article on post body, data-read-time-target on display span
-    // -----------------------------------------
-
-    const READ_TIME_WPM = 200;
-
-    function getReadTimeMatchValue(el, attr) {
-        const raw = el.getAttribute(attr);
-        if (!raw) return null;
-        const trimmed = raw.trim();
-        if (!trimmed || trimmed === 'true' || trimmed === attr) return null;
-        return trimmed;
-    }
-
-    function initDisplayReadTime(root = document) {
-        const scope = root?.querySelectorAll ? root : document;
-        const articles = scope.querySelectorAll('[data-read-time-article]');
-        if (!articles.length) return;
-
-        const allTargets = Array.from(scope.querySelectorAll('[data-read-time-target]'));
-        if (!allTargets.length) return;
-
-        articles.forEach((article, index) => {
-            const matchValue = getReadTimeMatchValue(article, 'data-read-time-article');
-            const wordCount = article.textContent.trim().split(/\s+/).filter(Boolean).length;
-            const minutes = Math.max(1, Math.ceil(wordCount / READ_TIME_WPM));
-
-            let targets = [];
-            if (matchValue) {
-                targets = allTargets.filter(
-                    (target) => getReadTimeMatchValue(target, 'data-read-time-target') === matchValue
-                );
-            }
-            if (!targets.length && allTargets[index]) {
-                targets = [allTargets[index]];
-            } else if (!targets.length && articles.length === 1 && allTargets.length === 1) {
-                targets = [allTargets[0]];
-            }
-
-            targets.forEach((target) => {
-                target.textContent = String(minutes);
-            });
-        });
-
-        console.log('[OOB] Read time initialized');
-    }
-
-    /** Re-run after Webflow.ready() — it can reset text blocks to Designer placeholders. */
-    function scheduleDisplayReadTime(root = document) {
-        const scope = root?.querySelectorAll ? root : document;
-        const run = () => {
-            if (!scope.querySelector('[data-read-time-article]')) return;
-            initDisplayReadTime(scope);
-        };
-        run();
-        requestAnimationFrame(() => requestAnimationFrame(run));
-        [50, 250, 500, 1000, 2000].forEach((ms) => window.setTimeout(run, ms));
-    }
-
-    /** Run after Webflow interaction init (fixes cold load / hard refresh on CMS templates). */
-    function scheduleDisplayReadTimeAfterWebflow(root = document) {
-        const scope = root?.querySelectorAll ? root : document;
-        const run = () => {
-            if (!scope.querySelector('[data-read-time-article]')) return;
-            initDisplayReadTime(scope);
-        };
-        if (typeof Webflow !== 'undefined' && typeof Webflow.push === 'function') {
-            Webflow.push(run);
-        }
-        scheduleDisplayReadTime(scope);
     }
 
     // -----------------------------------------
