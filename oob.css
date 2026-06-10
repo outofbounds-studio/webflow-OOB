@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.2 */
+/* Version: 1.4.3 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -644,7 +644,7 @@ a[data-copy-url]:focus-visible {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 4em 0;
+  padding: 0em 0;
 }
 
 .believe__header {
