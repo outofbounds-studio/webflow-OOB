@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.9 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.9');
+console.log('[OOB] Script loaded v2.5.0');
 
 (function () {
     'use strict';
@@ -84,7 +84,7 @@ console.log('[OOB] Script loaded v2.4.9');
         scheduleButton065(document);
         initCopyButtons(document);
         initDynamicCurrentYear(document);
-        if (document.querySelector('[data-read-time-article]')) initDisplayReadTime(document);
+        scheduleDisplayReadTime(document);
         // Footer logotype + ScrollTrigger init after once animation (see barba once)
     }
 
@@ -103,7 +103,7 @@ console.log('[OOB] Script loaded v2.4.9');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
-        if (has('[data-read-time-article]')) initDisplayReadTime(nextPage);
+        scheduleDisplayReadTime(nextPage);
         refreshBelieveScroll(nextPage);
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
@@ -606,9 +606,7 @@ console.log('[OOB] Script loaded v2.4.9');
                     if (!container.querySelector(BELIEVE_SELECTOR)) {
                         refreshFooterLogotypeScroll();
                     }
-                    if (container.querySelector('[data-read-time-article]')) {
-                        initDisplayReadTime(container);
-                    }
+                    scheduleDisplayReadTime(container);
                     syncNavActiveFromContainer(container);
                     refreshNavHighlightBlob();
                     if (hasScrollTrigger) ScrollTrigger.refresh();
@@ -631,6 +629,12 @@ console.log('[OOB] Script loaded v2.4.9');
 
     console.log('[OOB] Barba initialized (overlapping parallax)');
     checkBarbaDom();
+    scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document);
+    window.addEventListener(
+        'load',
+        () => scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document),
+        { once: true }
+    );
 
     // -----------------------------------------
     // GENERIC + HELPERS
@@ -1161,6 +1165,7 @@ console.log('[OOB] Script loaded v2.4.9');
         if (!articles.length) return;
 
         const allTargets = Array.from(scope.querySelectorAll('[data-read-time-target]'));
+        if (!allTargets.length) return;
 
         articles.forEach((article, index) => {
             const matchValue = getReadTimeMatchValue(article, 'data-read-time-article');
@@ -1183,6 +1188,21 @@ console.log('[OOB] Script loaded v2.4.9');
                 target.textContent = String(minutes);
             });
         });
+
+        console.log('[OOB] Read time initialized');
+    }
+
+    /** Re-run after Webflow.ready() — it can reset text blocks to Designer placeholders. */
+    function scheduleDisplayReadTime(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const run = () => {
+            if (!scope.querySelector('[data-read-time-article]')) return;
+            initDisplayReadTime(scope);
+        };
+        run();
+        requestAnimationFrame(() => requestAnimationFrame(run));
+        window.setTimeout(run, 50);
+        window.setTimeout(run, 250);
     }
 
     // -----------------------------------------
