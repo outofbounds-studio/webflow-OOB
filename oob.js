@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.3');
+console.log('[OOB] Script loaded v2.5.4');
 
 (function () {
     'use strict';
@@ -635,6 +635,10 @@ console.log('[OOB] Script loaded v2.5.3');
     ensureBarbaWrapper();
     scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
 
+    barba.hooks.beforeLeave(() => {
+        scrollToTop(true);
+    });
+
     barba.hooks.beforeLeave((data) => {
         if (data?.current?.container) {
             revertButton065(data.current.container);
@@ -644,6 +648,8 @@ console.log('[OOB] Script loaded v2.5.3');
     });
 
     barba.hooks.beforeEnter((data) => {
+        scrollToTop(true);
+
         gsap.set(data.next.container, {
             position: 'fixed',
             top: 0,
@@ -673,6 +679,7 @@ console.log('[OOB] Script loaded v2.5.3');
             lenis.start();
         }
         if (hasScrollTrigger) ScrollTrigger.refresh();
+        scrollToTop(true);
     });
 
     try {
@@ -796,12 +803,15 @@ console.log('[OOB] Script loaded v2.5.3');
         window.lenis = lenis;
     }
 
-    function resetPage(container) {
+    function scrollToTop(immediate = true) {
         if (lenis) {
-            lenis.scrollTo(0, { immediate: true });
-        } else {
-            window.scrollTo(0, 0);
+            lenis.scrollTo(0, { immediate });
         }
+        window.scrollTo(0, 0);
+    }
+
+    function resetPage(container) {
+        scrollToTop(true);
         gsap.set(container, { clearProps: 'position,top,left,right' });
         if (lenis) {
             lenis.resize();
