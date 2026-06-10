@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.4 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.5 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.4');
+console.log('[OOB] Script loaded v2.5.5');
 
 (function () {
     'use strict';
@@ -562,14 +562,18 @@ console.log('[OOB] Script loaded v2.5.4');
         CustomEase.create('parallax', '0.7, 0.05, 0.13, 1');
 
         if (reducedMotion) {
+            tl.call(() => scrollToTop(true), null, 0);
             return tl.set(current, { autoAlpha: 0 });
         }
 
         if (!transitionWrap || !transitionDark) {
             console.warn('[OOB] Missing [data-transition-wrap] or [data-transition-dark]');
+            tl.call(() => scrollToTop(true), null, 0);
             return tl.to(current, { autoAlpha: 0, duration: 0.4 });
         }
 
+        // Reset scroll under the transition overlay (avoids visible snap on the outgoing page)
+        tl.call(() => scrollToTop(true), null, 0);
         tl.set(transitionWrap, { zIndex: 2 });
 
         tl.fromTo(
@@ -635,10 +639,6 @@ console.log('[OOB] Script loaded v2.5.4');
     ensureBarbaWrapper();
     scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
 
-    barba.hooks.beforeLeave(() => {
-        scrollToTop(true);
-    });
-
     barba.hooks.beforeLeave((data) => {
         if (data?.current?.container) {
             revertButton065(data.current.container);
@@ -648,8 +648,6 @@ console.log('[OOB] Script loaded v2.5.4');
     });
 
     barba.hooks.beforeEnter((data) => {
-        scrollToTop(true);
-
         gsap.set(data.next.container, {
             position: 'fixed',
             top: 0,
