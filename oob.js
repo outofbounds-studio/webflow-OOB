@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.7 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.8 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.7');
+console.log('[OOB] Script loaded v2.5.8');
 
 (function () {
     'use strict';
@@ -635,14 +635,6 @@ console.log('[OOB] Script loaded v2.5.7');
     ensureBarbaWrapper();
     scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
 
-    barba.hooks.beforeLeave((data) => {
-        if (data?.current?.container) {
-            revertButton065(data.current.container);
-            revertFooterLogotypeScroll(document);
-            revertBelieveScroll(data.current.container);
-        }
-    });
-
     barba.hooks.beforeEnter((data) => {
         gsap.set(data.next.container, {
             position: 'fixed',
@@ -657,7 +649,13 @@ console.log('[OOB] Script loaded v2.5.7');
         applyThemeFrom(data.next.container);
     });
 
-    barba.hooks.afterLeave(() => {
+    barba.hooks.afterLeave((data) => {
+        const current = data?.current?.container;
+        if (current) {
+            revertButton065(current);
+            revertBelieveScroll(current);
+            revertFooterLogotypeScroll(current);
+        }
         if (hasScrollTrigger) ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     });
 
@@ -673,6 +671,7 @@ console.log('[OOB] Script loaded v2.5.7');
             lenis.start();
         }
         if (hasScrollTrigger) ScrollTrigger.refresh();
+        scrollToTop();
     });
 
     try {
@@ -796,12 +795,13 @@ console.log('[OOB] Script loaded v2.5.7');
         window.lenis = lenis;
     }
 
+    function scrollToTop() {
+        if (lenis) lenis.scrollTo(0, { immediate: true });
+        window.scrollTo(0, 0);
+    }
+
     function resetPage(container) {
-        if (lenis) {
-            lenis.scrollTo(0, { immediate: true });
-        } else {
-            window.scrollTo(0, 0);
-        }
+        scrollToTop();
         gsap.set(container, { clearProps: 'position,top,left,right' });
         if (lenis) {
             lenis.resize();
