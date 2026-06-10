@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.1 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.0');
+console.log('[OOB] Script loaded v2.5.1');
 
 (function () {
     'use strict';
@@ -545,6 +545,20 @@ console.log('[OOB] Script loaded v2.5.0');
     // BARBA HOOKS + INIT
     // -----------------------------------------
 
+    function ensureBarbaWrapper() {
+        if (document.querySelector('[data-barba="wrapper"]')) return;
+        const body = document.body;
+        const container = document.querySelector('[data-barba="container"]');
+        if (!body || !container) return;
+        body.setAttribute('data-barba', 'wrapper');
+        console.warn(
+            '[OOB] Added data-barba="wrapper" to <body>. Set permanently in Webflow: Body → Custom attributes → data-barba = wrapper (see BARBA-OSMO.md).'
+        );
+    }
+
+    ensureBarbaWrapper();
+    scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document);
+
     barba.hooks.beforeLeave((data) => {
         if (data?.current?.container) {
             revertButton065(data.current.container);
@@ -585,49 +599,56 @@ console.log('[OOB] Script loaded v2.5.0');
         if (hasScrollTrigger) ScrollTrigger.refresh();
     });
 
-    barba.init({
-        debug: false, // set true while debugging Barba in oob.js
-        timeout: 7000,
-        preventRunning: true,
-        transitions: [
-            {
-                name: 'default',
-                sync: true,
+    try {
+        barba.init({
+            debug: false, // set true while debugging Barba in oob.js
+            timeout: 7000,
+            preventRunning: true,
+            transitions: [
+                {
+                    name: 'default',
+                    sync: true,
 
-                async once(data) {
-                    initOnceFunctions();
-                    const container = data.next.container;
-                    if (isHomeContainer(container)) {
-                        await runHomeClipPathPreloader(container);
-                    } else {
-                        await runPageOnceAnimation(container);
-                    }
-                    refreshBelieveScroll(container);
-                    if (!container.querySelector(BELIEVE_SELECTOR)) {
-                        refreshFooterLogotypeScroll();
-                    }
-                    scheduleDisplayReadTime(container);
-                    syncNavActiveFromContainer(container);
-                    refreshNavHighlightBlob();
-                    if (hasScrollTrigger) ScrollTrigger.refresh();
+                    async once(data) {
+                        initOnceFunctions();
+                        const container = data.next.container;
+                        if (isHomeContainer(container)) {
+                            await runHomeClipPathPreloader(container);
+                        } else {
+                            await runPageOnceAnimation(container);
+                        }
+                        refreshBelieveScroll(container);
+                        if (!container.querySelector(BELIEVE_SELECTOR)) {
+                            refreshFooterLogotypeScroll();
+                        }
+                        scheduleDisplayReadTime(container);
+                        syncNavActiveFromContainer(container);
+                        refreshNavHighlightBlob();
+                        if (hasScrollTrigger) ScrollTrigger.refresh();
+                    },
+
+                    async leave(data) {
+                        return runPageLeaveAnimation(data.current.container, data.next.container);
+                    },
+
+                    async enter(data) {
+                        return runPageEnterAnimation(data.next.container);
+                    },
                 },
+            ],
+        });
 
-                async leave(data) {
-                    return runPageLeaveAnimation(data.current.container, data.next.container);
-                },
+        if (isHomeFirstPaint() && !rmMQ.matches) {
+            document.documentElement.classList.add('is-preloader-pending');
+        }
 
-                async enter(data) {
-                    return runPageEnterAnimation(data.next.container);
-                },
-            },
-        ],
-    });
-
-    if (isHomeFirstPaint() && !rmMQ.matches) {
-        document.documentElement.classList.add('is-preloader-pending');
+        console.log('[OOB] Barba initialized (overlapping parallax)');
+    } catch (err) {
+        console.error('[OOB] Barba init failed — check data-barba="wrapper" on Body.', err);
+        initOnceFunctions();
+        scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document);
     }
 
-    console.log('[OOB] Barba initialized (overlapping parallax)');
     checkBarbaDom();
     scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document);
     window.addEventListener(
