@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.5 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.6 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.5');
+console.log('[OOB] Script loaded v2.5.6');
 
 (function () {
     'use strict';
@@ -549,6 +549,34 @@ console.log('[OOB] Script loaded v2.5.5');
         });
     }
 
+    function coverTransitionOverlay(transitionWrap, transitionDark) {
+        if (!transitionWrap || !transitionDark) return false;
+        gsap.set(transitionWrap, { zIndex: 2 });
+        gsap.set(transitionDark, { autoAlpha: 0.85 });
+        return true;
+    }
+
+    function scrollToTopDeferred() {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => scrollToTop(true));
+        });
+    }
+
+    function runPageLeaveCleanup(current) {
+        if (current) revertButton065(current);
+        revertFooterLogotypeScroll(document);
+        revertBelieveScroll(current);
+    }
+
+    function beginMaskedPageLeave(current, transitionWrap, transitionDark) {
+        if (coverTransitionOverlay(transitionWrap, transitionDark)) {
+            scrollToTopDeferred();
+        } else {
+            scrollToTop(true);
+        }
+        runPageLeaveCleanup(current);
+    }
+
     function runPageLeaveAnimation(current, next) {
         const transitionWrap = document.querySelector('[data-transition-wrap]');
         const transitionDark = transitionWrap?.querySelector('[data-transition-dark]');
@@ -562,26 +590,18 @@ console.log('[OOB] Script loaded v2.5.5');
         CustomEase.create('parallax', '0.7, 0.05, 0.13, 1');
 
         if (reducedMotion) {
-            tl.call(() => scrollToTop(true), null, 0);
+            tl.call(() => beginMaskedPageLeave(current, transitionWrap, transitionDark), null, 0);
             return tl.set(current, { autoAlpha: 0 });
         }
 
         if (!transitionWrap || !transitionDark) {
             console.warn('[OOB] Missing [data-transition-wrap] or [data-transition-dark]');
-            tl.call(() => scrollToTop(true), null, 0);
+            tl.call(() => beginMaskedPageLeave(current, null, null), null, 0);
             return tl.to(current, { autoAlpha: 0, duration: 0.4 });
         }
 
-        // Reset scroll under the transition overlay (avoids visible snap on the outgoing page)
-        tl.call(() => scrollToTop(true), null, 0);
-        tl.set(transitionWrap, { zIndex: 2 });
-
-        tl.fromTo(
-            transitionDark,
-            { autoAlpha: 0 },
-            { autoAlpha: 0.8, duration: 1.2, ease: 'parallax' },
-            0
-        );
+        // Cover viewport first, then reset scroll (overlay was fading from 0 — scroll was visible)
+        tl.call(() => beginMaskedPageLeave(current, transitionWrap, transitionDark), null, 0);
 
         tl.fromTo(
             current,
@@ -607,6 +627,8 @@ console.log('[OOB] Script loaded v2.5.5');
 
         tl.add('startEnter', 0);
         tl.set(next, { zIndex: 3 });
+        // New page starts below viewport — safe moment to reset scroll if leave mask missed
+        tl.call(scrollToTopDeferred, null, 0);
         tl.fromTo(
             next,
             { y: '100vh' },
@@ -639,14 +661,6 @@ console.log('[OOB] Script loaded v2.5.5');
     ensureBarbaWrapper();
     scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
 
-    barba.hooks.beforeLeave((data) => {
-        if (data?.current?.container) {
-            revertButton065(data.current.container);
-            revertFooterLogotypeScroll(document);
-            revertBelieveScroll(data.current.container);
-        }
-    });
-
     barba.hooks.beforeEnter((data) => {
         gsap.set(data.next.container, {
             position: 'fixed',
@@ -677,7 +691,7 @@ console.log('[OOB] Script loaded v2.5.5');
             lenis.start();
         }
         if (hasScrollTrigger) ScrollTrigger.refresh();
-        scrollToTop(true);
+        scrollToTopDeferred();
     });
 
     try {
