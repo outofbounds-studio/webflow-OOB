@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.1 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.2 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.1');
+console.log('[OOB] Script loaded v2.5.2');
 
 (function () {
     'use strict';
@@ -63,6 +63,8 @@ console.log('[OOB] Script loaded v2.5.1');
                 const forms = Webflow.require('forms');
                 if (forms && typeof forms.ready === 'function') forms.ready();
             }
+            const container = document.querySelector('[data-barba="container"]') || document;
+            scheduleDisplayReadTimeAfterWebflow(container);
         } catch (err) {
             console.warn('[OOB] Webflow reinit error', err);
         }
@@ -84,7 +86,7 @@ console.log('[OOB] Script loaded v2.5.1');
         scheduleButton065(document);
         initCopyButtons(document);
         initDynamicCurrentYear(document);
-        scheduleDisplayReadTime(document);
+        scheduleDisplayReadTimeAfterWebflow(document);
         // Footer logotype + ScrollTrigger init after once animation (see barba once)
     }
 
@@ -103,7 +105,7 @@ console.log('[OOB] Script loaded v2.5.1');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
-        scheduleDisplayReadTime(nextPage);
+        scheduleDisplayReadTimeAfterWebflow(nextPage);
         refreshBelieveScroll(nextPage);
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
@@ -557,7 +559,7 @@ console.log('[OOB] Script loaded v2.5.1');
     }
 
     ensureBarbaWrapper();
-    scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document);
+    scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
 
     barba.hooks.beforeLeave((data) => {
         if (data?.current?.container) {
@@ -622,6 +624,8 @@ console.log('[OOB] Script loaded v2.5.1');
                             refreshFooterLogotypeScroll();
                         }
                         scheduleDisplayReadTime(container);
+                        // Cold load / refresh: Webflow IX can restore Designer placeholder after once
+                        scheduleDisplayReadTimeAfterWebflow(container);
                         syncNavActiveFromContainer(container);
                         refreshNavHighlightBlob();
                         if (hasScrollTrigger) ScrollTrigger.refresh();
@@ -646,14 +650,17 @@ console.log('[OOB] Script loaded v2.5.1');
     } catch (err) {
         console.error('[OOB] Barba init failed — check data-barba="wrapper" on Body.', err);
         initOnceFunctions();
-        scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document);
+        scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
     }
 
     checkBarbaDom();
-    scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document);
+    scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
     window.addEventListener(
         'load',
-        () => scheduleDisplayReadTime(document.querySelector('[data-barba="container"]') || document),
+        () =>
+            scheduleDisplayReadTimeAfterWebflow(
+                document.querySelector('[data-barba="container"]') || document
+            ),
         { once: true }
     );
 
@@ -1222,8 +1229,20 @@ console.log('[OOB] Script loaded v2.5.1');
         };
         run();
         requestAnimationFrame(() => requestAnimationFrame(run));
-        window.setTimeout(run, 50);
-        window.setTimeout(run, 250);
+        [50, 250, 500, 1000, 2000].forEach((ms) => window.setTimeout(run, ms));
+    }
+
+    /** Run after Webflow interaction init (fixes cold load / hard refresh on CMS templates). */
+    function scheduleDisplayReadTimeAfterWebflow(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const run = () => {
+            if (!scope.querySelector('[data-read-time-article]')) return;
+            initDisplayReadTime(scope);
+        };
+        if (typeof Webflow !== 'undefined' && typeof Webflow.push === 'function') {
+            Webflow.push(run);
+        }
+        scheduleDisplayReadTime(scope);
     }
 
     // -----------------------------------------
