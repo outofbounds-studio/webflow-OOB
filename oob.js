@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.5 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.6 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.5');
+console.log('[OOB] Script loaded v2.4.6');
 
 (function () {
     'use strict';
@@ -1308,9 +1308,9 @@ console.log('[OOB] Script loaded v2.4.5');
         updateBelieveCounter(wrap, activeIndex, slides.length);
     }
 
-    function setBelieveLineInitialState(lines, belowMask) {
+    function setBelieveLineInitialState(lines, hiddenBelowMask) {
         if (!lines?.length) return;
-        gsap.set(lines, { yPercent: belowMask ? 110 : 0, opacity: 1 });
+        gsap.set(lines, { yPercent: hiddenBelowMask ? 110 : 0, opacity: 1 });
     }
 
     function getBelieveTargetIndex(progress, count) {
@@ -1357,13 +1357,6 @@ console.log('[OOB] Script loaded v2.4.5');
         wrap._oobBelieveAnimTl = tl;
     }
 
-    function playBelieveInitialReveal(wrap, lines, onComplete) {
-        wrap._oobBelieveAnimTl?.kill();
-        gsap.set(lines, { yPercent: 110, opacity: 1 });
-        wrap._oobBelieveAnimTl = gsap.timeline({ onComplete });
-        wrap._oobBelieveAnimTl.to(lines, BELIEVE_LINE_IN, 0);
-    }
-
     function playBelieveReduceTransition(wrap, slides, toIndex) {
         wrap._oobBelieveAnimTl?.kill();
 
@@ -1401,7 +1394,6 @@ console.log('[OOB] Script loaded v2.4.5');
             currentIndex: 0,
             isAnimating: false,
             pendingIndex: null,
-            hasInitialReveal: false,
         };
         wrap._oobBelieveState = state;
 
@@ -1411,7 +1403,8 @@ console.log('[OOB] Script loaded v2.4.5');
                 autoAlpha: i === 0 ? 1 : 0,
                 pointerEvents: i === 0 ? 'auto' : 'none',
             });
-            setBelieveLineInitialState(lines, true);
+            // Statement 1 visible on load; others wait below mask for scroll step
+            setBelieveLineInitialState(lines, i !== 0);
         });
         setBelieveSlideState(wrap, slides, 0);
 
@@ -1439,18 +1432,6 @@ console.log('[OOB] Script loaded v2.4.5');
 
         wrap._oobBelieveProcessQueue = processQueue;
 
-        const runInitialReveal = () => {
-            if (state.hasInitialReveal || isReduce) return;
-            const lines = slides[0].getLines();
-            if (!lines.length) return;
-            state.hasInitialReveal = true;
-            state.isAnimating = true;
-            playBelieveInitialReveal(wrap, lines, () => {
-                state.isAnimating = false;
-                processQueue();
-            });
-        };
-
         wrap._oobBelievePinST = ScrollTrigger.create({
             trigger: wrap,
             start: 'top top',
@@ -1468,8 +1449,6 @@ console.log('[OOB] Script loaded v2.4.5');
                           ease: 'power2.inOut',
                       }
                     : false,
-            onEnter: runInitialReveal,
-            onEnterBack: runInitialReveal,
             onUpdate(self) {
                 requestStep(getBelieveTargetIndex(self.progress, slides.length));
             },
@@ -1507,7 +1486,7 @@ console.log('[OOB] Script loaded v2.4.5');
                         onSplit(self) {
                             const lines = self.lines || [];
                             if (!wrap._oobBelievePinST) {
-                                setBelieveLineInitialState(lines, true);
+                                setBelieveLineInitialState(lines, slide.slideIndex !== 0);
                             }
                             scheduleTimelineBuild();
                         },
@@ -1515,7 +1494,7 @@ console.log('[OOB] Script loaded v2.4.5');
                     slide.splitInstances.push(split);
                     wrap._oobBelieveSplits.push(split);
                     if (split.lines?.length) {
-                        setBelieveLineInitialState(split.lines, true);
+                        setBelieveLineInitialState(split.lines, slide.slideIndex !== 0);
                         scheduleTimelineBuild();
                     }
                     return;
@@ -1527,7 +1506,7 @@ console.log('[OOB] Script loaded v2.4.5');
                 });
                 slide.splitInstances.push(split);
                 wrap._oobBelieveSplits.push(split);
-                setBelieveLineInitialState(split.lines || [], true);
+                setBelieveLineInitialState(split.lines || [], slide.slideIndex !== 0);
                 scheduleTimelineBuild();
             });
         });
