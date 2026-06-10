@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.4.8 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.4.9 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.4.8');
+console.log('[OOB] Script loaded v2.4.9');
 
 (function () {
     'use strict';
@@ -84,6 +84,7 @@ console.log('[OOB] Script loaded v2.4.8');
         scheduleButton065(document);
         initCopyButtons(document);
         initDynamicCurrentYear(document);
+        if (document.querySelector('[data-read-time-article]')) initDisplayReadTime(document);
         // Footer logotype + ScrollTrigger init after once animation (see barba once)
     }
 
@@ -1146,24 +1147,36 @@ console.log('[OOB] Script loaded v2.4.8');
 
     const READ_TIME_WPM = 200;
 
+    function getReadTimeMatchValue(el, attr) {
+        const raw = el.getAttribute(attr);
+        if (!raw) return null;
+        const trimmed = raw.trim();
+        if (!trimmed || trimmed === 'true' || trimmed === attr) return null;
+        return trimmed;
+    }
+
     function initDisplayReadTime(root = document) {
         const scope = root?.querySelectorAll ? root : document;
         const articles = scope.querySelectorAll('[data-read-time-article]');
         if (!articles.length) return;
 
+        const allTargets = Array.from(scope.querySelectorAll('[data-read-time-target]'));
+
         articles.forEach((article, index) => {
-            const matchValue = article.getAttribute('data-read-time-article');
+            const matchValue = getReadTimeMatchValue(article, 'data-read-time-article');
             const wordCount = article.textContent.trim().split(/\s+/).filter(Boolean).length;
             const minutes = Math.max(1, Math.ceil(wordCount / READ_TIME_WPM));
 
-            let targets;
+            let targets = [];
             if (matchValue) {
-                targets = scope.querySelectorAll(`[data-read-time-target="${matchValue}"]`);
-            } else {
-                const emptyTargets = scope.querySelectorAll(
-                    '[data-read-time-target=""], [data-read-time-target]:not([data-read-time-target*="-"])'
+                targets = allTargets.filter(
+                    (target) => getReadTimeMatchValue(target, 'data-read-time-target') === matchValue
                 );
-                targets = emptyTargets[index] ? [emptyTargets[index]] : [];
+            }
+            if (!targets.length && allTargets[index]) {
+                targets = [allTargets[index]];
+            } else if (!targets.length && articles.length === 1 && allTargets.length === 1) {
+                targets = [allTargets[0]];
             }
 
             targets.forEach((target) => {
