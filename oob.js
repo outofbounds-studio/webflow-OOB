@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.9 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.9');
+console.log('[OOB] Script loaded v2.6.0');
 
 (function () {
     'use strict';
@@ -1252,11 +1252,11 @@ console.log('[OOB] Script loaded v2.5.9');
     // -----------------------------------------
     // THINKING POST — scroll progress bar (article template)
     // Webflow: data-read-time-article on .post-body (or data-post-scroll-article)
-    // 100% when post body bottom reaches 50vh; bar injected outside container if missing
+    // 0% at page top; 100% when post body bottom reaches 80vh
     // -----------------------------------------
 
     const POST_SCROLL_PROGRESS_SELECTOR = '[data-post-scroll-progress]';
-    const POST_SCROLL_PROGRESS_END = 0.5;
+    const POST_SCROLL_PROGRESS_END = 0.8;
 
     let postScrollProgressState = null;
 
@@ -1291,20 +1291,31 @@ console.log('[OOB] Script loaded v2.5.9');
         return progress;
     }
 
+    function getScrollY() {
+        if (lenis && typeof lenis.scroll === 'number') return lenis.scroll;
+        return window.scrollY || 0;
+    }
+
     function updatePostScrollProgress() {
         const state = postScrollProgressState;
         if (!state?.article || !state?.fill) return;
 
+        const scrollY = getScrollY();
+        if (scrollY <= 0) {
+            state.fill.style.width = '0%';
+            return;
+        }
+
         const rect = state.article.getBoundingClientRect();
-        const height = rect.height;
         const endY = window.innerHeight * POST_SCROLL_PROGRESS_END;
-        const range = height - endY;
+        const bottomAtTop = rect.bottom + scrollY;
+        const scrollEnd = bottomAtTop - endY;
 
         let progress = 0;
-        if (range <= 1) {
+        if (scrollEnd <= 1) {
             progress = rect.bottom <= endY ? 1 : 0;
         } else {
-            progress = clamp01(-rect.top / range);
+            progress = clamp01(scrollY / scrollEnd);
         }
 
         state.fill.style.width = `${progress * 100}%`;
