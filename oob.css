@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.5 */
+/* Version: 1.4.6 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -794,8 +794,8 @@ a[data-copy-url]:focus-visible {
 .post-body.w-richtext h2:not(:first-child),
 .post-body .w-richtext h2:not(:first-child),
 .post-body h2:not(:first-child) {
-  margin-top: 1em;
-  padding-top: 3em;
+  margin-top: 7.5em;
+  padding-top: 1em;
   border-top: 1px solid rgba(248, 244, 244, 0.3);
 }
 
@@ -804,6 +804,6 @@ a[data-copy-url]:focus-visible {
 .post-body hr {
   border: none;
   height: 1px;
-  margin: 3em 0;
+  margin: 7.5em 0 1em;
   background-color: rgba(248, 244, 244, 0.3);
 }
