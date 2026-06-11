@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.5.4 */
+/* Version: 1.5.5 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -833,4 +833,50 @@ a[data-copy-url]:focus-visible {
   width: 0%;
   background-color: #ff4802;
   will-change: width;
+}
+
+/* ── Live Form Validation Advanced (Osmo) ── */
+/* Validation state only — form layout lives in Webflow */
+
+[data-validate].is--error input,
+[data-validate].is--error textarea,
+[data-validate].is--error select {
+  border-color: #ff4802;
+}
+
+[data-validate].is--error .form-field-icon.is--error,
+[data-validate].is--error .radiocheck-field-icon.is--error {
+  opacity: 1;
+}
+
+[data-validate].is--success .form-field-icon.is--success,
+[data-validate].is--success .radiocheck-field-icon.is--success {
+  opacity: 1;
+}
+
+[data-form-validate] .radiocheck-field input:focus-visible ~ .radiocheck-custom {
+  background-color: #d0cfcd;
+  color: #e2e1df;
+}
+
+[data-form-validate] .radiocheck-field input:focus-visible:checked ~ .radiocheck-custom,
+[data-form-validate] .radiocheck-field input:checked ~ .radiocheck-custom {
+  background-color: #131313;
+  color: #efeeec;
+}
+
+[data-form-validate] .radiocheck-field .radiocheck-label.is--small {
+  margin-top: 0.125em;
+}
+
+[data-validate].is--error .radiocheck-custom {
+  border-color: #ff4802;
+}
+
+[data-validate].is--error input:checked ~ .radiocheck-custom {
+  border-color: #131313;
+}
+
+[data-form-validate] select:has(option[value=""]:checked) {
+  color: rgba(19, 19, 19, 0.3);
 }

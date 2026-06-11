@@ -380,6 +380,19 @@ Workflow: edit `oob.js` → push `main` → Pages deploy → hard refresh Webflo
 
 Set `debug: true` in `barba.init` inside `oob.js` while debugging transitions.
 
+### Live Form Validation (Advanced)
+
+Osmo resource wired in `oob.js` / `oob.css` (v2.6.4+). Re-inits on Barba `once` / `afterEnter`; reverts on `afterLeave`.
+
+| Webflow attribute | Where |
+|-------------------|--------|
+| `data-form-validate` | Form block wrapper (parent of `<form>`) |
+| `data-validate` | Each field group (label + input/textarea/select) |
+| `data-submit` | Custom submit button wrapper (contains hidden `input[type="submit"]`) |
+| `data-radiocheck-group` | Radio/checkbox group container (`min` / `max` optional) |
+
+Add success/error icon elements per Osmo structure (`.form-field-icon`, `.radiocheck-field-icon`). Classes `.is--error`, `.is--success`, `.is--filled` are toggled by JS.
+
 ---
 
 ## Verify

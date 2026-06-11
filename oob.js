@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.3');
+console.log('[OOB] Script loaded v2.6.4');
 
 (function () {
     'use strict';
@@ -179,6 +179,7 @@ console.log('[OOB] Script loaded v2.6.3');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
+        refreshAdvancedFormValidation(nextPage);
         scheduleDisplayReadTimeAfterWebflow(nextPage);
         refreshPostScrollProgress(nextPage);
         refreshBelieveScroll(nextPage);
@@ -656,6 +657,7 @@ console.log('[OOB] Script loaded v2.6.3');
             revertButton065(current);
             revertBelieveScroll(current);
             revertFooterLogotypeScroll(current);
+            revertAdvancedFormValidation(current);
         }
         revertPostScrollProgress();
         if (hasScrollTrigger) ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
@@ -699,6 +701,7 @@ console.log('[OOB] Script loaded v2.6.3');
                             refreshFooterLogotypeScroll();
                         }
                         scheduleDisplayReadTime(container);
+                        refreshAdvancedFormValidation(container);
                         // Cold load / refresh: Webflow IX can restore Designer placeholder after once
                         scheduleDisplayReadTimeAfterWebflow(container);
                         refreshPostScrollProgress(container);
@@ -1247,6 +1250,291 @@ console.log('[OOB] Script loaded v2.6.3');
         root.querySelectorAll('[data-current-year]').forEach((el) => {
             el.textContent = String(year);
         });
+    }
+
+    // -----------------------------------------
+    // FORMS — Live Form Validation Advanced (Osmo resource)
+    // Webflow: data-form-validate on wrapper, data-validate on field groups, data-submit on button wrap
+    // -----------------------------------------
+
+    const FORM_VALIDATE_CLEANUPS = new WeakMap();
+    const FORM_VALIDATE_SPAM_MS = 5000;
+    const FORM_VALIDATE_INVALID_SELECT_VALUES = new Set(['', 'disabled', 'null', 'false']);
+
+    function isAdvancedFormFieldValid(fieldGroup) {
+        const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+        if (radioCheckGroup) {
+            const inputs = radioCheckGroup.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+            const checkedInputs = radioCheckGroup.querySelectorAll('input:checked');
+            const min = parseInt(radioCheckGroup.getAttribute('min'), 10) || 1;
+            const max = parseInt(radioCheckGroup.getAttribute('max'), 10) || inputs.length;
+
+            if (inputs[0]?.type === 'radio') return checkedInputs.length >= 1;
+            if (inputs.length === 1) return inputs[0].checked;
+            return checkedInputs.length >= min && checkedInputs.length <= max;
+        }
+
+        const input = fieldGroup.querySelector('input, textarea, select');
+        if (!input) return false;
+
+        const min = parseInt(input.getAttribute('min'), 10) || 0;
+        const max = parseInt(input.getAttribute('max'), 10) || Infinity;
+        const value = input.value.trim();
+        const length = value.length;
+
+        if (input.tagName.toLowerCase() === 'select') {
+            return !FORM_VALIDATE_INVALID_SELECT_VALUES.has(value);
+        }
+        if (input.type === 'email') {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        }
+        if (input.hasAttribute('min') && length < min) return false;
+        if (input.hasAttribute('max') && length > max) return false;
+        return true;
+    }
+
+    function updateAdvancedFormFieldStatus(fieldGroup) {
+        const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+        if (radioCheckGroup) {
+            const inputs = radioCheckGroup.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+            const checkedInputs = radioCheckGroup.querySelectorAll('input:checked');
+
+            fieldGroup.classList.toggle('is--filled', checkedInputs.length > 0);
+
+            const valid = isAdvancedFormFieldValid(fieldGroup);
+            if (valid) {
+                fieldGroup.classList.add('is--success');
+                fieldGroup.classList.remove('is--error');
+                return;
+            }
+
+            fieldGroup.classList.remove('is--success');
+            const started = Array.from(inputs).some((input) => input.__validationStarted);
+            fieldGroup.classList.toggle('is--error', started);
+            return;
+        }
+
+        const input = fieldGroup.querySelector('input, textarea, select');
+        if (!input) return;
+
+        fieldGroup.classList.toggle('is--filled', !!input.value.trim());
+
+        const valid = isAdvancedFormFieldValid(fieldGroup);
+        if (valid) {
+            fieldGroup.classList.add('is--success');
+            fieldGroup.classList.remove('is--error');
+            return;
+        }
+
+        fieldGroup.classList.remove('is--success');
+        fieldGroup.classList.toggle('is--error', !!input.__validationStarted);
+    }
+
+    function bindAdvancedFormContainer(formContainer) {
+        const startTime = Date.now();
+        const cleanups = [];
+
+        const form = formContainer.querySelector('form');
+        if (!form) return null;
+
+        const validateFields = form.querySelectorAll('[data-validate]');
+        const dataSubmit = form.querySelector('[data-submit]');
+        if (!dataSubmit) return null;
+
+        const realSubmitInput = dataSubmit.querySelector('input[type="submit"]');
+        if (!realSubmitInput) return null;
+
+        const isSpam = () => Date.now() - startTime < FORM_VALIDATE_SPAM_MS;
+
+        validateFields.forEach((fieldGroup) => {
+            const select = fieldGroup.querySelector('select');
+            if (select) {
+                select.querySelectorAll('option').forEach((option) => {
+                    if (FORM_VALIDATE_INVALID_SELECT_VALUES.has(option.value)) {
+                        option.setAttribute('disabled', 'disabled');
+                    }
+                });
+            }
+        });
+
+        function validateAndStartLiveValidationForAll() {
+            let allValid = true;
+            let firstInvalidField = null;
+
+            validateFields.forEach((fieldGroup) => {
+                const input = fieldGroup.querySelector('input, textarea, select');
+                const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+                if (!input && !radioCheckGroup) return;
+
+                if (input) input.__validationStarted = true;
+                if (radioCheckGroup) {
+                    radioCheckGroup.__validationStarted = true;
+                    radioCheckGroup.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((el) => {
+                        el.__validationStarted = true;
+                    });
+                }
+
+                updateAdvancedFormFieldStatus(fieldGroup);
+
+                if (!isAdvancedFormFieldValid(fieldGroup)) {
+                    allValid = false;
+                    if (!firstInvalidField) {
+                        firstInvalidField =
+                            input || radioCheckGroup.querySelector('input[type="radio"], input[type="checkbox"]');
+                    }
+                }
+            });
+
+            if (!allValid && firstInvalidField) firstInvalidField.focus();
+            return allValid;
+        }
+
+        function trySubmit() {
+            if (!validateAndStartLiveValidationForAll()) return;
+            if (isSpam()) {
+                window.alert('Form submitted too quickly. Please try again.');
+                return;
+            }
+            realSubmitInput.click();
+        }
+
+        validateFields.forEach((fieldGroup) => {
+            const input = fieldGroup.querySelector('input, textarea, select');
+            const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+
+            if (radioCheckGroup) {
+                radioCheckGroup.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((radioInput) => {
+                    radioInput.__validationStarted = false;
+
+                    const onChange = () => {
+                        requestAnimationFrame(() => {
+                            if (!radioInput.__validationStarted) {
+                                const checkedCount = radioCheckGroup.querySelectorAll('input:checked').length;
+                                const min = parseInt(radioCheckGroup.getAttribute('min'), 10) || 1;
+                                if (checkedCount >= min) radioInput.__validationStarted = true;
+                            }
+                            if (radioInput.__validationStarted) updateAdvancedFormFieldStatus(fieldGroup);
+                        });
+                    };
+                    const onBlur = () => {
+                        radioInput.__validationStarted = true;
+                        updateAdvancedFormFieldStatus(fieldGroup);
+                    };
+
+                    radioInput.addEventListener('change', onChange);
+                    radioInput.addEventListener('blur', onBlur);
+                    cleanups.push(() => {
+                        radioInput.removeEventListener('change', onChange);
+                        radioInput.removeEventListener('blur', onBlur);
+                        delete radioInput.__validationStarted;
+                    });
+                });
+            } else if (input) {
+                input.__validationStarted = false;
+
+                if (input.tagName.toLowerCase() === 'select') {
+                    const onChange = () => {
+                        input.__validationStarted = true;
+                        updateAdvancedFormFieldStatus(fieldGroup);
+                    };
+                    input.addEventListener('change', onChange);
+                    cleanups.push(() => {
+                        input.removeEventListener('change', onChange);
+                        delete input.__validationStarted;
+                    });
+                } else {
+                    const onInput = () => {
+                        const value = input.value.trim();
+                        const length = value.length;
+                        const min = parseInt(input.getAttribute('min'), 10) || 0;
+                        const max = parseInt(input.getAttribute('max'), 10) || Infinity;
+
+                        if (!input.__validationStarted) {
+                            if (input.type === 'email') {
+                                if (isAdvancedFormFieldValid(fieldGroup)) input.__validationStarted = true;
+                            } else if (
+                                (input.hasAttribute('min') && length >= min) ||
+                                (input.hasAttribute('max') && length <= max)
+                            ) {
+                                input.__validationStarted = true;
+                            }
+                        }
+
+                        if (input.__validationStarted) updateAdvancedFormFieldStatus(fieldGroup);
+                    };
+                    const onBlur = () => {
+                        input.__validationStarted = true;
+                        updateAdvancedFormFieldStatus(fieldGroup);
+                    };
+
+                    input.addEventListener('input', onInput);
+                    input.addEventListener('blur', onBlur);
+                    cleanups.push(() => {
+                        input.removeEventListener('input', onInput);
+                        input.removeEventListener('blur', onBlur);
+                        delete input.__validationStarted;
+                    });
+                }
+            }
+        });
+
+        const onSubmitClick = () => trySubmit();
+        const onKeydown = (event) => {
+            if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
+                event.preventDefault();
+                trySubmit();
+            }
+        };
+
+        dataSubmit.addEventListener('click', onSubmitClick);
+        form.addEventListener('keydown', onKeydown);
+        cleanups.push(() => {
+            dataSubmit.removeEventListener('click', onSubmitClick);
+            form.removeEventListener('keydown', onKeydown);
+        });
+
+        cleanups.push(() => {
+            validateFields.forEach((fieldGroup) => {
+                fieldGroup.classList.remove('is--error', 'is--success', 'is--filled');
+            });
+        });
+
+        return () => cleanups.forEach((fn) => fn());
+    }
+
+    function initAdvancedFormValidation(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const forms = scope.querySelectorAll('[data-form-validate]');
+        if (!forms.length) return;
+
+        let bound = 0;
+        forms.forEach((formContainer) => {
+            if (formContainer.dataset.oobFormValidateInit === 'true') return;
+
+            const cleanup = bindAdvancedFormContainer(formContainer);
+            if (!cleanup) return;
+
+            FORM_VALIDATE_CLEANUPS.set(formContainer, cleanup);
+            formContainer.dataset.oobFormValidateInit = 'true';
+            bound += 1;
+        });
+
+        if (bound) console.log('[OOB] Advanced form validation initialized', { forms: bound });
+    }
+
+    function revertAdvancedFormValidation(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        scope.querySelectorAll('[data-form-validate]').forEach((formContainer) => {
+            const cleanup = FORM_VALIDATE_CLEANUPS.get(formContainer);
+            if (cleanup) cleanup();
+            FORM_VALIDATE_CLEANUPS.delete(formContainer);
+            delete formContainer.dataset.oobFormValidateInit;
+        });
+    }
+
+    function refreshAdvancedFormValidation(root = document) {
+        revertAdvancedFormValidation(root);
+        initAdvancedFormValidation(root);
     }
 
     // -----------------------------------------
