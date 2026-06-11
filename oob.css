@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.6 */
+/* Version: 1.4.7 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -791,11 +791,12 @@ a[data-copy-url]:focus-visible {
 /* ── Blog post body (Rich Text) — section dividers ── */
 /* Webflow: class post-body on Post Body Rich Text element */
 
+/* em on h2 uses heading font-size (~2× body) — use --size-font so 7.5× ≈ 120px at 1440 */
 .post-body.w-richtext h2:not(:first-child),
 .post-body .w-richtext h2:not(:first-child),
 .post-body h2:not(:first-child) {
-  margin-top: 7.5em;
-  padding-top: 1em;
+  margin-top: calc(7.5 * var(--size-font));
+  padding-top: calc(1 * var(--size-font));
   border-top: 1px solid rgba(248, 244, 244, 0.3);
 }
 
@@ -804,6 +805,6 @@ a[data-copy-url]:focus-visible {
 .post-body hr {
   border: none;
   height: 1px;
-  margin: 7.5em 0 1em;
+  margin: calc(7.5 * var(--size-font)) 0 calc(1 * var(--size-font));
   background-color: rgba(248, 244, 244, 0.3);
 }
