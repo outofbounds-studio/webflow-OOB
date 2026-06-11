@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.1 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.2 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.1');
+console.log('[OOB] Script loaded v2.6.2');
 
 (function () {
     'use strict';
@@ -1252,11 +1252,11 @@ console.log('[OOB] Script loaded v2.6.1');
     // -----------------------------------------
     // THINKING POST — scroll progress bar (article template)
     // Webflow: data-read-time-article on .post-body (or data-post-scroll-article)
-    // 0% at page top; 100% when post body bottom reaches 20vh
+    // 0% at page top; 100% when post body bottom reaches 30vh
     // -----------------------------------------
 
     const POST_SCROLL_PROGRESS_SELECTOR = '[data-post-scroll-progress]';
-    const POST_SCROLL_PROGRESS_END = 0.2;
+    const POST_SCROLL_PROGRESS_END = 0.3;
 
     let postScrollProgressState = null;
 
