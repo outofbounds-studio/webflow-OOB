@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.5.8 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.5.9 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.5.8');
+console.log('[OOB] Script loaded v2.5.9');
 
 (function () {
     'use strict';
@@ -180,6 +180,7 @@ console.log('[OOB] Script loaded v2.5.8');
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
         scheduleDisplayReadTimeAfterWebflow(nextPage);
+        refreshPostScrollProgress(nextPage);
         refreshBelieveScroll(nextPage);
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
@@ -656,6 +657,7 @@ console.log('[OOB] Script loaded v2.5.8');
             revertBelieveScroll(current);
             revertFooterLogotypeScroll(current);
         }
+        revertPostScrollProgress();
         if (hasScrollTrigger) ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     });
 
@@ -699,6 +701,7 @@ console.log('[OOB] Script loaded v2.5.8');
                         scheduleDisplayReadTime(container);
                         // Cold load / refresh: Webflow IX can restore Designer placeholder after once
                         scheduleDisplayReadTimeAfterWebflow(container);
+                        refreshPostScrollProgress(container);
                         syncNavActiveFromContainer(container);
                         refreshNavHighlightBlob();
                         if (hasScrollTrigger) ScrollTrigger.refresh();
@@ -1244,6 +1247,112 @@ console.log('[OOB] Script loaded v2.5.8');
         root.querySelectorAll('[data-current-year]').forEach((el) => {
             el.textContent = String(year);
         });
+    }
+
+    // -----------------------------------------
+    // THINKING POST — scroll progress bar (article template)
+    // Webflow: data-read-time-article on .post-body (or data-post-scroll-article)
+    // 100% when post body bottom reaches 50vh; bar injected outside container if missing
+    // -----------------------------------------
+
+    const POST_SCROLL_PROGRESS_SELECTOR = '[data-post-scroll-progress]';
+    const POST_SCROLL_PROGRESS_END = 0.5;
+
+    let postScrollProgressState = null;
+
+    function clamp01(value) {
+        return Math.min(1, Math.max(0, value));
+    }
+
+    function getPostScrollArticle(scope) {
+        return (
+            scope.querySelector('[data-post-scroll-article]') ||
+            scope.querySelector('[data-read-time-article]') ||
+            scope.querySelector('.post-body')
+        );
+    }
+
+    function ensurePostScrollProgressMarkup() {
+        let progress = document.querySelector(POST_SCROLL_PROGRESS_SELECTOR);
+        if (progress) return progress;
+
+        progress = document.createElement('div');
+        progress.setAttribute('data-post-scroll-progress', '');
+        progress.setAttribute('aria-hidden', 'true');
+        progress.hidden = true;
+        progress.innerHTML = '<div data-post-scroll-progress-fill></div>';
+
+        const wrapper = document.querySelector('[data-barba="wrapper"]') || document.body;
+        wrapper.insertBefore(progress, wrapper.firstChild);
+
+        console.warn(
+            '[OOB] [data-post-scroll-progress] was missing — injected by oob.js. Add outside [data-barba="container"] on the site template (see BARBA-OSMO.md).'
+        );
+        return progress;
+    }
+
+    function updatePostScrollProgress() {
+        const state = postScrollProgressState;
+        if (!state?.article || !state?.fill) return;
+
+        const rect = state.article.getBoundingClientRect();
+        const height = rect.height;
+        const endY = window.innerHeight * POST_SCROLL_PROGRESS_END;
+        const range = height - endY;
+
+        let progress = 0;
+        if (range <= 1) {
+            progress = rect.bottom <= endY ? 1 : 0;
+        } else {
+            progress = clamp01(-rect.top / range);
+        }
+
+        state.fill.style.width = `${progress * 100}%`;
+    }
+
+    function initPostScrollProgress(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const article = getPostScrollArticle(scope);
+        if (!article) return;
+
+        revertPostScrollProgress();
+
+        const progress = ensurePostScrollProgressMarkup();
+        const fill = progress.querySelector('[data-post-scroll-progress-fill]');
+        if (!fill) return;
+
+        progress.hidden = false;
+
+        const onScroll = () => updatePostScrollProgress();
+        const onResize = () => updatePostScrollProgress();
+
+        postScrollProgressState = { article, fill, progress, onScroll, onResize };
+
+        if (lenis) lenis.on('scroll', onScroll);
+        else window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onResize, { passive: true });
+
+        updatePostScrollProgress();
+    }
+
+    function revertPostScrollProgress() {
+        if (!postScrollProgressState) return;
+
+        const { onScroll, onResize, progress, fill } = postScrollProgressState;
+
+        if (lenis) lenis.off('scroll', onScroll);
+        else window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onResize);
+
+        if (fill) fill.style.width = '0%';
+        if (progress) progress.hidden = true;
+
+        postScrollProgressState = null;
+    }
+
+    function refreshPostScrollProgress(root = document) {
+        revertPostScrollProgress();
+        initPostScrollProgress(root);
     }
 
     // -----------------------------------------

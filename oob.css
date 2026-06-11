@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.4.9 */
+/* Version: 1.5.0 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -807,4 +807,30 @@ a[data-copy-url]:focus-visible {
   height: 1px;
   margin: calc(6 * var(--size-font)) 0 calc(1 * var(--size-font));
   background-color: rgba(248, 244, 244, 0.3);
+}
+
+/* ── Thinking post — article scroll progress ── */
+/* Webflow (optional): fixed bar outside [data-barba="container"] with data-post-scroll-progress */
+
+[data-post-scroll-progress] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  height: 4px;
+  pointer-events: none;
+  background: transparent;
+}
+
+[data-post-scroll-progress][hidden] {
+  display: none;
+}
+
+[data-post-scroll-progress-fill] {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background-color: #ff4802;
+  will-change: width;
 }
