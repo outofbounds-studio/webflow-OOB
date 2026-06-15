@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.5 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.6 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.5');
+console.log('[OOB] Script loaded v2.6.6');
 
 (function () {
     'use strict';
@@ -129,9 +129,37 @@ console.log('[OOB] Script loaded v2.6.5');
     // WEBFLOW RE-INIT (MSC pattern)
     // -----------------------------------------
 
+    function cleanupCloudflareTurnstile(root = document) {
+        const turnstile = window.turnstile;
+        if (!turnstile || typeof turnstile.remove !== 'function') return;
+
+        const scope = root?.querySelectorAll ? root : document;
+        const seen = new Set();
+
+        scope.querySelectorAll('.cf-turnstile').forEach((el) => {
+            if (seen.has(el)) return;
+            seen.add(el);
+            try {
+                turnstile.remove(el);
+            } catch (_) {
+                /* widget already removed */
+            }
+        });
+    }
+
+    function scheduleFormValidationAfterWebflow(root = document, { afterWebflowReinit = false } = {}) {
+        const run = () => refreshAdvancedFormValidation(root);
+        if (afterWebflowReinit) {
+            requestAnimationFrame(() => requestAnimationFrame(run));
+        } else {
+            requestAnimationFrame(run);
+        }
+    }
+
     function reinitWebflow() {
         try {
             if (typeof Webflow === 'undefined') return;
+            cleanupCloudflareTurnstile(document);
             if (typeof Webflow.destroy === 'function') Webflow.destroy();
             if (typeof Webflow.ready === 'function') Webflow.ready();
             if (Webflow.require) {
@@ -180,7 +208,7 @@ console.log('[OOB] Script loaded v2.6.5');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
-        refreshAdvancedFormValidation(nextPage);
+        scheduleFormValidationAfterWebflow(nextPage, { afterWebflowReinit: shouldReinitWebflow });
         scheduleDisplayReadTimeAfterWebflow(nextPage);
         refreshPostScrollProgress(nextPage);
         refreshBelieveScroll(nextPage);
@@ -659,7 +687,9 @@ console.log('[OOB] Script loaded v2.6.5');
             revertBelieveScroll(current);
             revertFooterLogotypeScroll(current);
             revertAdvancedFormValidation(current);
+            cleanupCloudflareTurnstile(current);
         }
+        cleanupCloudflareTurnstile(document);
         revertPostScrollProgress();
         if (hasScrollTrigger) ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     });
