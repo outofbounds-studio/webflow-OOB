@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.3');
+console.log('[OOB] Script loaded v2.9.4');
 
 (function () {
     'use strict';
@@ -1475,9 +1475,7 @@ console.log('[OOB] Script loaded v2.9.3');
     }
 
     function getNavMenuAnimTargets(els) {
-        if (els.linkItems.length) {
-            return els.linkItems.map((item) => item.querySelector(NAV_LINK_SELECTOR) || item);
-        }
+        if (els.linkItems.length) return els.linkItems;
         return els.links;
     }
 

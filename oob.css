@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.3 */
+/* Version: 1.7.4 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -265,18 +265,28 @@ h6,
     calc(var(--nav-menu-panel-padding-bottom) + var(--nav-menu-safe-bottom));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* Menu is moved to body in oob.js — restore .nav typography (Webflow: font-family on .nav) */
+  font-family: var(--detail, inherit);
+  text-transform: uppercase;
 }
 
 [data-nav-menu-item] {
-  overflow: hidden;
+  display: flex;
+  justify-content: center;
   width: 100%;
-  text-align: center;
+  overflow: hidden;
 }
 
 [data-nav-menu-panel] .navbar_link,
 [data-nav-menu-panel] .nav-link {
   display: block;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
   font-size: var(--nav-menu-link-size);
+  font-weight: inherit;
   line-height: 1.05;
   letter-spacing: var(--nav-menu-link-kerning);
   text-align: center;
@@ -286,6 +296,8 @@ h6,
 }
 
 [data-nav-menu-panel] .nav_span {
+  display: block;
+  font-family: inherit;
   color: inherit;
   text-shadow: none;
 }
