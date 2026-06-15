@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.6.7 */
+/* Version: 1.6.8 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -305,6 +305,14 @@ h6,
   height: 14px;
 }
 
+/* Nav stacking — do not set position here; use fixed in Webflow on .nav */
+.nav,
+.navbar_wrap,
+.navbar,
+.nav-bar {
+  z-index: var(--nav-bar-z);
+}
+
 html.is-nav-menu-open {
   overflow: hidden;
 }
@@ -316,14 +324,6 @@ html.is-nav-menu-open body {
 @media screen and (max-width: 767px) {
   .nav-links-wrap {
     display: none !important;
-  }
-
-  .nav,
-  .navbar_wrap,
-  .navbar,
-  .nav-bar {
-    position: relative;
-    z-index: var(--nav-bar-z);
   }
 
   [data-oob-nav-toggle] {

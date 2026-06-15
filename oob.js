@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.7 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.8 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.7');
+console.log('[OOB] Script loaded v2.8.8');
 
 (function () {
     'use strict';
@@ -1216,12 +1216,16 @@ console.log('[OOB] Script loaded v2.8.7');
 
     const NAV_BAR_STACK_Z = 110;
 
-    /** Keep nav above Barba enter layer and [data-nav-menu] overlay (z-index 100). */
+    /** Keep nav above Barba enter layer and [data-nav-menu] overlay (z-index 100). Never override position — set fixed in Webflow. */
     function ensureNavStacking() {
         document.querySelectorAll('.nav, .navbar_wrap, .navbar, .nav-bar').forEach((navEl) => {
             const style = getComputedStyle(navEl);
             if (style.position === 'static') {
-                navEl.style.position = 'relative';
+                console.warn(
+                    '[OOB] Nav stacking: .nav needs position fixed/relative/sticky in Webflow for z-index (currently static)',
+                    navEl.className
+                );
+                return;
             }
             const current = Number(navEl.style.zIndex);
             if (!navEl.style.zIndex || current < NAV_BAR_STACK_Z) {

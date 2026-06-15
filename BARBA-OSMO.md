@@ -377,7 +377,7 @@ Set the embed or parent `color` in Webflow so `currentColor` picks up your icon 
 
 **Toggle styling:** `oob.css` does **not** set background or colours on `[data-oob-nav-toggle]`. Style `.nav-menu-open-button` in Webflow (size, background, border-radius). On init, `oob.js` moves the toggle into `.nav-bar` if it was nested elsewhere so flex layout and Webflow styles apply. `overflow: hidden` on the toggle clips icon rotation so the nav bar does not change width.
 
-**Stacking:** `.nav` / `.nav-bar` use `z-index: 110`; `[data-nav-menu]` overlay uses `100` — the nav pill stays above the menu background when open.
+**Stacking:** `.nav` / `.nav-bar` use `z-index: 110` in `oob.css`; `[data-nav-menu]` overlay uses `100`. Set **`position: fixed`** on `.nav` in Webflow — `oob.js` / `oob.css` do not override position (a previous `position: relative` rule was breaking fixed on mobile).
 
 #### Styling (Webflow + `oob.css`)
 
