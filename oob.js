@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.3');
+console.log('[OOB] Script loaded v2.8.4');
 
 (function () {
     'use strict';
@@ -1390,7 +1390,7 @@ console.log('[OOB] Script loaded v2.8.3');
         const menu = document.querySelector('[data-nav-menu]');
         if (!menu) return null;
 
-        const openBtn = document.querySelector('[data-nav-menu-open]');
+        const openBtn = document.querySelector('[data-oob-nav-toggle]');
         const toggleIcon = openBtn?.querySelector('[data-nav-menu-icon]');
 
         const panel = menu.querySelector('[data-nav-menu-panel]');
@@ -1635,7 +1635,7 @@ console.log('[OOB] Script loaded v2.8.3');
             return;
         }
         if (!els.openBtn) {
-            console.warn('[OOB] Mobile nav: missing [data-nav-menu-open] toggle button');
+            console.warn('[OOB] Mobile nav: missing [data-oob-nav-toggle] toggle');
             return;
         }
         if (!els.toggleIcon) {

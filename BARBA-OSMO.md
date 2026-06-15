@@ -107,7 +107,7 @@ body [data-barba="wrapper"]
 │   └── div.oob-preloader__shade            ← #111111 full viewport
 ├── header.navbar (Symbol — global nav, OUTSIDE container)
 │   ├── .nav-links-wrap > .nav-highlight + links (desktop)
-│   ├── [data-nav-menu-open] toggle (mobile ≤991)
+│   ├── [data-oob-nav-toggle] toggle (mobile ≤991)
 │   └── [data-nav-menu] > [data-nav-menu-bg] + [data-nav-menu-panel] (mobile overlay)
 ├── div.transition [data-transition-wrap]   ← Symbol, OUTSIDE container
 │   └── div.transition__dark [data-transition-dark]
@@ -301,7 +301,7 @@ body [data-barba="wrapper"]
 │       │   ├── .nav-highlight
 │       │   └── List (ul) > links
 │       │       └── Link.navbar_link [data-barba-namespace="work"]
-│       └── Button [data-nav-menu-open]     ← mobile/tablet only (shown ≤991)
+│       └── Div [data-oob-nav-toggle]         ← mobile/tablet only (shown ≤991)
 │           └── Div [data-nav-menu-icon]      ← GSAP rotates on open (default 45°)
 │               └── SVG (4-square grid — style in Webflow)
 │
@@ -341,7 +341,7 @@ Every link needs matching `data-barba-namespace` (same as desktop). `oob.js` syn
 | Background panel | `data-nav-menu-bg` | Solid fill — scales `scaleY` from bottom |
 | Links column | `data-nav-menu-panel` | Stacked links; `data-lenis-prevent` if scrollable |
 | Link wrapper | `data-nav-menu-item` | Optional stagger target |
-| Open toggle | `data-nav-menu-open` | `button` — style rounded square in Webflow |
+| Open toggle | `data-oob-nav-toggle` | Div or link block styled as button in Webflow |
 | Icon wrapper | `data-nav-menu-icon` | Wraps SVG; GSAP rotates to cross (default `45`°, override with `data-nav-menu-icon-rotate`) |
 | Close (optional) | `data-nav-menu-close` | Extra close control inside panel |
 
@@ -350,8 +350,9 @@ Every link needs matching `data-barba-namespace` (same as desktop). `oob.js` syn
 Style the **button** and **SVG** entirely in Designer. `oob.js` only rotates `[data-nav-menu-icon]`.
 
 ```
-Button [data-nav-menu-open]
-├── Custom attribute: data-nav-menu-open
+Div [data-oob-nav-toggle]
+├── Custom attribute: data-oob-nav-toggle
+├── role="button" tabindex="0" (if using div)
 ├── Style in Webflow: fixed size (e.g. 2.5rem × 2.5rem), dark background, border-radius, flex center
 └── Div [data-nav-menu-icon]
     ├── Custom attribute: data-nav-menu-icon
@@ -374,7 +375,7 @@ Example SVG for Webflow Embed (tune `fill` / size in Designer):
 
 Set the embed or parent `color` in Webflow so `currentColor` picks up your icon colour.
 
-**Position (nested under `.nav-menu-open`):** You do not need to move the button into `.nav-bar`. `oob.css` pins `[data-nav-menu-open]` to the nav bar corner with `position: fixed`. Set these on `:root` (or in Webflow Head) to match your floating nav pill:
+**Position (nested under `.nav-menu-open`):** You do not need to move the toggle into `.nav-bar`. `oob.css` pins `[data-oob-nav-toggle]` to the nav bar corner with `position: fixed`. Set these on `:root` (or in Webflow Head) to match your floating nav pill:
 
 | Variable | Default | Match to |
 |----------|---------|----------|
@@ -427,7 +428,7 @@ Wrap each link in `[data-nav-menu-item]` (`overflow: hidden`) so link text revea
 
 #### Responsive visibility in Webflow
 
-`oob.css` hides `.nav-links-wrap` and shows `[data-nav-menu-open]` at ≤991px. You can mirror this in Webflow Designer (tablet/mobile display settings) for easier preview — CSS is the source of truth for published site.
+`oob.css` hides `.nav-links-wrap` and shows `[data-oob-nav-toggle]` at ≤991px. You can mirror this in Webflow Designer (tablet/mobile display settings) for easier preview — CSS is the source of truth for published site.
 
 #### Do not
 

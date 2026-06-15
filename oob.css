@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.6.3 */
+/* Version: 1.6.4 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -221,7 +221,7 @@ h6,
   --nav-menu-link-gap: 0.35em;
   --nav-bar-z: 110;
   --nav-menu-z: 100;
-  /* Match your floating .nav-bar pill in Webflow — tunes [data-nav-menu-open] position */
+  /* Match your floating .nav-bar pill in Webflow — tunes [data-oob-nav-toggle] position */
   --nav-bar-inset-x: 1rem;
   --nav-bar-inset-y: 1rem;
   --nav-bar-height: 3.5rem;
@@ -280,10 +280,11 @@ h6,
   text-shadow: none;
 }
 
-[data-nav-menu-open] {
+[data-oob-nav-toggle] {
   -webkit-tap-highlight-color: transparent;
   display: none;
   cursor: pointer;
+  min-width: 0;
   /* size, padding, background, border-radius: style in Webflow */
 }
 
@@ -316,7 +317,7 @@ html.is-nav-menu-open body {
 
 @media screen and (max-width: 991px) {
   /* Pin toggle to nav bar corner — works even if nested under .nav-menu-open */
-  [data-nav-menu-open] {
+  [data-oob-nav-toggle] {
     position: fixed;
     top: calc(
       var(--nav-bar-inset-y) + (var(--nav-bar-height) - var(--nav-toggle-size, 2.5rem)) / 2
