@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.1 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.2 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.1');
+console.log('[OOB] Script loaded v2.9.2');
 
 (function () {
     'use strict';
@@ -1406,27 +1406,13 @@ console.log('[OOB] Script loaded v2.9.1');
     let mobileNavState = null;
 
     function ensureViewportFitCover() {
-        const metas = [...document.querySelectorAll('meta[name="viewport"]')];
-        if (!metas.length) {
-            const meta = document.createElement('meta');
-            meta.name = 'viewport';
-            meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
-            document.head.appendChild(meta);
-            console.log('[OOB] Added viewport meta with viewport-fit=cover');
-            return;
-        }
+        document.querySelectorAll('meta[name="viewport"]').forEach((meta) => meta.remove());
 
-        const primary = metas[0];
-        const content = primary.getAttribute('content') || 'width=device-width, initial-scale=1';
-        if (!/viewport-fit\s*=\s*cover/i.test(content)) {
-            primary.setAttribute('content', `${content.replace(/,?\s*$/, '')}, viewport-fit=cover`);
-            console.log('[OOB] Patched primary viewport meta with viewport-fit=cover');
-        }
-
-        metas.slice(1).forEach((meta) => meta.remove());
-        if (metas.length > 1) {
-            console.log('[OOB] Removed duplicate viewport meta tags');
-        }
+        const meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+        document.head.insertBefore(meta, document.head.firstChild);
+        console.log('[OOB] Replaced viewport meta with viewport-fit=cover');
     }
 
     /** Opaque theme-color blocks translucent Safari chrome (content behind URL bar). */
@@ -1576,8 +1562,62 @@ console.log('[OOB] Script loaded v2.9.1');
         state.els?.openBtn?.focus();
     }
 
+    function getNavMenuVisualLayout() {
+        const vv = window.visualViewport;
+        return {
+            top: Math.max(0, Math.round(vv?.offsetTop ?? 0)),
+            height: Math.round(vv?.height ?? window.innerHeight),
+        };
+    }
+
+    function syncNavMenuToVisualViewport(menu) {
+        if (!menu) return;
+        const { top, height } = getNavMenuVisualLayout();
+        menu.style.top = `${top}px`;
+        menu.style.height = `${height}px`;
+        menu.style.bottom = 'auto';
+    }
+
+    function clearNavMenuLayout(menu) {
+        if (!menu) return;
+        menu.style.removeProperty('top');
+        menu.style.removeProperty('height');
+        menu.style.removeProperty('bottom');
+    }
+
+    function bindNavMenuVisualViewportSync(menu) {
+        if (!menu || mobileNavState?.visualViewportHandler) return;
+
+        const onVisualViewportChange = () => {
+            if (mobileNavState?.isOpen) syncNavMenuToVisualViewport(menu);
+        };
+
+        window.visualViewport?.addEventListener('resize', onVisualViewportChange);
+        window.visualViewport?.addEventListener('scroll', onVisualViewportChange);
+        window.addEventListener('orientationchange', onVisualViewportChange);
+        mobileNavState.visualViewportHandler = onVisualViewportChange;
+    }
+
+    function unbindNavMenuVisualViewportSync() {
+        const handler = mobileNavState?.visualViewportHandler;
+        if (!handler) return;
+
+        window.visualViewport?.removeEventListener('resize', handler);
+        window.visualViewport?.removeEventListener('scroll', handler);
+        window.removeEventListener('orientationchange', handler);
+        mobileNavState.visualViewportHandler = null;
+    }
+
     function setNavMenuScrollLock(active) {
+        const menu = mobileNavState?.els?.menu;
         document.documentElement.classList.toggle(NAV_MENU_OPEN_CLASS, active);
+        if (active) {
+            syncNavMenuToVisualViewport(menu);
+            bindNavMenuVisualViewportSync(menu);
+        } else {
+            unbindNavMenuVisualViewportSync();
+            clearNavMenuLayout(menu);
+        }
     }
 
     function restoreNavMenuScroll() {
@@ -1596,6 +1636,7 @@ console.log('[OOB] Script loaded v2.9.1');
         state.isOpen = true;
 
         setNavMenuScrollLock(true);
+        syncNavMenuToVisualViewport(els.menu);
         els.menu.setAttribute('aria-hidden', 'false');
         gsap.set(els.menu, { visibility: 'visible', pointerEvents: 'auto' });
         els.openBtn?.setAttribute('aria-expanded', 'true');
@@ -1778,7 +1819,14 @@ console.log('[OOB] Script loaded v2.9.1');
         mobileNavMQ.addEventListener?.('change', onBreakpointChange);
         mobileNavMQ.addListener?.(onBreakpointChange);
 
-        mobileNavState = { initialized: true, isOpen: false, els, tl: null, focusTrapHandler: null };
+        mobileNavState = {
+            initialized: true,
+            isOpen: false,
+            els,
+            tl: null,
+            focusTrapHandler: null,
+            visualViewportHandler: null,
+        };
 
         console.log('[OOB] Mobile nav menu initialized', {
             links: els.links.length,

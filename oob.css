@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.2 */
+/* Version: 1.7.3 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -228,11 +228,11 @@ h6,
 
 [data-nav-menu] {
   position: fixed;
-  top: var(--nav-menu-safe-top);
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
+  top: var(--nav-menu-safe-top);
   z-index: var(--nav-menu-z);
   visibility: hidden;
   pointer-events: none;
