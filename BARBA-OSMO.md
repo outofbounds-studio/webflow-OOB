@@ -381,19 +381,26 @@ Set the embed or parent `color` in Webflow so `currentColor` picks up your icon 
 
 #### iOS Safari edge-to-edge (tux.co-style)
 
+**Webflow limitation:** Webflow always outputs `<meta name="viewport" content="width=device-width, initial-scale=1">` **before** your Head Code. Safari reads that tag at parse time — JS cannot enable `viewport-fit=cover` on iOS afterward. `env(safe-area-inset-*)` stays `0` unless you rewrite HTML at the CDN (e.g. Cloudflare) on a custom domain.
+
+**What `oob.js` does instead:** measures `env()`; if zero on iPhone, applies **device fallback insets** as `--oob-safe-top` / `--oob-safe-bottom` and pulls the homepage hero into the notch area on mobile.
+
 **Closed page:** Content bleeds behind translucent Safari chrome (status bar + floating URL bar). Requires:
 
 | Requirement | How |
 |-------------|-----|
-| `viewport-fit=cover` | Paste the **inline** script below as the **first** line of Head Code (not a second `<meta>` tag). External `oob-viewport.js` also works but inline is faster. |
+| `viewport-fit=cover` | Ideal: CDN HTML rewrite on custom domain. Otherwise `oob.js` `initEdgeToEdge()` fallback (check console for `[OOB] viewport-fit=cover inactive`) |
+| No opaque `theme-color` | Remove from Webflow Head — opaque values tint the URL bar and hide content behind it |
+| Full-bleed hero on mobile | First `.hero-vimeo-background` uses `min-height: 100vh + safe-top` with negative margin (in `oob.css`) |
+| Safe-area insets | `--oob-safe-top` on fixed nav; menu overlay uses `visualViewport` + safe-top |
+
+Optional Head script (helps Android/desktop; **not sufficient alone on iOS**):
 
 ```html
 <script>
 (function(){document.querySelectorAll('meta[name="viewport"]').forEach(function(m){m.remove();});var v=document.createElement('meta');v.name='viewport';v.content='width=device-width, initial-scale=1, viewport-fit=cover';document.head.insertBefore(v,document.head.firstChild);})();
 </script>
 ```
-| No opaque `theme-color` | Remove from Webflow Head — opaque values tint the URL bar and hide content behind it |
-| Safe-area insets | `env(safe-area-inset-top)` on fixed nav; menu overlay starts below the notch |
 
 **Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**; overlay runs from the physical bottom up to `safe-area-inset-top` (below the notch). No `html`/`body` background fill, no `theme-color` swap.
 

@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.3 */
+/* Version: 1.7.4 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -133,6 +133,11 @@ html.is-preloader-active .hero .container {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  --oob-safe-top: env(safe-area-inset-top, 0px);
+  --oob-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --oob-safe-left: env(safe-area-inset-left, 0px);
+  --oob-safe-right: env(safe-area-inset-right, 0px);
+  --vh: 1svh;
 }
 
 body {
@@ -220,8 +225,8 @@ h6,
   --nav-menu-link-size: 4em;
   --nav-menu-link-kerning: -0.03em;
   --nav-menu-link-gap: 0.5em;
-  --nav-menu-safe-top: env(safe-area-inset-top, 0px);
-  --nav-menu-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-menu-safe-top: var(--oob-safe-top, env(safe-area-inset-top, 0px));
+  --nav-menu-safe-bottom: var(--oob-safe-bottom, env(safe-area-inset-bottom, 0px));
   --nav-bar-z: 110;
   --nav-menu-z: 100;
 }
@@ -345,7 +350,19 @@ html.is-nav-menu-open body {
   .nav,
   .navbar_wrap,
   .navbar {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--oob-safe-top, env(safe-area-inset-top, 0px));
+  }
+
+  /* Webflow can't emit viewport-fit=cover in static HTML — pull first hero into the notch area */
+  .hero-vimeo-background {
+    min-height: calc(var(--vh, 1svh) * 100 + var(--oob-safe-top, 0px));
+    margin-top: calc(-1 * var(--oob-safe-top, 0px));
+    width: 100%;
+  }
+
+  section.hero:first-of-type .hero-pad,
+  section.hero:first-of-type .hero-pad-main {
+    padding-top: calc(var(--oob-safe-top, 0px) + 2.8125em);
   }
 
   [data-oob-nav-toggle] {
