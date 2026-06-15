@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.8 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.9 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.8');
+console.log('[OOB] Script loaded v2.6.9');
 
 (function () {
     'use strict';
@@ -146,30 +146,66 @@ console.log('[OOB] Script loaded v2.6.8');
         return true;
     }
 
+    const WEBFLOW_FORM_DATA_KEY = '.w-form';
+
+    function ensureWebflowFormSubmitDelegate() {
+        const jq = window.jQuery || window.$;
+        if (!jq) return;
+
+        // Webflow only binds this once (s flag); destroy() removes it — re-bind after Barba nav
+        jq(document).off('submit.oobWebflow', '.w-form form');
+        jq(document).on('submit.oobWebflow', '.w-form form', function (evt) {
+            const data = jq.data(this, WEBFLOW_FORM_DATA_KEY);
+            if (!data?.handler) return;
+            evt.preventDefault();
+            data.evt = evt;
+            data.handler(data);
+        });
+    }
+
+    function invokeWebflowFormHandler(form) {
+        const jq = window.jQuery || window.$;
+        if (!jq) return false;
+
+        const data = jq.data(form, WEBFLOW_FORM_DATA_KEY);
+        if (!data?.handler) return false;
+
+        const evt = jq.Event('submit');
+        data.evt = evt;
+        data.handler(data);
+        return true;
+    }
+
     function reinitWebflowForms(root = document) {
         if (typeof Webflow === 'undefined') return;
         const scope = root?.querySelector ? root : document;
         syncWebflowPageId(scope);
         const forms = Webflow.require?.('forms');
         if (forms?.ready) forms.ready();
+        ensureWebflowFormSubmitDelegate();
     }
 
-    /** Webflow forms listen via jQuery — trigger submit, not requestSubmit (avoids 405 on page URL). */
+    /** Invoke Webflow AJAX handler — never native submit (POST /page-url → 405). */
     function submitWebflowForm(form, submitInput) {
         const scope = form.closest('[data-barba="container"]') || document;
-        reinitWebflowForms(scope);
 
-        const jq = window.jQuery || window.$;
-        if (jq && form.hasAttribute('data-wf-page-id')) {
-            if (form.getAttribute('method')?.toLowerCase() === 'get') {
-                form.setAttribute('method', 'post');
-                form.method = 'post';
-            }
-            jq(form).trigger('submit');
+        if (!form.hasAttribute('data-wf-page-id')) {
+            if (submitInput) submitInput.click();
             return;
         }
 
-        if (submitInput) submitInput.click();
+        const attempt = () => {
+            reinitWebflowForms(scope);
+            return invokeWebflowFormHandler(form);
+        };
+
+        if (attempt()) return;
+
+        setTimeout(() => {
+            if (!attempt()) {
+                console.error('[OOB] Webflow form handler not bound — check data-wf-page sync and Turnstile');
+            }
+        }, 300);
     }
 
     function cleanupCloudflareTurnstile(root = document) {
@@ -214,6 +250,7 @@ console.log('[OOB] Script loaded v2.6.8');
                 const forms = Webflow.require('forms');
                 if (forms && typeof forms.ready === 'function') forms.ready();
             }
+            ensureWebflowFormSubmitDelegate();
             scheduleDisplayReadTimeAfterWebflow(container);
         } catch (err) {
             console.warn('[OOB] Webflow reinit error', err);
@@ -1569,12 +1606,17 @@ console.log('[OOB] Script loaded v2.6.8');
                 trySubmit();
             }
         };
+        const blockNativeSubmit = (event) => {
+            if (form.hasAttribute('data-wf-page-id')) event.preventDefault();
+        };
 
         dataSubmit.addEventListener('click', onSubmitClick);
         form.addEventListener('keydown', onKeydown);
+        form.addEventListener('submit', blockNativeSubmit);
         cleanups.push(() => {
             dataSubmit.removeEventListener('click', onSubmitClick);
             form.removeEventListener('keydown', onKeydown);
+            form.removeEventListener('submit', blockNativeSubmit);
         });
 
         cleanups.push(() => {
