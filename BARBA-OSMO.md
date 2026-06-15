@@ -394,9 +394,18 @@ Set the embed or parent `color` in Webflow so `currentColor` picks up your icon 
 
 **`viewport-fit=cover`:** Optional — `oob-viewport.js` replaces Webflow’s default viewport meta. iOS may still ignore JS changes (Webflow limitation); safe-area `env()` may stay `0`. Top/notch safe-area is not targeted here.
 
-**Closed menu:** No `theme-color` → translucent bottom URL bar (page content visible behind it).
+**Closed menu:** No `theme-color` (Safari 15–18). On **iOS 26+**, Safari ignores `theme-color` and tints the bottom bar from CSS — usually `body` background (`#1c1b1b` on this site) unless a fixed element sits on the bottom edge. `[data-nav-menu]` collapses to `height: 0` when closed so it is not sampled; no fixed orange/dark strip at the bottom.
 
-**Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**, plus `theme-color` set to `--nav-menu-bg` (`#ff4802`) so Safari’s bottom chrome matches. Removed again after the close animation — never set a dark `theme-color` on close. Tune bottom bleed with `--nav-menu-chrome-bottom-overscan` in `oob.css` (default `48px`).
+**Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**, plus:
+
+| Safari | Mechanism |
+|--------|-----------|
+| 15–18 | `theme-color` = `--nav-menu-bg` while `html.is-nav-menu-safari-chrome` (cleared after close animation) |
+| 26+ | Fixed `[data-oob-safari-bottom-chrome]` strip (injected by `oob.js`) with solid orange `background-color` |
+
+Never set a dark `theme-color` on close. Tune bottom bleed with `--nav-menu-chrome-bottom-overscan` (default `48px`).
+
+**iOS 26 note:** Bottom chrome may look like a dark tint (not glass-over-hero) when closed because Safari samples `body { background-color: #1c1b1b }`. True tux.co-style “content behind the URL bar” needs `viewport-fit=cover` in static HTML (Webflow limitation) and edge-to-edge content — not something JS can fully restore on iOS 26.
 
 `oob.js` moves `[data-nav-menu]` to `document.body` on init so `position: fixed` is not clipped by a transformed parent.
 
