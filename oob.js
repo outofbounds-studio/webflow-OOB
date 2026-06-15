@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.4 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.5 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.4');
+console.log('[OOB] Script loaded v2.6.5');
 
 (function () {
     'use strict';
@@ -37,6 +37,7 @@ console.log('[OOB] Script loaded v2.6.4');
     let lenis = null;
     let nextPage = document;
     let onceFunctionsInitialized = false;
+    let barbaViewCount = 0;
 
     const rmMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reducedMotion = rmMQ.matches;
@@ -152,7 +153,6 @@ console.log('[OOB] Script loaded v2.6.4');
         initLenis();
         if (onceFunctionsInitialized) return;
         onceFunctionsInitialized = true;
-        reinitWebflow();
         ensureNavStacking();
         syncNavActiveFromContainer(document);
         initNavHighlightBlob();
@@ -170,9 +170,10 @@ console.log('[OOB] Script loaded v2.6.4');
         // if (has('[data-something]')) initSomething();
     }
 
-    function initAfterEnterFunctions(next) {
+    function initAfterEnterFunctions(next, options = {}) {
         nextPage = next || document;
-        reinitWebflow();
+        const { reinitWebflow: shouldReinitWebflow = true } = options;
+        if (shouldReinitWebflow) reinitWebflow();
         syncNavActiveFromContainer(nextPage);
         refreshNavHighlightBlob();
         if (has('[data-button-038]')) scheduleButton038(nextPage);
@@ -668,7 +669,11 @@ console.log('[OOB] Script loaded v2.6.4');
     });
 
     barba.hooks.afterEnter((data) => {
-        initAfterEnterFunctions(data.next.container);
+        barbaViewCount += 1;
+        // First view: Webflow + Turnstile already booted on cold load — skip destroy/ready
+        initAfterEnterFunctions(data.next.container, {
+            reinitWebflow: barbaViewCount > 1,
+        });
 
         if (lenis) {
             lenis.resize();
@@ -701,7 +706,6 @@ console.log('[OOB] Script loaded v2.6.4');
                             refreshFooterLogotypeScroll();
                         }
                         scheduleDisplayReadTime(container);
-                        refreshAdvancedFormValidation(container);
                         // Cold load / refresh: Webflow IX can restore Designer placeholder after once
                         scheduleDisplayReadTimeAfterWebflow(container);
                         refreshPostScrollProgress(container);
@@ -729,7 +733,9 @@ console.log('[OOB] Script loaded v2.6.4');
     } catch (err) {
         console.error('[OOB] Barba init failed — check data-barba="wrapper" on Body.', err);
         initOnceFunctions();
-        scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
+        const fallbackContainer = document.querySelector('[data-barba="container"]') || document;
+        scheduleDisplayReadTimeAfterWebflow(fallbackContainer);
+        refreshAdvancedFormValidation(fallbackContainer);
     }
 
     checkBarbaDom();
