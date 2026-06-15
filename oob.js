@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.7.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.7.1 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.7.0');
+console.log('[OOB] Script loaded v2.7.1');
 
 (function () {
     'use strict';
@@ -43,6 +43,11 @@ console.log('[OOB] Script loaded v2.7.0');
     let reducedMotion = rmMQ.matches;
     rmMQ.addEventListener?.('change', (e) => (reducedMotion = e.matches));
     rmMQ.addListener?.((e) => (reducedMotion = e.matches));
+
+    const touchScrollMQ = window.matchMedia('(pointer: coarse)');
+    let useTouchNativeScroll = touchScrollMQ.matches;
+    touchScrollMQ.addEventListener?.('change', (e) => (useTouchNativeScroll = e.matches));
+    touchScrollMQ.addListener?.((e) => (useTouchNativeScroll = e.matches));
 
     const has = (s) => !!nextPage.querySelector(s);
 
@@ -898,6 +903,8 @@ console.log('[OOB] Script loaded v2.7.0');
         if (lenis) {
             lenis.resize();
             lenis.start();
+        } else {
+            unlockNativeScroll();
         }
         if (hasScrollTrigger) ScrollTrigger.refresh();
         scrollToTop();
@@ -1002,14 +1009,34 @@ console.log('[OOB] Script loaded v2.7.0');
         lenis?.raf(time * 1000);
     }
 
+    function shouldUseLenis() {
+        if (!hasLenis) return false;
+        if (reducedMotion) return false;
+        // html.lenis { overflow: hidden } blocks native touch scroll on iOS/Android
+        if (useTouchNativeScroll) return false;
+        return true;
+    }
+
+    function unlockNativeScroll() {
+        const html = document.documentElement;
+        html.classList.remove('lenis', 'lenis-smooth', 'lenis-scrolling', 'lenis-stopped');
+        if (!html.classList.contains('is-preloader-active')) {
+            html.style.removeProperty('overflow');
+            document.body.style.removeProperty('overflow');
+        }
+    }
+
     function initLenis() {
         if (lenis) return;
-        if (!hasLenis) {
-            console.warn('[OOB] Lenis not loaded — add Lenis CDN to Head (see BARBA-OSMO.md).');
-            return;
-        }
-        if (reducedMotion) {
-            console.log('[OOB] Lenis skipped (prefers-reduced-motion)');
+        if (!shouldUseLenis()) {
+            if (!hasLenis) {
+                console.warn('[OOB] Lenis not loaded — add Lenis CDN to Head (see BARBA-OSMO.md).');
+            } else if (reducedMotion) {
+                console.log('[OOB] Lenis skipped (prefers-reduced-motion)');
+            } else if (useTouchNativeScroll) {
+                console.log('[OOB] Lenis skipped (touch device — native scroll)');
+            }
+            unlockNativeScroll();
             return;
         }
 
@@ -1034,10 +1061,12 @@ console.log('[OOB] Script loaded v2.7.0');
 
     function resetPage(container) {
         scrollToTop();
-        gsap.set(container, { clearProps: 'position,top,left,right' });
+        gsap.set(container, { clearProps: 'position,top,left,right,zIndex' });
         if (lenis) {
             lenis.resize();
             lenis.start();
+        } else {
+            unlockNativeScroll();
         }
     }
 
