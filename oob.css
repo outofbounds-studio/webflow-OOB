@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.6.4 */
+/* Version: 1.6.5 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -221,11 +221,6 @@ h6,
   --nav-menu-link-gap: 0.35em;
   --nav-bar-z: 110;
   --nav-menu-z: 100;
-  /* Match your floating .nav-bar pill in Webflow — tunes [data-oob-nav-toggle] position */
-  --nav-bar-inset-x: 1rem;
-  --nav-bar-inset-y: 1rem;
-  --nav-bar-height: 3.5rem;
-  --nav-toggle-size: 2.5rem;
 }
 
 [data-nav-menu] {
@@ -280,31 +275,21 @@ h6,
   text-shadow: none;
 }
 
-[data-oob-nav-toggle] {
-  -webkit-tap-highlight-color: transparent;
-  display: none;
-  cursor: pointer;
-  min-width: 0;
-  /* size, padding, background, border-radius: style in Webflow */
+/* Toggle (.nav-menu-open-button + data-oob-nav-toggle): style entirely in Webflow.
+   If nested inside [data-nav-menu], keep visible/clickable when overlay is closed. */
+[data-nav-menu] [data-oob-nav-toggle] {
+  visibility: visible;
+  pointer-events: auto;
 }
 
 [data-nav-menu-close] {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* GSAP rotates this wrapper — style button + SVG in Webflow */
+/* GSAP rotates [data-nav-menu-icon] — size/layout in Webflow */
 [data-nav-menu-icon] {
   transform-origin: center center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   pointer-events: none;
-}
-
-[data-nav-menu-icon] svg {
-  display: block;
-  width: 100%;
-  height: 100%;
 }
 
 html.is-nav-menu-open {
@@ -316,21 +301,6 @@ html.is-nav-menu-open body {
 }
 
 @media screen and (max-width: 991px) {
-  /* Pin toggle to nav bar corner — works even if nested under .nav-menu-open */
-  [data-oob-nav-toggle] {
-    position: fixed;
-    top: calc(
-      var(--nav-bar-inset-y) + (var(--nav-bar-height) - var(--nav-toggle-size, 2.5rem)) / 2
-    );
-    right: var(--nav-bar-inset-x);
-    z-index: calc(var(--nav-bar-z) + 1);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    pointer-events: auto;
-  }
-
   .nav-links-wrap {
     display: none !important;
   }

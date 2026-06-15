@@ -341,7 +341,7 @@ Every link needs matching `data-barba-namespace` (same as desktop). `oob.js` syn
 | Background panel | `data-nav-menu-bg` | Solid fill — scales `scaleY` from bottom |
 | Links column | `data-nav-menu-panel` | Stacked links; `data-lenis-prevent` if scrollable |
 | Link wrapper | `data-nav-menu-item` | Optional stagger target |
-| Open toggle | `data-oob-nav-toggle` | Div or link block styled as button in Webflow |
+| Open toggle | `data-oob-nav-toggle` | Div with Webflow class e.g. `.nav-menu-open-button` — **all visual styles in Designer** |
 | Icon wrapper | `data-nav-menu-icon` | Wraps SVG; GSAP rotates to cross (default `45`°, override with `data-nav-menu-icon-rotate`) |
 | Close (optional) | `data-nav-menu-close` | Extra close control inside panel |
 
@@ -350,10 +350,10 @@ Every link needs matching `data-barba-namespace` (same as desktop). `oob.js` syn
 Style the **button** and **SVG** entirely in Designer. `oob.js` only rotates `[data-nav-menu-icon]`.
 
 ```
-Div [data-oob-nav-toggle]
+Div.nav-menu-open-button [data-oob-nav-toggle]
 ├── Custom attribute: data-oob-nav-toggle
 ├── role="button" tabindex="0" (if using div)
-├── Style in Webflow: fixed size (e.g. 2.5rem × 2.5rem), dark background, border-radius, flex center
+├── Style in Webflow: size, background, border-radius, position, display (mobile only)
 └── Div [data-nav-menu-icon]
     ├── Custom attribute: data-nav-menu-icon
     ├── Optional: data-nav-menu-icon-rotate="45"  (degrees when menu is open)
@@ -375,16 +375,7 @@ Example SVG for Webflow Embed (tune `fill` / size in Designer):
 
 Set the embed or parent `color` in Webflow so `currentColor` picks up your icon colour.
 
-**Position (nested under `.nav-menu-open`):** You do not need to move the toggle into `.nav-bar`. `oob.css` pins `[data-oob-nav-toggle]` to the nav bar corner with `position: fixed`. Set these on `:root` (or in Webflow Head) to match your floating nav pill:
-
-| Variable | Default | Match to |
-|----------|---------|----------|
-| `--nav-bar-inset-x` | `1rem` | Nav bar horizontal margin from viewport edge |
-| `--nav-bar-inset-y` | `1rem` | Nav bar top offset |
-| `--nav-bar-height` | `3.5rem` | Nav bar height |
-| `--nav-toggle-size` | `2.5rem` | Toggle button height (for vertical centering) |
-
-`pointer-events: auto` on the toggle keeps it clickable even when nested inside `[data-nav-menu]` (overlay uses `pointer-events: none` when closed).
+**Toggle styling:** `oob.css` does **not** set background, size, position, or display on `[data-oob-nav-toggle]`. Use a Webflow class (e.g. `.nav-menu-open-button`) for all appearance. If the toggle lives inside `[data-nav-menu]`, `oob.css` only sets `visibility: visible` and `pointer-events: auto` so it stays visible/clickable when the overlay is closed.
 
 #### Styling (Webflow + `oob.css`)
 
@@ -402,10 +393,6 @@ Tune in `oob.css`:
 | `--nav-menu-panel-padding-top` | `6.5rem` (clears fixed header) |
 | `--nav-bar-z` | `110` |
 | `--nav-menu-z` | `100` |
-| `--nav-bar-inset-x` | `1rem` |
-| `--nav-bar-inset-y` | `1rem` |
-| `--nav-bar-height` | `3.5rem` |
-| `--nav-toggle-size` | `2.5rem` |
 
 #### Animation (handled in `oob.js`)
 
@@ -428,7 +415,7 @@ Wrap each link in `[data-nav-menu-item]` (`overflow: hidden`) so link text revea
 
 #### Responsive visibility in Webflow
 
-`oob.css` hides `.nav-links-wrap` and shows `[data-oob-nav-toggle]` at ≤991px. You can mirror this in Webflow Designer (tablet/mobile display settings) for easier preview — CSS is the source of truth for published site.
+`oob.css` hides `.nav-links-wrap` at ≤991px. Show/hide and style `[data-oob-nav-toggle]` in Webflow Designer (tablet/mobile).
 
 #### Do not
 

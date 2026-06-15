@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.4 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.5 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.4');
+console.log('[OOB] Script loaded v2.8.5');
 
 (function () {
     'use strict';
