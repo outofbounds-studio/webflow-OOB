@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.6.6 */
+/* Version: 1.6.7 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -209,7 +209,7 @@ h6,
   z-index: 1;
 }
 
-/* ------------ Mobile nav menu (≤991px) ------------- */
+/* ------------ Mobile nav menu (<768px) ------------- */
 /* Webflow structure: BARBA-OSMO.md § Mobile nav menu */
 :root {
   --nav-menu-bg: #ff4802;
@@ -286,16 +286,23 @@ h6,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Icon rotation is clipped inside the toggle — prevents nav bar width jump */
+/* Icon rotation is clipped inside the toggle — fixed 14×14px grid */
 [data-nav-menu-icon] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
   transform-origin: center center;
   pointer-events: none;
   will-change: transform;
+}
+
+[data-nav-menu-icon] svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 html.is-nav-menu-open {
@@ -306,7 +313,7 @@ html.is-nav-menu-open body {
   overflow: hidden;
 }
 
-@media screen and (max-width: 991px) {
+@media screen and (max-width: 767px) {
   .nav-links-wrap {
     display: none !important;
   }
@@ -326,8 +333,12 @@ html.is-nav-menu-open body {
   }
 }
 
-@media screen and (min-width: 992px) {
+@media screen and (min-width: 768px) {
   [data-nav-menu] {
+    display: none !important;
+  }
+
+  [data-oob-nav-toggle] {
     display: none !important;
   }
 }

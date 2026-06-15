@@ -107,7 +107,7 @@ body [data-barba="wrapper"]
 │   └── div.oob-preloader__shade            ← #111111 full viewport
 ├── header.navbar (Symbol — global nav, OUTSIDE container)
 │   ├── .nav-links-wrap > .nav-highlight + links (desktop)
-│   ├── [data-oob-nav-toggle] toggle (mobile ≤991)
+│   ├── [data-oob-nav-toggle] toggle (mobile <768)
 │   └── [data-nav-menu] > [data-nav-menu-bg] + [data-nav-menu-panel] (mobile overlay)
 ├── div.transition [data-transition-wrap]   ← Symbol, OUTSIDE container
 │   └── div.transition__dark [data-transition-dark]
@@ -281,13 +281,13 @@ The blob stays on the current page link (`w--current` / `aria-current="page"`) a
 
 ---
 
-### Mobile nav menu (≤991px)
+### Mobile nav menu (<768px)
 
 Full-screen overlay with a background panel that scales open from the top, then stacked links stagger in. The fixed header (blur/glass) stays visible above the overlay — logo and menu toggle remain clickable.
 
 **Requires:** GSAP (already in Head). Initialized via `initMobileNavMenu()` in `oob.js`. Console: `[OOB] Mobile nav menu initialized`.
 
-**Breakpoint:** 991px — desktop keeps horizontal `.nav-links-wrap`; tablet/mobile uses overlay.
+**Breakpoint:** 768px — desktop (`≥768px`) keeps horizontal `.nav-links-wrap` + hides toggle; below 768px uses overlay.
 
 #### Webflow structure (one nav Symbol, outside Barba container)
 
@@ -297,11 +297,11 @@ body [data-barba="wrapper"]
 │   └── .nav-inner (flex row, space-between, align center)
 │       ├── .nav-logo
 │       │   └── Link [data-nav-logo]        ← home, no highlight
-│       ├── .nav-links-wrap                 ← desktop only (hidden ≤991 in oob.css)
+│       ├── .nav-links-wrap                 ← desktop only (≥768px)
 │       │   ├── .nav-highlight
 │       │   └── List (ul) > links
 │       │       └── Link.navbar_link [data-barba-namespace="work"]
-│       └── Div [data-oob-nav-toggle]         ← mobile/tablet only (shown ≤991)
+│       └── Div [data-oob-nav-toggle]         ← mobile only (<768px)
 │           └── Div [data-nav-menu-icon]      ← GSAP rotates on open (default 45°)
 │               └── SVG (4-square grid — style in Webflow)
 │
@@ -417,7 +417,7 @@ Wrap each link in `[data-nav-menu-item]` (`overflow: hidden`) so link text revea
 
 #### Responsive visibility in Webflow
 
-`oob.css` hides `.nav-links-wrap` at ≤991px. Show/hide and style `[data-oob-nav-toggle]` in Webflow Designer (tablet/mobile).
+`oob.css` hides `.nav-links-wrap` below 768px and hides `[data-oob-nav-toggle]` at ≥768px. Mirror in Webflow Designer for easier preview.
 
 #### Do not
 
@@ -553,7 +553,7 @@ Console on Barba navigation: `[OOB] Webflow forms reset (preview + Turnstile)`.
 - [ ] Console: `[OOB] Script loaded`, `[OOB] Barba initialized`, `[OOB] Lenis initialized`
 - [ ] No `[OOB] Barba structure error` (nav must be outside container)
 - [ ] Nav blob: `[OOB] Nav highlight blob initialized` (if `.nav-links-wrap` present)
-- [ ] Mobile nav: `[OOB] Mobile nav menu initialized` (if `[data-nav-menu]` present; test ≤991px)
+- [ ] Mobile nav: `[OOB] Mobile nav menu initialized` (if `[data-nav-menu]` present; test <768px)
 - [ ] Mobile: overlay opens, links stagger, toggle → X, closes on link / Escape / Barba nav
 - [ ] Internal link: parallax leave/enter (or instant if reduced motion)
 - [ ] Nav `data-barba-update` syncs active state

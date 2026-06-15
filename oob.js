@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.6 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.7 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.6');
+console.log('[OOB] Script loaded v2.8.7');
 
 (function () {
     'use strict';
@@ -1386,12 +1386,12 @@ console.log('[OOB] Script loaded v2.8.6');
     }
 
     // -----------------------------------------
-    // MOBILE NAV MENU — full-screen overlay (≤991px)
+    // MOBILE NAV MENU — full-screen overlay (<768px)
     // Webflow: see BARBA-OSMO.md § Mobile nav menu
     // -----------------------------------------
 
     const NAV_MENU_OPEN_CLASS = 'is-nav-menu-open';
-    const NAV_MENU_BREAKPOINT = '(max-width: 991px)';
+    const NAV_MENU_BREAKPOINT = '(max-width: 767px)';
     const NAV_MENU_OPEN_DURATION = 0.85;
     const NAV_MENU_CLOSE_DURATION = 0.6;
     const NAV_MENU_LINK_STAGGER = 0.085;
