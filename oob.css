@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.6.0 */
+/* Version: 1.6.3 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -212,7 +212,8 @@ h6,
 /* ------------ Mobile nav menu (≤991px) ------------- */
 /* Webflow structure: BARBA-OSMO.md § Mobile nav menu */
 :root {
-  --nav-menu-bg: #111111;
+  --nav-menu-bg: #ff4802;
+  --nav-menu-link-color: #000000;
   --nav-menu-panel-padding-top: 6.5rem;
   --nav-menu-panel-padding-x: 1.5rem;
   --nav-menu-panel-padding-bottom: 2.5rem;
@@ -220,6 +221,11 @@ h6,
   --nav-menu-link-gap: 0.35em;
   --nav-bar-z: 110;
   --nav-menu-z: 100;
+  /* Match your floating .nav-bar pill in Webflow — tunes [data-nav-menu-open] position */
+  --nav-bar-inset-x: 1rem;
+  --nav-bar-inset-y: 1rem;
+  --nav-bar-height: 3.5rem;
+  --nav-toggle-size: 2.5rem;
 }
 
 [data-nav-menu] {
@@ -236,7 +242,7 @@ h6,
   inset: 0;
   background-color: var(--nav-menu-bg);
   transform: scaleY(0);
-  transform-origin: top center;
+  transform-origin: bottom center;
   will-change: transform;
 }
 
@@ -265,42 +271,39 @@ h6,
   line-height: 1.05;
   letter-spacing: -0.02em;
   text-decoration: none;
+  color: var(--nav-menu-link-color);
+  text-shadow: none;
+}
+
+[data-nav-menu-panel] .nav_span {
+  color: inherit;
+  text-shadow: none;
 }
 
 [data-nav-menu-open] {
   -webkit-tap-highlight-color: transparent;
-  position: relative;
-  z-index: 1;
   display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
   cursor: pointer;
+  /* size, padding, background, border-radius: style in Webflow */
 }
 
 [data-nav-menu-close] {
   -webkit-tap-highlight-color: transparent;
 }
 
-[data-nav-menu-toggle] {
+/* GSAP rotates this wrapper — style button + SVG in Webflow */
+[data-nav-menu-icon] {
+  transform-origin: center center;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  width: 2rem;
-  height: 2rem;
+  pointer-events: none;
 }
 
-[data-nav-menu-line] {
+[data-nav-menu-icon] svg {
   display: block;
   width: 100%;
-  height: 2px;
-  background-color: currentColor;
-  transform-origin: center;
-  border-radius: 1px;
+  height: 100%;
 }
 
 html.is-nav-menu-open {
@@ -312,8 +315,19 @@ html.is-nav-menu-open body {
 }
 
 @media screen and (max-width: 991px) {
+  /* Pin toggle to nav bar corner — works even if nested under .nav-menu-open */
   [data-nav-menu-open] {
+    position: fixed;
+    top: calc(
+      var(--nav-bar-inset-y) + (var(--nav-bar-height) - var(--nav-toggle-size, 2.5rem)) / 2
+    );
+    right: var(--nav-bar-inset-x);
+    z-index: calc(var(--nav-bar-z) + 1);
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    pointer-events: auto;
   }
 
   .nav-links-wrap {

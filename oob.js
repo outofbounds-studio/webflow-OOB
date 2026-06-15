@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.3 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.0');
+console.log('[OOB] Script loaded v2.8.3');
 
 (function () {
     'use strict';
@@ -1375,9 +1375,10 @@ console.log('[OOB] Script loaded v2.8.0');
 
     const NAV_MENU_OPEN_CLASS = 'is-nav-menu-open';
     const NAV_MENU_BREAKPOINT = '(max-width: 991px)';
-    const NAV_MENU_OPEN_DURATION = 0.65;
-    const NAV_MENU_CLOSE_DURATION = 0.5;
-    const NAV_MENU_LINK_STAGGER = 0.07;
+    const NAV_MENU_OPEN_DURATION = 0.85;
+    const NAV_MENU_CLOSE_DURATION = 0.6;
+    const NAV_MENU_LINK_STAGGER = 0.085;
+    const NAV_MENU_BG_ORIGIN = 'bottom center';
 
     let mobileNavState = null;
 
@@ -1390,10 +1391,7 @@ console.log('[OOB] Script loaded v2.8.0');
         if (!menu) return null;
 
         const openBtn = document.querySelector('[data-nav-menu-open]');
-        const toggleRoot = openBtn?.querySelector('[data-nav-menu-toggle]') || openBtn;
-        const toggleLines = toggleRoot
-            ? [...toggleRoot.querySelectorAll('[data-nav-menu-line]')]
-            : [];
+        const toggleIcon = openBtn?.querySelector('[data-nav-menu-icon]');
 
         const panel = menu.querySelector('[data-nav-menu-panel]');
         const links = panel
@@ -1409,71 +1407,39 @@ console.log('[OOB] Script loaded v2.8.0');
             linkItems,
             openBtn,
             closeBtn: document.querySelector('[data-nav-menu-close]'),
-            toggleLines,
+            toggleIcon,
         };
     }
 
-    function getNavMenuStaggerTargets(els) {
-        if (els.linkItems.length) return els.linkItems;
+    function getNavMenuAnimTargets(els) {
+        if (els.linkItems.length) {
+            return els.linkItems.map((item) => item.querySelector(NAV_LINK_SELECTOR) || item);
+        }
         return els.links;
     }
 
-    function setNavMenuToggleOpen(isOpen, tl, position = 0) {
-        const lines = mobileNavState?.els?.toggleLines;
-        if (!lines?.length) return;
-
-        const duration = reducedMotion ? 0 : 0.35;
-        const ease = 'power3.inOut';
-
-        if (lines.length === 2) {
-            const [line1, line2] = lines;
-            if (isOpen) {
-                const anim = {
-                    rotate: 45,
-                    y: 6,
-                    duration,
-                    ease,
-                };
-                if (tl) {
-                    tl.to(line1, anim, position);
-                    tl.to(line2, { ...anim, rotate: -45, y: -6 }, position);
-                } else {
-                    gsap.to(line1, anim);
-                    gsap.to(line2, { ...anim, rotate: -45, y: -6 });
-                }
-            } else {
-                const anim = { rotate: 0, y: 0, duration, ease };
-                if (tl) {
-                    tl.to(lines, anim, position);
-                } else {
-                    gsap.to(lines, anim);
-                }
-            }
-            return;
-        }
-
-        if (lines.length === 3) {
-            const [line1, line2, line3] = lines;
-            if (isOpen) {
-                if (tl) {
-                    tl.to(line1, { rotate: 45, y: 8, duration, ease }, position);
-                    tl.to(line2, { autoAlpha: 0, duration: duration * 0.5, ease }, position);
-                    tl.to(line3, { rotate: -45, y: -8, duration, ease }, position);
-                } else {
-                    gsap.to(line1, { rotate: 45, y: 8, duration, ease });
-                    gsap.to(line2, { autoAlpha: 0, duration: duration * 0.5, ease });
-                    gsap.to(line3, { rotate: -45, y: -8, duration, ease });
-                }
-            } else if (tl) {
-                tl.to(lines, { rotate: 0, y: 0, autoAlpha: 1, duration, ease }, position);
-            } else {
-                gsap.to(lines, { rotate: 0, y: 0, autoAlpha: 1, duration, ease });
-            }
-        }
+    function getNavMenuIconRotateDegrees(icon) {
+        const raw = icon?.getAttribute('data-nav-menu-icon-rotate');
+        const parsed = raw ? Number(raw) : 45;
+        return Number.isFinite(parsed) ? parsed : 45;
     }
 
-    function resetNavMenuToggleLines() {
-        setNavMenuToggleOpen(false);
+    function setNavMenuToggleOpen(isOpen, tl, position = 0) {
+        const icon = mobileNavState?.els?.toggleIcon;
+        if (!icon) return;
+
+        const duration = reducedMotion ? 0 : 0.4;
+        const ease = 'power3.inOut';
+        const rotate = isOpen ? getNavMenuIconRotateDegrees(icon) : 0;
+        const anim = { rotate, duration, ease, transformOrigin: '50% 50%', force3D: true };
+
+        if (tl) tl.to(icon, anim, position);
+        else gsap.to(icon, anim);
+    }
+
+    function resetNavMenuToggleIcon() {
+        const icon = mobileNavState?.els?.toggleIcon;
+        if (icon) gsap.set(icon, { rotate: 0, transformOrigin: '50% 50%' });
     }
 
     function trapNavMenuFocus() {
@@ -1554,15 +1520,15 @@ console.log('[OOB] Script loaded v2.8.0');
 
         if (lenis && typeof lenis.stop === 'function') lenis.stop();
 
-        const targets = getNavMenuStaggerTargets(els);
+        const targets = getNavMenuAnimTargets(els);
         const openDuration = reducedMotion ? 0 : NAV_MENU_OPEN_DURATION;
 
-        gsap.set(els.bg, { scaleY: 0, transformOrigin: 'top center' });
-        gsap.set(targets, { y: '2.5rem', autoAlpha: 0 });
+        gsap.set(els.bg, { scaleY: 0, transformOrigin: NAV_MENU_BG_ORIGIN });
+        gsap.set(targets, { yPercent: 110, autoAlpha: 0 });
 
         if (reducedMotion) {
             gsap.set(els.bg, { scaleY: 1 });
-            gsap.set(targets, { y: 0, autoAlpha: 1 });
+            gsap.set(targets, { yPercent: 0, autoAlpha: 1 });
             setNavMenuToggleOpen(true);
             trapNavMenuFocus();
             return;
@@ -1573,19 +1539,23 @@ console.log('[OOB] Script loaded v2.8.0');
             onComplete: () => trapNavMenuFocus(),
         });
 
-        tl.to(els.bg, { scaleY: 1, duration: openDuration * 0.75, ease: 'power3.inOut' }, 0);
+        tl.to(
+            els.bg,
+            { scaleY: 1, duration: openDuration, ease: 'power3.inOut' },
+            0
+        );
         tl.to(
             targets,
             {
-                y: 0,
+                yPercent: 0,
                 autoAlpha: 1,
-                duration: openDuration * 0.55,
+                duration: openDuration * 0.65,
                 stagger: NAV_MENU_LINK_STAGGER,
-                ease: 'power3.out',
+                ease: 'osmo',
             },
-            openDuration * 0.22
+            openDuration * 0.32
         );
-        setNavMenuToggleOpen(true, tl, openDuration * 0.12);
+        setNavMenuToggleOpen(true, tl, openDuration * 0.1);
 
         state.tl = tl;
     }
@@ -1605,14 +1575,14 @@ console.log('[OOB] Script loaded v2.8.0');
         els.openBtn?.setAttribute('aria-expanded', 'false');
         releaseNavMenuFocus();
 
-        const targets = getNavMenuStaggerTargets(els);
+        const targets = getNavMenuAnimTargets(els);
         const closeDuration = reducedMotion ? 0 : NAV_MENU_CLOSE_DURATION;
 
         const finishClose = () => {
             gsap.set(els.menu, { visibility: 'hidden', pointerEvents: 'none' });
-            gsap.set(els.bg, { scaleY: 0 });
-            gsap.set(targets, { y: 0, autoAlpha: 1 });
-            resetNavMenuToggleLines();
+            gsap.set(els.bg, { scaleY: 0, transformOrigin: NAV_MENU_BG_ORIGIN });
+            gsap.set(targets, { yPercent: 0, autoAlpha: 1 });
+            resetNavMenuToggleIcon();
             if (restoreScroll) restoreNavMenuScroll();
         };
 
@@ -1630,18 +1600,23 @@ console.log('[OOB] Script loaded v2.8.0');
         tl.to(
             targets,
             {
-                y: '1.5rem',
+                yPercent: 110,
                 autoAlpha: 0,
-                duration: closeDuration * 0.35,
-                stagger: NAV_MENU_LINK_STAGGER * 0.5,
+                duration: closeDuration * 0.4,
+                stagger: { each: NAV_MENU_LINK_STAGGER * 0.45, from: 'end' },
                 ease: 'power3.in',
             },
             0
         );
         tl.to(
             els.bg,
-            { scaleY: 0, duration: closeDuration * 0.65, ease: 'power3.inOut' },
-            closeDuration * 0.2
+            {
+                scaleY: 0,
+                transformOrigin: NAV_MENU_BG_ORIGIN,
+                duration: closeDuration * 0.7,
+                ease: 'power3.inOut',
+            },
+            closeDuration * 0.18
         );
 
         state.tl = tl;
@@ -1663,6 +1638,11 @@ console.log('[OOB] Script loaded v2.8.0');
             console.warn('[OOB] Mobile nav: missing [data-nav-menu-open] toggle button');
             return;
         }
+        if (!els.toggleIcon) {
+            console.warn(
+                '[OOB] Mobile nav: missing [data-nav-menu-icon] inside toggle (see BARBA-OSMO.md)'
+            );
+        }
 
         if (!els.menu.id) els.menu.id = 'oob-nav-menu';
         els.openBtn.setAttribute('aria-controls', els.menu.id);
@@ -1672,11 +1652,14 @@ console.log('[OOB] Script loaded v2.8.0');
         els.menu.setAttribute('aria-hidden', 'true');
         els.menu.setAttribute('aria-label', 'Site navigation');
 
-        gsap.set(els.bg, { scaleY: 0, transformOrigin: 'top center' });
+        gsap.set(els.bg, { scaleY: 0, transformOrigin: NAV_MENU_BG_ORIGIN });
         gsap.set(els.menu, { visibility: 'hidden', pointerEvents: 'none' });
+        if (els.toggleIcon) {
+            gsap.set(els.toggleIcon, { rotate: 0, transformOrigin: '50% 50%' });
+        }
 
-        const targets = getNavMenuStaggerTargets(els);
-        if (targets.length) gsap.set(targets, { y: 0, autoAlpha: 1 });
+        const targets = getNavMenuAnimTargets(els);
+        if (targets.length) gsap.set(targets, { yPercent: 0, autoAlpha: 1 });
 
         els.openBtn.addEventListener('click', () => {
             if (!isMobileNavViewport()) return;

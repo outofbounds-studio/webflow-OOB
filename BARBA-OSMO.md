@@ -302,12 +302,11 @@ body [data-barba="wrapper"]
 │       │   └── List (ul) > links
 │       │       └── Link.navbar_link [data-barba-namespace="work"]
 │       └── Button [data-nav-menu-open]     ← mobile/tablet only (shown ≤991)
-│           └── div [data-nav-menu-toggle]
-│               ├── div [data-nav-menu-line]
-│               └── div [data-nav-menu-line]   ← 2 lines → animates to X
+│           └── Div [data-nav-menu-icon]      ← GSAP rotates on open (default 45°)
+│               └── SVG (4-square grid — style in Webflow)
 │
 ├── div [data-nav-menu]                     ← sibling of inner OR inside header (outside container)
-│   ├── div [data-nav-menu-bg]              ← solid panel (scales from top)
+│   ├── div [data-nav-menu-bg]              ← solid panel (scales up from bottom)
 │   └── div [data-nav-menu-panel]           ← add data-lenis-prevent if panel scrolls
 │       ├── div [data-nav-menu-item]        ← optional wrapper per link (stagger target)
 │       │   └── Link.navbar_link [data-barba-namespace="work"]
@@ -339,12 +338,52 @@ Every link needs matching `data-barba-namespace` (same as desktop). `oob.js` syn
 | Element | Attribute | Notes |
 |---------|-----------|--------|
 | Overlay root | `data-nav-menu` | Fixed full viewport |
-| Background panel | `data-nav-menu-bg` | Solid fill — scales `scaleY` from top |
+| Background panel | `data-nav-menu-bg` | Solid fill — scales `scaleY` from bottom |
 | Links column | `data-nav-menu-panel` | Stacked links; `data-lenis-prevent` if scrollable |
 | Link wrapper | `data-nav-menu-item` | Optional stagger target |
-| Open toggle | `data-nav-menu-open` | `button` — morphs to X via `[data-nav-menu-line]` |
-| Toggle graphic | `data-nav-menu-toggle` | Wraps 2 (or 3) `[data-nav-menu-line]` divs |
+| Open toggle | `data-nav-menu-open` | `button` — style rounded square in Webflow |
+| Icon wrapper | `data-nav-menu-icon` | Wraps SVG; GSAP rotates to cross (default `45`°, override with `data-nav-menu-icon-rotate`) |
 | Close (optional) | `data-nav-menu-close` | Extra close control inside panel |
+
+#### Menu toggle button (Webflow)
+
+Style the **button** and **SVG** entirely in Designer. `oob.js` only rotates `[data-nav-menu-icon]`.
+
+```
+Button [data-nav-menu-open]
+├── Custom attribute: data-nav-menu-open
+├── Style in Webflow: fixed size (e.g. 2.5rem × 2.5rem), dark background, border-radius, flex center
+└── Div [data-nav-menu-icon]
+    ├── Custom attribute: data-nav-menu-icon
+    ├── Optional: data-nav-menu-icon-rotate="45"  (degrees when menu is open)
+    └── SVG Embed or Image (4-square grid icon, white fill)
+```
+
+**Closed:** 2×2 square grid (four dots). **Open:** icon rotates 45° so the grid reads as a cross/diamond.
+
+Example SVG for Webflow Embed (tune `fill` / size in Designer):
+
+```html
+<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect x="0" y="0" width="6" height="6" fill="currentColor"/>
+  <rect x="8" y="0" width="6" height="6" fill="currentColor"/>
+  <rect x="0" y="8" width="6" height="6" fill="currentColor"/>
+  <rect x="8" y="8" width="6" height="6" fill="currentColor"/>
+</svg>
+```
+
+Set the embed or parent `color` in Webflow so `currentColor` picks up your icon colour.
+
+**Position (nested under `.nav-menu-open`):** You do not need to move the button into `.nav-bar`. `oob.css` pins `[data-nav-menu-open]` to the nav bar corner with `position: fixed`. Set these on `:root` (or in Webflow Head) to match your floating nav pill:
+
+| Variable | Default | Match to |
+|----------|---------|----------|
+| `--nav-bar-inset-x` | `1rem` | Nav bar horizontal margin from viewport edge |
+| `--nav-bar-inset-y` | `1rem` | Nav bar top offset |
+| `--nav-bar-height` | `3.5rem` | Nav bar height |
+| `--nav-toggle-size` | `2.5rem` | Toggle button height (for vertical centering) |
+
+`pointer-events: auto` on the toggle keeps it clickable even when nested inside `[data-nav-menu]` (overlay uses `pointer-events: none` when closed).
 
 #### Styling (Webflow + `oob.css`)
 
@@ -356,19 +395,26 @@ Tune in `oob.css`:
 
 | Variable | Default |
 |----------|---------|
-| `--nav-menu-bg` | `#111111` |
+| `--nav-menu-bg` | `#ff4802` |
+| `--nav-menu-link-color` | `#000000` |
 | `--nav-menu-link-size` | `2.75rem` |
 | `--nav-menu-panel-padding-top` | `6.5rem` (clears fixed header) |
 | `--nav-bar-z` | `110` |
 | `--nav-menu-z` | `100` |
+| `--nav-bar-inset-x` | `1rem` |
+| `--nav-bar-inset-y` | `1rem` |
+| `--nav-bar-height` | `3.5rem` |
+| `--nav-toggle-size` | `2.5rem` |
 
 #### Animation (handled in `oob.js`)
 
 | Phase | Open | Close |
 |-------|------|-------|
-| 1 | `[data-nav-menu-bg]` scales Y `0 → 1` from top | Links fade/slide out |
-| 2 | Links stagger up + fade in | Background scales Y `1 → 0` |
-| Toggle | 2-line hamburger → X | X → hamburger |
+| 1 | `[data-nav-menu-bg]` scales Y `0 → 1` from **bottom** | Links slide down + fade (reverse stagger) |
+| 2 | Links rise inside `[data-nav-menu-item]` masks (`yPercent` + fade) | Background scales Y `1 → 0` to bottom |
+| Toggle | 2×2 grid icon rotates 45° (cross) | Rotates back to 0° |
+
+Wrap each link in `[data-nav-menu-item]` (`overflow: hidden`) so link text reveals upward inside the mask.
 
 **Osmo patterns included:**
 
