@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.7 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.8 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.7');
+console.log('[OOB] Script loaded v2.6.8');
 
 (function () {
     'use strict';
@@ -146,6 +146,32 @@ console.log('[OOB] Script loaded v2.6.7');
         return true;
     }
 
+    function reinitWebflowForms(root = document) {
+        if (typeof Webflow === 'undefined') return;
+        const scope = root?.querySelector ? root : document;
+        syncWebflowPageId(scope);
+        const forms = Webflow.require?.('forms');
+        if (forms?.ready) forms.ready();
+    }
+
+    /** Webflow forms listen via jQuery — trigger submit, not requestSubmit (avoids 405 on page URL). */
+    function submitWebflowForm(form, submitInput) {
+        const scope = form.closest('[data-barba="container"]') || document;
+        reinitWebflowForms(scope);
+
+        const jq = window.jQuery || window.$;
+        if (jq && form.hasAttribute('data-wf-page-id')) {
+            if (form.getAttribute('method')?.toLowerCase() === 'get') {
+                form.setAttribute('method', 'post');
+                form.method = 'post';
+            }
+            jq(form).trigger('submit');
+            return;
+        }
+
+        if (submitInput) submitInput.click();
+    }
+
     function cleanupCloudflareTurnstile(root = document) {
         const turnstile = window.turnstile;
         if (!turnstile || typeof turnstile.remove !== 'function') return;
@@ -166,7 +192,10 @@ console.log('[OOB] Script loaded v2.6.7');
 
     function scheduleFormValidationAfterWebflow(root = document, { afterWebflowReinit = false } = {}) {
         const run = () => refreshAdvancedFormValidation(root);
-        if (afterWebflowReinit) {
+        const hasForm = root?.querySelector?.('[data-form-validate], form[data-wf-page-id]');
+        if (afterWebflowReinit && hasForm) {
+            setTimeout(run, 150);
+        } else if (afterWebflowReinit) {
             requestAnimationFrame(() => requestAnimationFrame(run));
         } else {
             requestAnimationFrame(run);
@@ -1392,11 +1421,6 @@ console.log('[OOB] Script loaded v2.6.7');
         const form = formContainer.querySelector('form');
         if (!form) return null;
 
-        if (form.getAttribute('method')?.toLowerCase() === 'get') {
-            form.setAttribute('method', 'post');
-            form.method = 'post';
-        }
-
         const validateFields = form.querySelectorAll('[data-validate]');
         const dataSubmit = form.querySelector('[data-submit]');
         if (!dataSubmit) return null;
@@ -1455,11 +1479,7 @@ console.log('[OOB] Script loaded v2.6.7');
                 window.alert('Form submitted too quickly. Please try again.');
                 return;
             }
-            if (typeof form.requestSubmit === 'function') {
-                form.requestSubmit(realSubmitInput);
-            } else {
-                realSubmitInput.click();
-            }
+            submitWebflowForm(form, realSubmitInput);
         }
 
         validateFields.forEach((fieldGroup) => {
