@@ -379,23 +379,22 @@ Set the embed or parent `color` in Webflow so `currentColor` picks up your icon 
 
 **Stacking:** `.nav` / `.nav-bar` use `z-index: 110` in `oob.css`; `[data-nav-menu]` overlay uses `100`. Set **`position: fixed`** on `.nav` in Webflow — `oob.js` / `oob.css` do not override position (a previous `position: relative` rule was breaking fixed on mobile).
 
-#### iOS Safari edge-to-edge (tux.co-style)
+#### iOS Safari
 
-**Closed page:** Content bleeds behind translucent Safari chrome (status bar + floating URL bar). Requires:
+**Translucent chrome** (content visible behind floating URL bar): Safari paints opaque bars when `<meta name="theme-color">` is present. Webflow must not add one.
 
-| Requirement | How |
-|-------------|-----|
-| `viewport-fit=cover` | Paste the **inline** script below as the **first** line of Head Code (not a second `<meta>` tag). External `oob-viewport.js` also works but inline is faster. |
+1. Load **`oob-viewport.js` first** in Head Code (strips `theme-color` before first paint):
 
 ```html
-<script>
-(function(){document.querySelectorAll('meta[name="viewport"]').forEach(function(m){m.remove();});var v=document.createElement('meta');v.name='viewport';v.content='width=device-width, initial-scale=1, viewport-fit=cover';document.head.insertBefore(v,document.head.firstChild);})();
-</script>
+<script src="https://outofbounds-studio.github.io/webflow-OOB/oob-viewport.js"></script>
 ```
-| No opaque `theme-color` | Remove from Webflow Head — opaque values tint the URL bar and hide content behind it |
-| Safe-area insets | `env(safe-area-inset-top)` on fixed nav; menu overlay starts below the notch |
 
-**Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**; overlay runs from the physical bottom up to `safe-area-inset-top` (below the notch). No `html`/`body` background fill, no `theme-color` swap.
+2. Do **not** add `<meta name="theme-color">` or a duplicate `<meta name="viewport">` in Head Code.
+3. `oob.js` removes any `theme-color` added later and watches `<head>` for new tags.
+
+**`viewport-fit=cover`:** Optional — `oob-viewport.js` replaces Webflow’s default viewport meta. iOS may still ignore JS changes (Webflow limitation); safe-area `env()` may stay `0`.
+
+**Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**. No `html`/`body` background fill, no `theme-color` swap.
 
 `oob.js` moves `[data-nav-menu]` to `document.body` on init so `position: fixed` is not clipped by a transformed parent.
 

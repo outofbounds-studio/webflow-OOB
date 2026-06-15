@@ -1,7 +1,11 @@
 /* oob-viewport.js — load FIRST in Webflow Head Code (before CSS/JS) */
-/* Webflow injects its own viewport meta first; patching content via JS is ignored on iOS.
-   Remove all viewport metas and insert one fresh tag with viewport-fit=cover. */
+/* 1) Strip theme-color so Safari keeps translucent URL/status chrome */
+/* 2) Replace Webflow viewport meta with viewport-fit=cover (best-effort; iOS may ignore JS) */
 (function () {
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+        meta.remove();
+    });
+
     document.querySelectorAll('meta[name="viewport"]').forEach(function (meta) {
         meta.remove();
     });

@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.2 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.3 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.2');
+console.log('[OOB] Script loaded v2.9.3');
 
 (function () {
     'use strict';
@@ -370,6 +370,7 @@ console.log('[OOB] Script loaded v2.9.2');
     function initOnceFunctions() {
         ensureViewportFitCover();
         ensureTranslucentSafariChrome();
+        watchTranslucentSafariChrome();
         initLenis();
         if (onceFunctionsInitialized) return;
         onceFunctionsInitialized = true;
@@ -1415,23 +1416,23 @@ console.log('[OOB] Script loaded v2.9.2');
         console.log('[OOB] Replaced viewport meta with viewport-fit=cover');
     }
 
-    /** Opaque theme-color blocks translucent Safari chrome (content behind URL bar). */
+    /** theme-color paints Safari URL/status bars opaque — remove all instances. */
     function ensureTranslucentSafariChrome() {
-        const meta = document.querySelector('meta[name="theme-color"]');
-        if (!meta) return;
+        const metas = document.querySelectorAll('meta[name="theme-color"]');
+        if (!metas.length) return;
 
-        const color = (meta.getAttribute('content') || '').trim().toLowerCase();
-        const stale =
-            color === '#111111' ||
-            color === '#111' ||
-            color === '#1c1b1b' ||
-            color === 'rgb(17, 17, 17)' ||
-            color === 'rgb(28, 27, 27)';
+        metas.forEach((meta) => meta.remove());
+        console.log('[OOB] Removed theme-color meta for translucent Safari chrome');
+    }
 
-        if (stale) {
-            meta.remove();
-            console.log('[OOB] Removed opaque theme-color meta (translucent Safari chrome)');
-        }
+    function watchTranslucentSafariChrome() {
+        if (watchTranslucentSafariChrome.active) return;
+        watchTranslucentSafariChrome.active = true;
+
+        const observer = new MutationObserver(() => {
+            document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
+        });
+        observer.observe(document.head, { childList: true, subtree: true });
     }
 
     function placeNavMenuOnBody(menu) {
@@ -1442,6 +1443,7 @@ console.log('[OOB] Script loaded v2.9.2');
 
     ensureViewportFitCover();
     ensureTranslucentSafariChrome();
+    watchTranslucentSafariChrome();
 
     function isMobileNavViewport() {
         return window.matchMedia(NAV_MENU_BREAKPOINT).matches;
