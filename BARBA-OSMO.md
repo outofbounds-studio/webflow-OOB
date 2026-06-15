@@ -382,7 +382,9 @@ Set `debug: true` in `barba.init` inside `oob.js` while debugging transitions.
 
 ### Live Form Validation (Advanced)
 
-Osmo resource wired in `oob.js` / `oob.css` (v2.6.4+). Re-inits on Barba `once` / `afterEnter`; reverts on `afterLeave`.
+Osmo resource wired in `oob.js` / `oob.css`. Re-inits on Barba `afterEnter`; reverts on `afterLeave`.
+
+**Webflow forms + Turnstile (Barba nav):** `initResetWebflow()` runs on every Barba `enter` (v2.7.0+). Requires a **hidden `.w-form` on every page** (e.g. site component, `display: none`) so Webflow’s forms module stays initialized. Spam/bot protection can stay ON.
 
 | Webflow attribute | Where |
 |-------------------|--------|
@@ -392,6 +394,8 @@ Osmo resource wired in `oob.js` / `oob.css` (v2.6.4+). Re-inits on Barba `once` 
 | `data-radiocheck-group` | Radio/checkbox group container (`min` / `max` optional) |
 
 Add success/error icon elements per Osmo structure (`.form-field-icon`, `.radiocheck-field-icon`). Classes `.is--error`, `.is--success`, `.is--filled` are toggled by JS.
+
+Console on Barba navigation: `[OOB] Webflow forms reset (preview + Turnstile)`.
 
 ---
 

@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.9 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.7.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.9');
+console.log('[OOB] Script loaded v2.7.0');
 
 (function () {
     'use strict';
@@ -181,8 +181,108 @@ console.log('[OOB] Script loaded v2.6.9');
         const scope = root?.querySelector ? root : document;
         syncWebflowPageId(scope);
         const forms = Webflow.require?.('forms');
-        if (forms?.ready) forms.ready();
+        if (forms?.preview) forms.preview();
+        else if (forms?.ready) forms.ready();
         ensureWebflowFormSubmitDelegate();
+    }
+
+    function unlockWebflowFormState(formWrap) {
+        formWrap.classList.remove('w-form-loading');
+        formWrap.querySelectorAll('[type="submit"]').forEach((submit) => {
+            submit.disabled = false;
+            submit.removeAttribute('disabled');
+            submit.classList.remove('w-form-loading');
+        });
+    }
+
+    function renderWebflowTurnstileInForm(formWrap) {
+        const turnstile = window.turnstile;
+        if (!turnstile?.render) return;
+
+        const formEl = formWrap.querySelector('form');
+        if (!formEl) return;
+
+        const sitekey = formEl.getAttribute('data-turnstile-sitekey');
+        if (!sitekey) return;
+
+        formEl.querySelectorAll('input[name="cf-turnstile-response"]').forEach((el) => el.remove());
+
+        let container = formEl.querySelector('[data-turnstile-element]');
+        if (!container) {
+            container = document.createElement('div');
+            container.setAttribute('data-turnstile-element', '');
+            formEl.appendChild(container);
+        }
+
+        const existing = container.querySelector('.cf-turnstile');
+        if (existing && turnstile.remove) {
+            try {
+                turnstile.remove(existing);
+            } catch (_) {
+                /* already removed */
+            }
+        }
+        container.innerHTML = '';
+
+        const unlock = () => unlockWebflowFormState(formWrap);
+        turnstile.render(container, {
+            sitekey,
+            callback: unlock,
+            'error-callback': unlock,
+            'expired-callback': unlock,
+        });
+    }
+
+    /**
+     * Webflow forms + Turnstile reset after Barba enter (experimental MSC/Osmo pattern).
+     * Webflow: keep a hidden .w-form on every page (display:none component).
+     */
+    function initResetWebflow(data) {
+        if (!data?.next?.container || typeof Webflow === 'undefined' || !Webflow.require) return;
+        if (!data.current?.container) return;
+
+        const container = data.next.container;
+
+        if (data.next.html) {
+            try {
+                const dom = new DOMParser().parseFromString(data.next.html, 'text/html');
+                const webflowPageId = dom.querySelector('html')?.getAttribute('data-wf-page');
+                if (webflowPageId) {
+                    document.documentElement.setAttribute('data-wf-page', webflowPageId);
+                    console.log('[OOB] Reset data-wf-page from next HTML', webflowPageId);
+                }
+            } catch (_) {
+                syncWebflowPageId(container);
+            }
+        } else {
+            syncWebflowPageId(container);
+        }
+
+        cleanupCloudflareTurnstile(container);
+
+        const w = Webflow;
+        if (typeof w.destroy === 'function') w.destroy();
+        if (typeof w.ready === 'function') w.ready();
+
+        const forms = w.require('forms');
+        if (forms?.preview) forms.preview();
+        else if (forms?.ready) forms.ready();
+
+        const ix2 = w.require('ix2');
+        if (ix2?.init) ix2.init();
+
+        ensureWebflowFormSubmitDelegate();
+
+        container.querySelectorAll('.w-form').forEach(unlockWebflowFormState);
+
+        requestAnimationFrame(() => {
+            container.querySelectorAll('.w-form').forEach((formWrap) => {
+                unlockWebflowFormState(formWrap);
+                renderWebflowTurnstileInForm(formWrap);
+            });
+        });
+
+        console.log('[OOB] Webflow forms reset (preview + Turnstile)');
     }
 
     /** Invoke Webflow AJAX handler — never native submit (POST /page-url → 405). */
@@ -230,7 +330,7 @@ console.log('[OOB] Script loaded v2.6.9');
         const run = () => refreshAdvancedFormValidation(root);
         const hasForm = root?.querySelector?.('[data-form-validate], form[data-wf-page-id]');
         if (afterWebflowReinit && hasForm) {
-            setTimeout(run, 150);
+            setTimeout(run, 350);
         } else if (afterWebflowReinit) {
             requestAnimationFrame(() => requestAnimationFrame(run));
         } else {
@@ -248,7 +348,8 @@ console.log('[OOB] Script loaded v2.6.9');
             if (typeof Webflow.ready === 'function') Webflow.ready();
             if (Webflow.require) {
                 const forms = Webflow.require('forms');
-                if (forms && typeof forms.ready === 'function') forms.ready();
+                if (forms?.preview) forms.preview();
+                else if (forms?.ready) forms.ready();
             }
             ensureWebflowFormSubmitDelegate();
             scheduleDisplayReadTimeAfterWebflow(container);
@@ -284,7 +385,7 @@ console.log('[OOB] Script loaded v2.6.9');
 
     function initAfterEnterFunctions(next, options = {}) {
         nextPage = next || document;
-        const { reinitWebflow: shouldReinitWebflow = true } = options;
+        const { reinitWebflow: shouldReinitWebflow = true, afterBarbaNav = false } = options;
         if (shouldReinitWebflow) reinitWebflow();
         syncNavActiveFromContainer(nextPage);
         refreshNavHighlightBlob();
@@ -292,7 +393,9 @@ console.log('[OOB] Script loaded v2.6.9');
         if (has('[data-button-065]')) scheduleButton065(nextPage);
         initCopyButtons(nextPage);
         if (has('[data-current-year]')) initDynamicCurrentYear(nextPage);
-        scheduleFormValidationAfterWebflow(nextPage, { afterWebflowReinit: shouldReinitWebflow });
+        scheduleFormValidationAfterWebflow(nextPage, {
+            afterWebflowReinit: afterBarbaNav || shouldReinitWebflow,
+        });
         scheduleDisplayReadTimeAfterWebflow(nextPage);
         refreshPostScrollProgress(nextPage);
         refreshBelieveScroll(nextPage);
@@ -781,13 +884,15 @@ console.log('[OOB] Script loaded v2.6.9');
 
     barba.hooks.enter((data) => {
         initBarbaNavUpdate(data);
+        initResetWebflow(data);
     });
 
     barba.hooks.afterEnter((data) => {
         barbaViewCount += 1;
-        // First view: Webflow + Turnstile already booted on cold load — skip destroy/ready
+        // Webflow forms/Turnstile: initResetWebflow() in enter hook (Barba nav only)
         initAfterEnterFunctions(data.next.container, {
-            reinitWebflow: barbaViewCount > 1,
+            reinitWebflow: false,
+            afterBarbaNav: barbaViewCount > 1,
         });
 
         if (lenis) {
