@@ -385,7 +385,7 @@ Set the embed or parent `color` in Webflow so `currentColor` picks up your icon 
 
 | Requirement | How |
 |-------------|-----|
-| `viewport-fit=cover` | Webflow Head viewport meta, or `oob.js` patches it on init |
+| `viewport-fit=cover` | Load `oob-viewport.js` **first** in Head Code (patches Webflow's default viewport meta). Do **not** add a second `<meta name="viewport">` — Safari uses only the first tag. |
 | No opaque `theme-color` | Remove from Webflow Head — opaque values tint the URL bar and hide content behind it |
 | Safe-area insets | `env(safe-area-inset-top)` on fixed nav; menu overlay starts below the notch |
 

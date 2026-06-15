@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.0 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.1 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.0');
+console.log('[OOB] Script loaded v2.9.1');
 
 (function () {
     'use strict';
@@ -1406,9 +1406,9 @@ console.log('[OOB] Script loaded v2.9.0');
     let mobileNavState = null;
 
     function ensureViewportFitCover() {
-        let meta = document.querySelector('meta[name="viewport"]');
-        if (!meta) {
-            meta = document.createElement('meta');
+        const metas = [...document.querySelectorAll('meta[name="viewport"]')];
+        if (!metas.length) {
+            const meta = document.createElement('meta');
             meta.name = 'viewport';
             meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
             document.head.appendChild(meta);
@@ -1416,12 +1416,17 @@ console.log('[OOB] Script loaded v2.9.0');
             return;
         }
 
-        const content = meta.getAttribute('content') || '';
-        if (/viewport-fit\s*=\s*cover/i.test(content)) return;
+        const primary = metas[0];
+        const content = primary.getAttribute('content') || 'width=device-width, initial-scale=1';
+        if (!/viewport-fit\s*=\s*cover/i.test(content)) {
+            primary.setAttribute('content', `${content.replace(/,?\s*$/, '')}, viewport-fit=cover`);
+            console.log('[OOB] Patched primary viewport meta with viewport-fit=cover');
+        }
 
-        const next = content.trim().replace(/,?\s*$/, '');
-        meta.setAttribute('content', `${next}, viewport-fit=cover`);
-        console.log('[OOB] Patched viewport meta with viewport-fit=cover');
+        metas.slice(1).forEach((meta) => meta.remove());
+        if (metas.length > 1) {
+            console.log('[OOB] Removed duplicate viewport meta tags');
+        }
     }
 
     /** Opaque theme-color blocks translucent Safari chrome (content behind URL bar). */
