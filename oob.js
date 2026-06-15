@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.6 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.6');
+console.log('[OOB] Script loaded v2.9.5');
 
 (function () {
     'use strict';
@@ -1398,8 +1398,6 @@ console.log('[OOB] Script loaded v2.9.6');
     // -----------------------------------------
 
     const NAV_MENU_OPEN_CLASS = 'is-nav-menu-open';
-    const NAV_MENU_SCROLL_LOCK_CLASS = 'is-nav-menu-scroll-lock';
-    const NAV_MENU_SAFARI_CHROME_CLASS = 'is-nav-menu-safari-chrome';
     const OOB_THEME_COLOR_ID = 'oob-safari-theme-color';
     const NAV_MENU_BREAKPOINT = '(max-width: 767px)';
     const NAV_MENU_OPEN_DURATION = 0.85;
@@ -1451,30 +1449,7 @@ console.log('[OOB] Script loaded v2.9.6');
         if (mobileNavState) mobileNavState.safariChromeOrange = true;
     }
 
-    /** iOS 26+ ignores theme-color — use a fixed bottom strip Safari can sample (see BARBA-OSMO.md). */
-    function ensureSafariBottomChrome() {
-        if (document.querySelector('[data-oob-safari-bottom-chrome]')) return;
-
-        const chrome = document.createElement('div');
-        chrome.setAttribute('data-oob-safari-bottom-chrome', '');
-        chrome.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(chrome);
-    }
-
-    function setNavMenuSafariChrome(active) {
-        if (active && isMobileNavViewport()) {
-            ensureSafariBottomChrome();
-            document.documentElement.classList.add(NAV_MENU_SAFARI_CHROME_CLASS);
-            setSafariMenuThemeColor();
-            return;
-        }
-
-        document.documentElement.classList.remove(NAV_MENU_SAFARI_CHROME_CLASS);
-        clearSafariThemeColor();
-    }
-
     function ensureTranslucentSafariChrome() {
-        document.documentElement.classList.remove(NAV_MENU_SAFARI_CHROME_CLASS);
         clearSafariThemeColor();
     }
 
@@ -1631,7 +1606,7 @@ console.log('[OOB] Script loaded v2.9.6');
         );
         menu.style.top = `${top}px`;
         menu.style.height = `${height}px`;
-        menu.style.bottom = '0';
+        menu.style.bottom = 'auto';
     }
 
     function clearNavMenuLayout(menu) {
@@ -1666,20 +1641,14 @@ console.log('[OOB] Script loaded v2.9.6');
 
     function setNavMenuScrollLock(active) {
         const menu = mobileNavState?.els?.menu;
-        document.documentElement.classList.toggle(NAV_MENU_SCROLL_LOCK_CLASS, active);
+        document.documentElement.classList.toggle(NAV_MENU_OPEN_CLASS, active);
         if (active) {
-            document.documentElement.classList.add(NAV_MENU_OPEN_CLASS);
             syncNavMenuToVisualViewport(menu);
             bindNavMenuVisualViewportSync(menu);
-            return;
+        } else {
+            unbindNavMenuVisualViewportSync();
+            clearNavMenuLayout(menu);
         }
-
-        unbindNavMenuVisualViewportSync();
-    }
-
-    function clearNavMenuOpenLayout(menu) {
-        document.documentElement.classList.remove(NAV_MENU_OPEN_CLASS);
-        clearNavMenuLayout(menu);
     }
 
     function restoreNavMenuScroll() {
@@ -1698,7 +1667,7 @@ console.log('[OOB] Script loaded v2.9.6');
         state.isOpen = true;
 
         setNavMenuScrollLock(true);
-        setNavMenuSafariChrome(true);
+        setSafariMenuThemeColor();
         syncNavMenuToVisualViewport(els.menu);
         els.menu.setAttribute('aria-hidden', 'false');
         gsap.set(els.menu, { visibility: 'visible', pointerEvents: 'auto' });
@@ -1769,9 +1738,7 @@ console.log('[OOB] Script loaded v2.9.6');
             gsap.set(els.bg, { scaleY: 0, transformOrigin: NAV_MENU_BG_ORIGIN });
             gsap.set(targets, { yPercent: 0, autoAlpha: 1 });
             resetNavMenuToggleIcon();
-            document.documentElement.classList.remove(NAV_MENU_SCROLL_LOCK_CLASS);
-            clearNavMenuOpenLayout(els.menu);
-            setNavMenuSafariChrome(false);
+            clearSafariThemeColor();
             if (restoreScroll) restoreNavMenuScroll();
         };
 
@@ -1835,7 +1802,6 @@ console.log('[OOB] Script loaded v2.9.6');
 
         placeNavToggleInBar(els.openBtn);
         placeNavMenuOnBody(els.menu);
-        ensureSafariBottomChrome();
         ensureNavStacking();
 
         if (!els.menu.id) els.menu.id = 'oob-nav-menu';

@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.8 */
+/* Version: 1.7.7 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -231,22 +231,13 @@ h6,
   position: fixed;
   left: 0;
   right: 0;
+  bottom: 0;
   width: 100%;
+  top: var(--nav-menu-safe-top);
   z-index: var(--nav-menu-z);
   visibility: hidden;
   pointer-events: none;
-  overflow: hidden;
-  /* Closed: stay out of Safari 26 bottom chrome sampling (fixed + bottom edge) */
-  top: 0;
-  bottom: auto;
-  height: 0;
-  min-height: 0;
-}
-
-html.is-nav-menu-open [data-nav-menu] {
   overflow: clip;
-  bottom: 0;
-  height: auto;
 }
 
 [data-nav-menu-bg] {
@@ -350,34 +341,15 @@ html.is-nav-menu-open [data-nav-menu] {
   z-index: var(--nav-bar-z);
 }
 
-html.is-nav-menu-scroll-lock {
+html.is-nav-menu-open {
   overflow: hidden;
 }
 
-html.is-nav-menu-scroll-lock body {
+html.is-nav-menu-open body {
   overflow: hidden;
 }
 
-/* iOS 26+ samples fixed elements near the bottom — not theme-color (Safari 15–18 still use meta). */
-[data-oob-safari-bottom-chrome] {
-  position: fixed;
-  bottom: calc(-1 * max(8px, var(--nav-menu-safe-bottom)));
-  left: 0;
-  width: 100%;
-  min-height: 12px;
-  z-index: calc(var(--nav-menu-z) - 1);
-  pointer-events: none;
-  display: none;
-  background-color: transparent;
-}
-
-html.is-nav-menu-safari-chrome [data-oob-safari-bottom-chrome] {
-  display: block;
-  background-color: var(--nav-menu-bg);
-  min-height: max(var(--nav-menu-chrome-bottom-overscan), 12px);
-}
-
-/* Extend animated orange fill under Safari's floating bottom URL bar while menu is open */
+/* Extend orange fill under Safari's floating bottom URL bar while menu is open */
 html.is-nav-menu-open [data-nav-menu-bg] {
   bottom: calc(-1 * max(var(--nav-menu-chrome-bottom-overscan), var(--nav-menu-safe-bottom)));
   min-height: calc(100% + max(var(--nav-menu-chrome-bottom-overscan), var(--nav-menu-safe-bottom)));
