@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.5.6 */
+/* Version: 1.6.0 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -207,6 +207,130 @@ h6,
 .nav-link {
   position: relative;
   z-index: 1;
+}
+
+/* ------------ Mobile nav menu (≤991px) ------------- */
+/* Webflow structure: BARBA-OSMO.md § Mobile nav menu */
+:root {
+  --nav-menu-bg: #111111;
+  --nav-menu-panel-padding-top: 6.5rem;
+  --nav-menu-panel-padding-x: 1.5rem;
+  --nav-menu-panel-padding-bottom: 2.5rem;
+  --nav-menu-link-size: 2.75rem;
+  --nav-menu-link-gap: 0.35em;
+  --nav-bar-z: 110;
+  --nav-menu-z: 100;
+}
+
+[data-nav-menu] {
+  position: fixed;
+  inset: 0;
+  z-index: var(--nav-menu-z);
+  visibility: hidden;
+  pointer-events: none;
+  overflow: clip;
+}
+
+[data-nav-menu-bg] {
+  position: absolute;
+  inset: 0;
+  background-color: var(--nav-menu-bg);
+  transform: scaleY(0);
+  transform-origin: top center;
+  will-change: transform;
+}
+
+[data-nav-menu-panel] {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--nav-menu-link-gap);
+  min-height: 100%;
+  padding: var(--nav-menu-panel-padding-top) var(--nav-menu-panel-padding-x)
+    var(--nav-menu-panel-padding-bottom);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-nav-menu-item] {
+  overflow: hidden;
+}
+
+[data-nav-menu-panel] .navbar_link,
+[data-nav-menu-panel] .nav-link {
+  display: block;
+  font-size: var(--nav-menu-link-size);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+[data-nav-menu-open] {
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+[data-nav-menu-close] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-nav-menu-toggle] {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 2rem;
+  height: 2rem;
+}
+
+[data-nav-menu-line] {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: currentColor;
+  transform-origin: center;
+  border-radius: 1px;
+}
+
+html.is-nav-menu-open {
+  overflow: hidden;
+}
+
+html.is-nav-menu-open body {
+  overflow: hidden;
+}
+
+@media screen and (max-width: 991px) {
+  [data-nav-menu-open] {
+    display: inline-flex;
+  }
+
+  .nav-links-wrap {
+    display: none !important;
+  }
+
+  .nav,
+  .navbar_wrap,
+  .navbar {
+    z-index: var(--nav-bar-z);
+  }
+}
+
+@media screen and (min-width: 992px) {
+  [data-nav-menu] {
+    display: none !important;
+  }
 }
 
 /* ------------ Main CTA button (038) ------------- */

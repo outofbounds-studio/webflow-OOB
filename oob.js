@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.7.1 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.7.1');
+console.log('[OOB] Script loaded v2.8.0');
 
 (function () {
     'use strict';
@@ -374,6 +374,7 @@ console.log('[OOB] Script loaded v2.7.1');
         ensureNavStacking();
         syncNavActiveFromContainer(document);
         initNavHighlightBlob();
+        initMobileNavMenu();
         scheduleButton038(document);
         scheduleButton065(document);
         initCopyButtons(document);
@@ -384,8 +385,7 @@ console.log('[OOB] Script loaded v2.7.1');
 
     function initBeforeEnterFunctions(next) {
         nextPage = next || document;
-        // Runs before the enter animation
-        // if (has('[data-something]')) initSomething();
+        closeMobileNavMenu({ immediate: true, restoreScroll: false });
     }
 
     function initAfterEnterFunctions(next, options = {}) {
@@ -1186,13 +1186,25 @@ console.log('[OOB] Script loaded v2.7.1');
         return false;
     }
 
+    function isNavLinkElement(link) {
+        return (
+            link.matches(NAV_LINK_SELECTOR) &&
+            !link.matches(NAV_LINK_EXCLUDE) &&
+            !link.closest('[data-nav-logo], [data-nav-home], .nav-logo, .w-nav-brand')
+        );
+    }
+
+    function getSiteNavLinks() {
+        return [...document.querySelectorAll(NAV_LINK_SELECTOR)].filter(isNavLinkElement);
+    }
+
     function syncNavActiveFromContainer(container) {
         const pageContainer = getBarbaContainer(container);
         if (!pageContainer) return;
 
         const namespace = pageContainer.getAttribute('data-barba-namespace') || '';
         const pathname = window.location.pathname;
-        const { links } = getNavHighlightElements();
+        const links = getSiteNavLinks();
 
         links.forEach((link) => {
             const isCurrent = linkMatchesPage(link, namespace, pathname);
@@ -1356,11 +1368,361 @@ console.log('[OOB] Script loaded v2.7.1');
         });
     }
 
+    // -----------------------------------------
+    // MOBILE NAV MENU — full-screen overlay (≤991px)
+    // Webflow: see BARBA-OSMO.md § Mobile nav menu
+    // -----------------------------------------
+
+    const NAV_MENU_OPEN_CLASS = 'is-nav-menu-open';
+    const NAV_MENU_BREAKPOINT = '(max-width: 991px)';
+    const NAV_MENU_OPEN_DURATION = 0.65;
+    const NAV_MENU_CLOSE_DURATION = 0.5;
+    const NAV_MENU_LINK_STAGGER = 0.07;
+
+    let mobileNavState = null;
+
+    function isMobileNavViewport() {
+        return window.matchMedia(NAV_MENU_BREAKPOINT).matches;
+    }
+
+    function getNavMenuElements() {
+        const menu = document.querySelector('[data-nav-menu]');
+        if (!menu) return null;
+
+        const openBtn = document.querySelector('[data-nav-menu-open]');
+        const toggleRoot = openBtn?.querySelector('[data-nav-menu-toggle]') || openBtn;
+        const toggleLines = toggleRoot
+            ? [...toggleRoot.querySelectorAll('[data-nav-menu-line]')]
+            : [];
+
+        const panel = menu.querySelector('[data-nav-menu-panel]');
+        const links = panel
+            ? [...panel.querySelectorAll(NAV_LINK_SELECTOR)].filter(isNavLinkElement)
+            : [];
+        const linkItems = panel ? [...panel.querySelectorAll('[data-nav-menu-item]')] : [];
+
+        return {
+            menu,
+            bg: menu.querySelector('[data-nav-menu-bg]'),
+            panel,
+            links,
+            linkItems,
+            openBtn,
+            closeBtn: document.querySelector('[data-nav-menu-close]'),
+            toggleLines,
+        };
+    }
+
+    function getNavMenuStaggerTargets(els) {
+        if (els.linkItems.length) return els.linkItems;
+        return els.links;
+    }
+
+    function setNavMenuToggleOpen(isOpen, tl, position = 0) {
+        const lines = mobileNavState?.els?.toggleLines;
+        if (!lines?.length) return;
+
+        const duration = reducedMotion ? 0 : 0.35;
+        const ease = 'power3.inOut';
+
+        if (lines.length === 2) {
+            const [line1, line2] = lines;
+            if (isOpen) {
+                const anim = {
+                    rotate: 45,
+                    y: 6,
+                    duration,
+                    ease,
+                };
+                if (tl) {
+                    tl.to(line1, anim, position);
+                    tl.to(line2, { ...anim, rotate: -45, y: -6 }, position);
+                } else {
+                    gsap.to(line1, anim);
+                    gsap.to(line2, { ...anim, rotate: -45, y: -6 });
+                }
+            } else {
+                const anim = { rotate: 0, y: 0, duration, ease };
+                if (tl) {
+                    tl.to(lines, anim, position);
+                } else {
+                    gsap.to(lines, anim);
+                }
+            }
+            return;
+        }
+
+        if (lines.length === 3) {
+            const [line1, line2, line3] = lines;
+            if (isOpen) {
+                if (tl) {
+                    tl.to(line1, { rotate: 45, y: 8, duration, ease }, position);
+                    tl.to(line2, { autoAlpha: 0, duration: duration * 0.5, ease }, position);
+                    tl.to(line3, { rotate: -45, y: -8, duration, ease }, position);
+                } else {
+                    gsap.to(line1, { rotate: 45, y: 8, duration, ease });
+                    gsap.to(line2, { autoAlpha: 0, duration: duration * 0.5, ease });
+                    gsap.to(line3, { rotate: -45, y: -8, duration, ease });
+                }
+            } else if (tl) {
+                tl.to(lines, { rotate: 0, y: 0, autoAlpha: 1, duration, ease }, position);
+            } else {
+                gsap.to(lines, { rotate: 0, y: 0, autoAlpha: 1, duration, ease });
+            }
+        }
+    }
+
+    function resetNavMenuToggleLines() {
+        setNavMenuToggleOpen(false);
+    }
+
+    function trapNavMenuFocus() {
+        const state = mobileNavState;
+        if (!state?.els?.panel) return;
+
+        const panel = state.els.panel;
+        const focusable = [
+            ...panel.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            ),
+        ].filter((el) => el.offsetParent !== null || el === document.activeElement);
+
+        state.focusTrapHandler = (event) => {
+            if (event.key !== 'Tab' || !state.isOpen) return;
+
+            const items = focusable.length
+                ? focusable
+                : [
+                      ...panel.querySelectorAll(
+                          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                      ),
+                  ];
+            if (!items.length) return;
+
+            const first = items[0];
+            const last = items[items.length - 1];
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        document.addEventListener('keydown', state.focusTrapHandler);
+
+        const focusTarget =
+            state.els.closeBtn ||
+            state.els.links[0] ||
+            panel.querySelector('a[href], button');
+        focusTarget?.focus();
+    }
+
+    function releaseNavMenuFocus() {
+        const state = mobileNavState;
+        if (!state?.focusTrapHandler) return;
+        document.removeEventListener('keydown', state.focusTrapHandler);
+        state.focusTrapHandler = null;
+        state.els?.openBtn?.focus();
+    }
+
+    function setNavMenuScrollLock(active) {
+        document.documentElement.classList.toggle(NAV_MENU_OPEN_CLASS, active);
+    }
+
+    function restoreNavMenuScroll() {
+        if (lenis && typeof lenis.start === 'function') lenis.start();
+        else unlockNativeScroll();
+    }
+
+    function openMobileNavMenu() {
+        const state = mobileNavState;
+        if (!state?.initialized || state.isOpen || !isMobileNavViewport()) return;
+
+        const { els } = state;
+        if (!els.bg || !els.panel) return;
+
+        state.tl?.kill();
+        state.isOpen = true;
+
+        setNavMenuScrollLock(true);
+        els.menu.setAttribute('aria-hidden', 'false');
+        gsap.set(els.menu, { visibility: 'visible', pointerEvents: 'auto' });
+        els.openBtn?.setAttribute('aria-expanded', 'true');
+
+        if (lenis && typeof lenis.stop === 'function') lenis.stop();
+
+        const targets = getNavMenuStaggerTargets(els);
+        const openDuration = reducedMotion ? 0 : NAV_MENU_OPEN_DURATION;
+
+        gsap.set(els.bg, { scaleY: 0, transformOrigin: 'top center' });
+        gsap.set(targets, { y: '2.5rem', autoAlpha: 0 });
+
+        if (reducedMotion) {
+            gsap.set(els.bg, { scaleY: 1 });
+            gsap.set(targets, { y: 0, autoAlpha: 1 });
+            setNavMenuToggleOpen(true);
+            trapNavMenuFocus();
+            return;
+        }
+
+        const tl = gsap.timeline({
+            defaults: { ease: 'power3.inOut' },
+            onComplete: () => trapNavMenuFocus(),
+        });
+
+        tl.to(els.bg, { scaleY: 1, duration: openDuration * 0.75, ease: 'power3.inOut' }, 0);
+        tl.to(
+            targets,
+            {
+                y: 0,
+                autoAlpha: 1,
+                duration: openDuration * 0.55,
+                stagger: NAV_MENU_LINK_STAGGER,
+                ease: 'power3.out',
+            },
+            openDuration * 0.22
+        );
+        setNavMenuToggleOpen(true, tl, openDuration * 0.12);
+
+        state.tl = tl;
+    }
+
+    function closeMobileNavMenu(options = {}) {
+        const { immediate = false, restoreScroll = true } = options;
+        const state = mobileNavState;
+        if (!state?.initialized) return;
+        if (!state.isOpen && !immediate) return;
+
+        const { els } = state;
+        state.tl?.kill();
+        state.isOpen = false;
+
+        setNavMenuScrollLock(false);
+        els.menu.setAttribute('aria-hidden', 'true');
+        els.openBtn?.setAttribute('aria-expanded', 'false');
+        releaseNavMenuFocus();
+
+        const targets = getNavMenuStaggerTargets(els);
+        const closeDuration = reducedMotion ? 0 : NAV_MENU_CLOSE_DURATION;
+
+        const finishClose = () => {
+            gsap.set(els.menu, { visibility: 'hidden', pointerEvents: 'none' });
+            gsap.set(els.bg, { scaleY: 0 });
+            gsap.set(targets, { y: 0, autoAlpha: 1 });
+            resetNavMenuToggleLines();
+            if (restoreScroll) restoreNavMenuScroll();
+        };
+
+        if (immediate || reducedMotion) {
+            finishClose();
+            return;
+        }
+
+        const tl = gsap.timeline({
+            defaults: { ease: 'power3.inOut' },
+            onComplete: finishClose,
+        });
+
+        setNavMenuToggleOpen(false, tl, 0);
+        tl.to(
+            targets,
+            {
+                y: '1.5rem',
+                autoAlpha: 0,
+                duration: closeDuration * 0.35,
+                stagger: NAV_MENU_LINK_STAGGER * 0.5,
+                ease: 'power3.in',
+            },
+            0
+        );
+        tl.to(
+            els.bg,
+            { scaleY: 0, duration: closeDuration * 0.65, ease: 'power3.inOut' },
+            closeDuration * 0.2
+        );
+
+        state.tl = tl;
+    }
+
+    function initMobileNavMenu() {
+        if (mobileNavState?.initialized) return;
+
+        const els = getNavMenuElements();
+        if (!els?.menu) return;
+
+        if (!els.bg || !els.panel) {
+            console.warn(
+                '[OOB] Mobile nav: [data-nav-menu] needs [data-nav-menu-bg] and [data-nav-menu-panel] (see BARBA-OSMO.md)'
+            );
+            return;
+        }
+        if (!els.openBtn) {
+            console.warn('[OOB] Mobile nav: missing [data-nav-menu-open] toggle button');
+            return;
+        }
+
+        if (!els.menu.id) els.menu.id = 'oob-nav-menu';
+        els.openBtn.setAttribute('aria-controls', els.menu.id);
+        els.openBtn.setAttribute('aria-expanded', 'false');
+        els.menu.setAttribute('role', 'dialog');
+        els.menu.setAttribute('aria-modal', 'true');
+        els.menu.setAttribute('aria-hidden', 'true');
+        els.menu.setAttribute('aria-label', 'Site navigation');
+
+        gsap.set(els.bg, { scaleY: 0, transformOrigin: 'top center' });
+        gsap.set(els.menu, { visibility: 'hidden', pointerEvents: 'none' });
+
+        const targets = getNavMenuStaggerTargets(els);
+        if (targets.length) gsap.set(targets, { y: 0, autoAlpha: 1 });
+
+        els.openBtn.addEventListener('click', () => {
+            if (!isMobileNavViewport()) return;
+            if (mobileNavState.isOpen) closeMobileNavMenu();
+            else openMobileNavMenu();
+        });
+
+        els.closeBtn?.addEventListener('click', () => closeMobileNavMenu());
+
+        els.links.forEach((link) => {
+            link.addEventListener('click', () => {
+                if (!mobileNavState.isOpen) return;
+                closeMobileNavMenu({ restoreScroll: false });
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && mobileNavState?.isOpen) {
+                event.preventDefault();
+                closeMobileNavMenu();
+            }
+        });
+
+        const mobileNavMQ = window.matchMedia(NAV_MENU_BREAKPOINT);
+        const onBreakpointChange = () => {
+            if (!mobileNavMQ.matches && mobileNavState?.isOpen) {
+                closeMobileNavMenu({ immediate: true });
+            }
+        };
+        mobileNavMQ.addEventListener?.('change', onBreakpointChange);
+        mobileNavMQ.addListener?.(onBreakpointChange);
+
+        mobileNavState = { initialized: true, isOpen: false, els, tl: null, focusTrapHandler: null };
+
+        console.log('[OOB] Mobile nav menu initialized', {
+            links: els.links.length,
+            items: els.linkItems.length,
+        });
+    }
+
     // Run after layout (footer script); Barba once also calls initOnceFunctions
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             syncNavActiveFromContainer(document);
             initNavHighlightBlob();
+            initMobileNavMenu();
         });
     });
 

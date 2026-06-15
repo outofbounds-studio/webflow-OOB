@@ -106,7 +106,9 @@ body [data-barba="wrapper"]
 ├── div[data-oob-preloader]                 ← homepage intro (OUTSIDE container)
 │   └── div.oob-preloader__shade            ← #111111 full viewport
 ├── header.navbar (Symbol — global nav, OUTSIDE container)
-│   └── .nav-links-wrap > .nav-highlight + links.nav-link
+│   ├── .nav-links-wrap > .nav-highlight + links (desktop)
+│   ├── [data-nav-menu-open] toggle (mobile ≤991)
+│   └── [data-nav-menu] > [data-nav-menu-bg] + [data-nav-menu-panel] (mobile overlay)
 ├── div.transition [data-transition-wrap]   ← Symbol, OUTSIDE container
 │   └── div.transition__dark [data-transition-dark]
 └── div.page-content [data-barba="container"] [data-barba-namespace="home"] [data-page-theme="light"]
@@ -279,6 +281,116 @@ The blob stays on the current page link (`w--current` / `aria-current="page"`) a
 
 ---
 
+### Mobile nav menu (≤991px)
+
+Full-screen overlay with a background panel that scales open from the top, then stacked links stagger in. The fixed header (blur/glass) stays visible above the overlay — logo and menu toggle remain clickable.
+
+**Requires:** GSAP (already in Head). Initialized via `initMobileNavMenu()` in `oob.js`. Console: `[OOB] Mobile nav menu initialized`.
+
+**Breakpoint:** 991px — desktop keeps horizontal `.nav-links-wrap`; tablet/mobile uses overlay.
+
+#### Webflow structure (one nav Symbol, outside Barba container)
+
+```
+body [data-barba="wrapper"]
+├── header.navbar / .navbar_wrap / .nav     ← fixed, blur, z-index 110
+│   └── .nav-inner (flex row, space-between, align center)
+│       ├── .nav-logo
+│       │   └── Link [data-nav-logo]        ← home, no highlight
+│       ├── .nav-links-wrap                 ← desktop only (hidden ≤991 in oob.css)
+│       │   ├── .nav-highlight
+│       │   └── List (ul) > links
+│       │       └── Link.navbar_link [data-barba-namespace="work"]
+│       └── Button [data-nav-menu-open]     ← mobile/tablet only (shown ≤991)
+│           └── div [data-nav-menu-toggle]
+│               ├── div [data-nav-menu-line]
+│               └── div [data-nav-menu-line]   ← 2 lines → animates to X
+│
+├── div [data-nav-menu]                     ← sibling of inner OR inside header (outside container)
+│   ├── div [data-nav-menu-bg]              ← solid panel (scales from top)
+│   └── div [data-nav-menu-panel]           ← add data-lenis-prevent if panel scrolls
+│       ├── div [data-nav-menu-item]        ← optional wrapper per link (stagger target)
+│       │   └── Link.navbar_link [data-barba-namespace="work"]
+│       ├── div [data-nav-menu-item]
+│       │   └── Link.navbar_link …
+│       └── …
+│
+├── div.transition [data-transition-wrap]
+└── div [data-barba="container"] …
+```
+
+**Order on page:** `data-oob-preloader` (optional) → **nav Symbol** → `data-nav-menu` overlay (can live inside nav Symbol as last child) → transition → container.
+
+#### Nav Links component (recommended)
+
+Use a **Nav Links** Webflow component for link text/hrefs/namespaces:
+
+| Instance | Where |
+|----------|--------|
+| 1 | Inside `.nav-links-wrap` → desktop horizontal list |
+| 2 | Inside `[data-nav-menu-panel]` → mobile stacked list |
+
+Wrap each mobile link in `[data-nav-menu-item]` for cleaner stagger (optional — links stagger directly if omitted).
+
+Every link needs matching `data-barba-namespace` (same as desktop). `oob.js` syncs `w--current` on **all** `.navbar_link` / `.nav-link` site-wide.
+
+#### Custom attributes
+
+| Element | Attribute | Notes |
+|---------|-----------|--------|
+| Overlay root | `data-nav-menu` | Fixed full viewport |
+| Background panel | `data-nav-menu-bg` | Solid fill — scales `scaleY` from top |
+| Links column | `data-nav-menu-panel` | Stacked links; `data-lenis-prevent` if scrollable |
+| Link wrapper | `data-nav-menu-item` | Optional stagger target |
+| Open toggle | `data-nav-menu-open` | `button` — morphs to X via `[data-nav-menu-line]` |
+| Toggle graphic | `data-nav-menu-toggle` | Wraps 2 (or 3) `[data-nav-menu-line]` divs |
+| Close (optional) | `data-nav-menu-close` | Extra close control inside panel |
+
+#### Styling (Webflow + `oob.css`)
+
+Desktop header: keep your transparent + `backdrop-filter: blur()` on `.navbar` — **do not** animate the header background on open.
+
+Menu fill color: CSS variable `--nav-menu-bg` (default `#111111`) on `:root` or the nav Symbol.
+
+Tune in `oob.css`:
+
+| Variable | Default |
+|----------|---------|
+| `--nav-menu-bg` | `#111111` |
+| `--nav-menu-link-size` | `2.75rem` |
+| `--nav-menu-panel-padding-top` | `6.5rem` (clears fixed header) |
+| `--nav-bar-z` | `110` |
+| `--nav-menu-z` | `100` |
+
+#### Animation (handled in `oob.js`)
+
+| Phase | Open | Close |
+|-------|------|-------|
+| 1 | `[data-nav-menu-bg]` scales Y `0 → 1` from top | Links fade/slide out |
+| 2 | Links stagger up + fade in | Background scales Y `1 → 0` |
+| Toggle | 2-line hamburger → X | X → hamburger |
+
+**Osmo patterns included:**
+
+- `lenis.stop()` on open, `lenis.start()` on close (native scroll on touch if Lenis skipped)
+- `html.is-nav-menu-open` scroll lock
+- Menu closes on Barba `beforeEnter` (before page transition)
+- `Escape` closes menu
+- Focus trap while open; `aria-expanded`, `aria-hidden`, `aria-modal`
+- Resizing to desktop closes menu immediately
+
+#### Responsive visibility in Webflow
+
+`oob.css` hides `.nav-links-wrap` and shows `[data-nav-menu-open]` at ≤991px. You can mirror this in Webflow Designer (tablet/mobile display settings) for easier preview — CSS is the source of truth for published site.
+
+#### Do not
+
+- Put `[data-nav-menu]` inside `[data-barba="container"]`
+- Use Webflow’s native Navbar (`w-nav`) — conflicts with Barba/custom JS
+- Animate blur/background on the fixed header bar — only `[data-nav-menu-bg]` animates
+
+---
+
 ## About — What We Believe (pinned scroll statements)
 
 Scroll-pinned section on the About page. Cycles **3 statements** as the user scrolls: each scroll step **triggers** a time-based line-reveal (Osmo [Line Reveal Testimonials](https://www.osmo.supply/resource/line-reveal-testimonials)) that plays to completion, holds on screen, then advances on the next step. Animations are **not** scrubbed — stopping mid-scroll never leaves half-visible text.
@@ -405,6 +517,8 @@ Console on Barba navigation: `[OOB] Webflow forms reset (preview + Turnstile)`.
 - [ ] Console: `[OOB] Script loaded`, `[OOB] Barba initialized`, `[OOB] Lenis initialized`
 - [ ] No `[OOB] Barba structure error` (nav must be outside container)
 - [ ] Nav blob: `[OOB] Nav highlight blob initialized` (if `.nav-links-wrap` present)
+- [ ] Mobile nav: `[OOB] Mobile nav menu initialized` (if `[data-nav-menu]` present; test ≤991px)
+- [ ] Mobile: overlay opens, links stagger, toggle → X, closes on link / Escape / Barba nav
 - [ ] Internal link: parallax leave/enter (or instant if reduced motion)
 - [ ] Nav `data-barba-update` syncs active state
 - [ ] Webflow forms / native interactions work after 2+ page transitions
