@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.6.6 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.6.7 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.6.6');
+console.log('[OOB] Script loaded v2.6.7');
 
 (function () {
     'use strict';
@@ -129,6 +129,23 @@ console.log('[OOB] Script loaded v2.6.6');
     // WEBFLOW RE-INIT (MSC pattern)
     // -----------------------------------------
 
+    function syncWebflowPageId(root = document) {
+        const scope = root?.querySelector ? root : document;
+        const pageId =
+            scope.getAttribute?.('data-wf-page-id') ||
+            scope.querySelector('form[data-wf-page-id]')?.getAttribute('data-wf-page-id') ||
+            scope.querySelector('[data-wf-page-id]')?.getAttribute('data-wf-page-id');
+
+        if (!pageId) return false;
+
+        const html = document.documentElement;
+        if (html.getAttribute('data-wf-page') !== pageId) {
+            html.setAttribute('data-wf-page', pageId);
+            console.log('[OOB] Synced data-wf-page for Webflow forms', pageId);
+        }
+        return true;
+    }
+
     function cleanupCloudflareTurnstile(root = document) {
         const turnstile = window.turnstile;
         if (!turnstile || typeof turnstile.remove !== 'function') return;
@@ -159,6 +176,8 @@ console.log('[OOB] Script loaded v2.6.6');
     function reinitWebflow() {
         try {
             if (typeof Webflow === 'undefined') return;
+            const container = document.querySelector('[data-barba="container"]') || document;
+            syncWebflowPageId(container);
             cleanupCloudflareTurnstile(document);
             if (typeof Webflow.destroy === 'function') Webflow.destroy();
             if (typeof Webflow.ready === 'function') Webflow.ready();
@@ -166,7 +185,6 @@ console.log('[OOB] Script loaded v2.6.6');
                 const forms = Webflow.require('forms');
                 if (forms && typeof forms.ready === 'function') forms.ready();
             }
-            const container = document.querySelector('[data-barba="container"]') || document;
             scheduleDisplayReadTimeAfterWebflow(container);
         } catch (err) {
             console.warn('[OOB] Webflow reinit error', err);
@@ -677,6 +695,7 @@ console.log('[OOB] Script loaded v2.6.6');
         if (lenis && typeof lenis.stop === 'function') lenis.stop();
 
         initBeforeEnterFunctions(data.next.container);
+        syncWebflowPageId(data.next.container);
         applyThemeFrom(data.next.container);
     });
 
@@ -1373,6 +1392,11 @@ console.log('[OOB] Script loaded v2.6.6');
         const form = formContainer.querySelector('form');
         if (!form) return null;
 
+        if (form.getAttribute('method')?.toLowerCase() === 'get') {
+            form.setAttribute('method', 'post');
+            form.method = 'post';
+        }
+
         const validateFields = form.querySelectorAll('[data-validate]');
         const dataSubmit = form.querySelector('[data-submit]');
         if (!dataSubmit) return null;
@@ -1431,7 +1455,11 @@ console.log('[OOB] Script loaded v2.6.6');
                 window.alert('Form submitted too quickly. Please try again.');
                 return;
             }
-            realSubmitInput.click();
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit(realSubmitInput);
+            } else {
+                realSubmitInput.click();
+            }
         }
 
         validateFields.forEach((fieldGroup) => {
