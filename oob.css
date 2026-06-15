@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.6 */
+/* Version: 1.7.7 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -219,9 +219,10 @@ h6,
   --nav-menu-panel-padding-bottom: 2.5rem;
   --nav-menu-link-size: 3em;
   --nav-menu-link-kerning: -0.03em;
-  --nav-menu-link-gap: 1.25em;
+  --nav-menu-link-gap: 1.35em;
   --nav-menu-safe-top: env(safe-area-inset-top, 0px);
   --nav-menu-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-menu-chrome-bottom-overscan: 48px;
   --nav-bar-z: 110;
   --nav-menu-z: 100;
 }
@@ -346,6 +347,12 @@ html.is-nav-menu-open {
 
 html.is-nav-menu-open body {
   overflow: hidden;
+}
+
+/* Extend orange fill under Safari's floating bottom URL bar while menu is open */
+html.is-nav-menu-open [data-nav-menu-bg] {
+  bottom: calc(-1 * max(var(--nav-menu-chrome-bottom-overscan), var(--nav-menu-safe-bottom)));
+  min-height: calc(100% + max(var(--nav-menu-chrome-bottom-overscan), var(--nav-menu-safe-bottom)));
 }
 
 @media screen and (max-width: 767px) {

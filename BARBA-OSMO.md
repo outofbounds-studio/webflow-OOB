@@ -390,11 +390,13 @@ Set the embed or parent `color` in Webflow so `currentColor` picks up your icon 
 ```
 
 2. Do **not** add `<meta name="theme-color">` or a duplicate `<meta name="viewport">` in Head Code.
-3. `oob.js` removes any `theme-color` added later and watches `<head>` for new tags.
+3. `oob.js` removes stray `theme-color` tags and watches `<head>` for new ones — except while the mobile menu is open (see below).
 
-**`viewport-fit=cover`:** Optional — `oob-viewport.js` replaces Webflow’s default viewport meta. iOS may still ignore JS changes (Webflow limitation); safe-area `env()` may stay `0`.
+**`viewport-fit=cover`:** Optional — `oob-viewport.js` replaces Webflow’s default viewport meta. iOS may still ignore JS changes (Webflow limitation); safe-area `env()` may stay `0`. Top/notch safe-area is not targeted here.
 
-**Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**. No `html`/`body` background fill, no `theme-color` swap.
+**Closed menu:** No `theme-color` → translucent bottom URL bar (page content visible behind it).
+
+**Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**, plus `theme-color` set to `--nav-menu-bg` (`#ff4802`) so Safari’s bottom chrome matches. Removed again after the close animation — never set a dark `theme-color` on close. Tune bottom bleed with `--nav-menu-chrome-bottom-overscan` in `oob.css` (default `48px`).
 
 `oob.js` moves `[data-nav-menu]` to `document.body` on init so `position: fixed` is not clipped by a transformed parent.
 

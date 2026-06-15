@@ -2,7 +2,7 @@
 // Version: 2.9.4 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.4');
+console.log('[OOB] Script loaded v2.9.5');
 
 (function () {
     'use strict';
@@ -1398,6 +1398,7 @@ console.log('[OOB] Script loaded v2.9.4');
     // -----------------------------------------
 
     const NAV_MENU_OPEN_CLASS = 'is-nav-menu-open';
+    const OOB_THEME_COLOR_ID = 'oob-safari-theme-color';
     const NAV_MENU_BREAKPOINT = '(max-width: 767px)';
     const NAV_MENU_OPEN_DURATION = 0.85;
     const NAV_MENU_CLOSE_DURATION = 0.6;
@@ -1416,13 +1417,40 @@ console.log('[OOB] Script loaded v2.9.4');
         console.log('[OOB] Replaced viewport meta with viewport-fit=cover');
     }
 
-    /** theme-color paints Safari URL/status bars opaque — remove all instances. */
-    function ensureTranslucentSafariChrome() {
-        const metas = document.querySelectorAll('meta[name="theme-color"]');
-        if (!metas.length) return;
+    function getNavMenuBgColor() {
+        const value = getComputedStyle(document.documentElement)
+            .getPropertyValue('--nav-menu-bg')
+            .trim();
+        return value || '#ff4802';
+    }
 
-        metas.forEach((meta) => meta.remove());
-        console.log('[OOB] Removed theme-color meta for translucent Safari chrome');
+    /** No theme-color = translucent Safari bottom URL bar when menu is closed. */
+    function clearSafariThemeColor() {
+        document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
+        if (mobileNavState) mobileNavState.safariChromeOrange = false;
+    }
+
+    /** Orange bottom chrome while mobile nav menu is open (never set a dark fallback on close). */
+    function setSafariMenuThemeColor() {
+        if (!isMobileNavViewport()) return;
+
+        document
+            .querySelectorAll(`meta[name="theme-color"]:not(#${OOB_THEME_COLOR_ID})`)
+            .forEach((meta) => meta.remove());
+
+        let meta = document.getElementById(OOB_THEME_COLOR_ID);
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.id = OOB_THEME_COLOR_ID;
+            meta.name = 'theme-color';
+            document.head.appendChild(meta);
+        }
+        meta.content = getNavMenuBgColor();
+        if (mobileNavState) mobileNavState.safariChromeOrange = true;
+    }
+
+    function ensureTranslucentSafariChrome() {
+        clearSafariThemeColor();
     }
 
     function watchTranslucentSafariChrome() {
@@ -1430,7 +1458,13 @@ console.log('[OOB] Script loaded v2.9.4');
         watchTranslucentSafariChrome.active = true;
 
         const observer = new MutationObserver(() => {
-            document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
+            document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+                if (meta.id === OOB_THEME_COLOR_ID && mobileNavState?.safariChromeOrange) return;
+                meta.remove();
+            });
+            if (mobileNavState?.safariChromeOrange && isMobileNavViewport()) {
+                setSafariMenuThemeColor();
+            }
         });
         observer.observe(document.head, { childList: true, subtree: true });
     }
@@ -1562,17 +1596,14 @@ console.log('[OOB] Script loaded v2.9.4');
         state.els?.openBtn?.focus();
     }
 
-    function getNavMenuVisualLayout() {
-        const vv = window.visualViewport;
-        return {
-            top: Math.max(0, Math.round(vv?.offsetTop ?? 0)),
-            height: Math.round(vv?.height ?? window.innerHeight),
-        };
-    }
-
     function syncNavMenuToVisualViewport(menu) {
         if (!menu) return;
-        const { top, height } = getNavMenuVisualLayout();
+        const vv = window.visualViewport;
+        const top = Math.max(0, Math.round(vv?.offsetTop ?? 0));
+        const height = Math.max(
+            Math.round(vv?.height ?? window.innerHeight),
+            window.innerHeight - top
+        );
         menu.style.top = `${top}px`;
         menu.style.height = `${height}px`;
         menu.style.bottom = 'auto';
@@ -1636,6 +1667,7 @@ console.log('[OOB] Script loaded v2.9.4');
         state.isOpen = true;
 
         setNavMenuScrollLock(true);
+        setSafariMenuThemeColor();
         syncNavMenuToVisualViewport(els.menu);
         els.menu.setAttribute('aria-hidden', 'false');
         gsap.set(els.menu, { visibility: 'visible', pointerEvents: 'auto' });
@@ -1706,6 +1738,7 @@ console.log('[OOB] Script loaded v2.9.4');
             gsap.set(els.bg, { scaleY: 0, transformOrigin: NAV_MENU_BG_ORIGIN });
             gsap.set(targets, { yPercent: 0, autoAlpha: 1 });
             resetNavMenuToggleIcon();
+            clearSafariThemeColor();
             if (restoreScroll) restoreNavMenuScroll();
         };
 
@@ -1822,6 +1855,7 @@ console.log('[OOB] Script loaded v2.9.4');
         mobileNavState = {
             initialized: true,
             isOpen: false,
+            safariChromeOrange: false,
             els,
             tl: null,
             focusTrapHandler: null,
