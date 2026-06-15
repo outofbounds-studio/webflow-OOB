@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.6.8 */
+/* Version: 1.6.9 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -217,7 +217,8 @@ h6,
   --nav-menu-panel-padding-top: 6.5rem;
   --nav-menu-panel-padding-x: 1.5rem;
   --nav-menu-panel-padding-bottom: 2.5rem;
-  --nav-menu-link-size: 2.75rem;
+  --nav-menu-link-size: 3.25em;
+  --nav-menu-link-kerning: -0.03em;
   --nav-menu-link-gap: 0.35em;
   --nav-bar-z: 110;
   --nav-menu-z: 100;
@@ -264,7 +265,7 @@ h6,
   display: block;
   font-size: var(--nav-menu-link-size);
   line-height: 1.05;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--nav-menu-link-kerning);
   text-decoration: none;
   color: var(--nav-menu-link-color);
   text-shadow: none;
