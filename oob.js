@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.8 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.9 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.8');
+console.log('[OOB] Script loaded v2.8.9');
 
 (function () {
     'use strict';
@@ -1402,6 +1402,97 @@ console.log('[OOB] Script loaded v2.8.8');
     const NAV_MENU_BG_ORIGIN = 'bottom center';
 
     let mobileNavState = null;
+    let navMenuChromeState = null;
+
+    function captureNavMenuChromeDefaults() {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        return {
+            themeColor: meta?.getAttribute('content') || '',
+            hadThemeMeta: Boolean(meta),
+        };
+    }
+
+    function getNavMenuBgColor() {
+        const fromVar = getComputedStyle(document.documentElement)
+            .getPropertyValue('--nav-menu-bg')
+            .trim();
+        return fromVar || '#ff4802';
+    }
+
+    function getSiteChromeBgColor() {
+        const fromVar = getComputedStyle(document.documentElement)
+            .getPropertyValue('--site-chrome-bg')
+            .trim();
+        if (fromVar) return fromVar;
+
+        const bodyBg = getComputedStyle(document.body).backgroundColor;
+        if (bodyBg && bodyBg !== 'rgba(0, 0, 0, 0)' && bodyBg !== 'transparent') {
+            return bodyBg;
+        }
+        return '#111111';
+    }
+
+    function syncNavMenuViewportHeight(menu) {
+        const height = Math.round(window.visualViewport?.height ?? window.innerHeight);
+        const value = `${height}px`;
+        document.documentElement.style.setProperty('--nav-menu-vh', value);
+        menu?.style.setProperty('--nav-menu-vh', value);
+    }
+
+    function clearNavMenuViewportHeight(menu) {
+        document.documentElement.style.removeProperty('--nav-menu-vh');
+        menu?.style.removeProperty('--nav-menu-vh');
+    }
+
+    function setNavMenuThemeColor(color) {
+        let meta = document.querySelector('meta[name="theme-color"]');
+        if (!color) {
+            if (!navMenuChromeState?.defaults?.hadThemeMeta) {
+                meta?.remove();
+                return;
+            }
+            color = navMenuChromeState.defaults.themeColor;
+        }
+
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = 'theme-color';
+            document.head.appendChild(meta);
+            navMenuChromeState.createdThemeMeta = true;
+        }
+
+        meta.setAttribute('content', color);
+    }
+
+    function applyNavMenuOpenChrome(menu) {
+        syncNavMenuViewportHeight(menu);
+        document.documentElement.classList.add(NAV_MENU_OPEN_CLASS);
+        setNavMenuThemeColor(getNavMenuBgColor());
+    }
+
+    function clearNavMenuOpenChrome(menu) {
+        document.documentElement.classList.remove(NAV_MENU_OPEN_CLASS);
+        clearNavMenuViewportHeight(menu);
+        setNavMenuThemeColor(getSiteChromeBgColor());
+    }
+
+    function bindNavMenuViewportSync(menu) {
+        if (!menu || navMenuChromeState?.viewportHandler) return;
+
+        const onViewportChange = () => {
+            if (mobileNavState?.isOpen) syncNavMenuViewportHeight(menu);
+        };
+
+        window.visualViewport?.addEventListener('resize', onViewportChange);
+        window.addEventListener('orientationchange', onViewportChange);
+        navMenuChromeState.viewportHandler = onViewportChange;
+    }
+
+    function placeNavMenuOnBody(menu) {
+        if (!menu || menu.parentElement === document.body) return;
+        document.body.appendChild(menu);
+        console.log('[OOB] Moved [data-nav-menu] to document.body for full viewport coverage');
+    }
 
     function isMobileNavViewport() {
         return window.matchMedia(NAV_MENU_BREAKPOINT).matches;
@@ -1523,7 +1614,9 @@ console.log('[OOB] Script loaded v2.8.8');
     }
 
     function setNavMenuScrollLock(active) {
-        document.documentElement.classList.toggle(NAV_MENU_OPEN_CLASS, active);
+        const menu = mobileNavState?.els?.menu;
+        if (active) applyNavMenuOpenChrome(menu);
+        else clearNavMenuOpenChrome(menu);
     }
 
     function restoreNavMenuScroll() {
@@ -1598,7 +1691,6 @@ console.log('[OOB] Script loaded v2.8.8');
         state.tl?.kill();
         state.isOpen = false;
 
-        setNavMenuScrollLock(false);
         els.menu.setAttribute('aria-hidden', 'true');
         els.openBtn?.setAttribute('aria-expanded', 'false');
         releaseNavMenuFocus();
@@ -1611,6 +1703,7 @@ console.log('[OOB] Script loaded v2.8.8');
             gsap.set(els.bg, { scaleY: 0, transformOrigin: NAV_MENU_BG_ORIGIN });
             gsap.set(targets, { yPercent: 0, autoAlpha: 1 });
             resetNavMenuToggleIcon();
+            setNavMenuScrollLock(false);
             if (restoreScroll) restoreNavMenuScroll();
         };
 
@@ -1673,7 +1766,20 @@ console.log('[OOB] Script loaded v2.8.8');
         }
 
         placeNavToggleInBar(els.openBtn);
+        placeNavMenuOnBody(els.menu);
         ensureNavStacking();
+
+        navMenuChromeState = {
+            defaults: captureNavMenuChromeDefaults(),
+            createdThemeMeta: false,
+            viewportHandler: null,
+        };
+        bindNavMenuViewportSync(els.menu);
+        syncNavMenuViewportHeight(els.menu);
+
+        if (document.documentElement.classList.contains(NAV_MENU_OPEN_CLASS)) {
+            clearNavMenuOpenChrome(els.menu);
+        }
 
         if (!els.menu.id) els.menu.id = 'oob-nav-menu';
         els.openBtn.setAttribute('aria-controls', els.menu.id);

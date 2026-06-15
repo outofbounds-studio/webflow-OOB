@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.0 */
+/* Version: 1.7.1 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -217,25 +217,39 @@ h6,
   --nav-menu-panel-padding-top: 2.5rem;
   --nav-menu-panel-padding-x: 1.5rem;
   --nav-menu-panel-padding-bottom: 2.5rem;
-  --nav-menu-link-size: 3.25em;
+  --nav-menu-link-size: 3.5em;
   --nav-menu-link-kerning: -0.03em;
-  --nav-menu-link-gap: 0.35em;
+  --nav-menu-link-gap: 0.5em;
+  --nav-menu-vh: 100dvh;
+  --site-chrome-bg: #111111;
   --nav-bar-z: 110;
   --nav-menu-z: 100;
 }
 
 [data-nav-menu] {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: var(--nav-menu-vh, 100dvh);
+  min-height: -webkit-fill-available;
   z-index: var(--nav-menu-z);
   visibility: hidden;
   pointer-events: none;
   overflow: clip;
+  background-color: var(--nav-menu-bg);
 }
 
 [data-nav-menu-bg] {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
   background-color: var(--nav-menu-bg);
   transform: scaleY(0);
   transform-origin: bottom center;
@@ -250,6 +264,7 @@ h6,
   align-items: center;
   justify-content: center;
   gap: var(--nav-menu-link-gap);
+  height: 100%;
   min-height: 100%;
   padding: var(--nav-menu-panel-padding-top) var(--nav-menu-panel-padding-x)
     var(--nav-menu-panel-padding-bottom);
@@ -320,10 +335,14 @@ h6,
 
 html.is-nav-menu-open {
   overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--nav-menu-bg);
 }
 
 html.is-nav-menu-open body {
   overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--nav-menu-bg);
 }
 
 @media screen and (max-width: 767px) {
