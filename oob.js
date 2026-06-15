@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.3 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.2 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.3');
+console.log('[OOB] Script loaded v2.9.2');
 
 (function () {
     'use strict';
@@ -370,7 +370,6 @@ console.log('[OOB] Script loaded v2.9.3');
     function initOnceFunctions() {
         ensureViewportFitCover();
         ensureTranslucentSafariChrome();
-        initEdgeToEdge();
         initLenis();
         if (onceFunctionsInitialized) return;
         onceFunctionsInitialized = true;
@@ -395,7 +394,6 @@ console.log('[OOB] Script loaded v2.9.3');
         nextPage = next || document;
         const { reinitWebflow: shouldReinitWebflow = true, afterBarbaNav = false } = options;
         if (shouldReinitWebflow) reinitWebflow();
-        applyEdgeToEdgeVars();
         syncNavActiveFromContainer(nextPage);
         refreshNavHighlightBlob();
         if (has('[data-button-038]')) scheduleButton038(nextPage);
@@ -1414,85 +1412,7 @@ console.log('[OOB] Script loaded v2.9.3');
         meta.name = 'viewport';
         meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
         document.head.insertBefore(meta, document.head.firstChild);
-        console.log(
-            '[OOB] Replaced viewport meta with viewport-fit=cover (iOS may ignore JS changes — see initEdgeToEdge fallback)'
-        );
-    }
-
-    function measureEnvSafeAreaInsets() {
-        const probe = document.createElement('div');
-        probe.style.cssText =
-            'position:fixed;visibility:hidden;pointer-events:none;padding:' +
-            'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
-        (document.body || document.documentElement).appendChild(probe);
-        const style = getComputedStyle(probe);
-        const insets = {
-            top: parseFloat(style.paddingTop) || 0,
-            right: parseFloat(style.paddingRight) || 0,
-            bottom: parseFloat(style.paddingBottom) || 0,
-            left: parseFloat(style.paddingLeft) || 0,
-        };
-        probe.remove();
-        return insets;
-    }
-
-    function getIOSFallbackSafeArea() {
-        const shortSide = Math.min(window.screen.width, window.screen.height);
-        const longSide = Math.max(window.screen.width, window.screen.height);
-        const landscape = window.matchMedia('(orientation: landscape)').matches;
-
-        if (landscape) {
-            return { top: 0, right: 44, bottom: 21, left: 44 };
-        }
-
-        if (longSide >= 932 && shortSide >= 428) {
-            return { top: 59, right: 0, bottom: 34, left: 0 };
-        }
-
-        if (longSide >= 812) {
-            return { top: 47, right: 0, bottom: 34, left: 0 };
-        }
-
-        return { top: 20, right: 0, bottom: 0, left: 0 };
-    }
-
-    function setMobileViewportUnits() {
-        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
-    }
-
-    function applyEdgeToEdgeVars() {
-        setMobileViewportUnits();
-
-        const measured = measureEnvSafeAreaInsets();
-        const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const needsFallback = isAppleMobile && measured.top === 0 && measured.bottom === 0;
-        const insets = needsFallback ? getIOSFallbackSafeArea() : measured;
-        const root = document.documentElement;
-
-        root.style.setProperty('--oob-safe-top', `${insets.top}px`);
-        root.style.setProperty('--oob-safe-bottom', `${insets.bottom}px`);
-        root.style.setProperty('--oob-safe-left', `${insets.left}px`);
-        root.style.setProperty('--oob-safe-right', `${insets.right}px`);
-        root.dataset.oobSafeArea = needsFallback ? 'fallback' : measured.top > 0 ? 'env' : 'none';
-
-        if (needsFallback) {
-            console.warn(
-                '[OOB] viewport-fit=cover inactive (Webflow static viewport). Using iOS safe-area fallback.',
-                insets
-            );
-        }
-    }
-
-    let edgeToEdgeBound = false;
-
-    function initEdgeToEdge() {
-        applyEdgeToEdgeVars();
-        if (edgeToEdgeBound) return;
-        edgeToEdgeBound = true;
-
-        window.addEventListener('resize', applyEdgeToEdgeVars);
-        window.addEventListener('orientationchange', applyEdgeToEdgeVars);
-        window.visualViewport?.addEventListener('resize', applyEdgeToEdgeVars);
+        console.log('[OOB] Replaced viewport meta with viewport-fit=cover');
     }
 
     /** Opaque theme-color blocks translucent Safari chrome (content behind URL bar). */
@@ -1522,9 +1442,6 @@ console.log('[OOB] Script loaded v2.9.3');
 
     ensureViewportFitCover();
     ensureTranslucentSafariChrome();
-
-    if (document.body) initEdgeToEdge();
-    else document.addEventListener('DOMContentLoaded', initEdgeToEdge, { once: true });
 
     function isMobileNavViewport() {
         return window.matchMedia(NAV_MENU_BREAKPOINT).matches;
@@ -1647,12 +1564,10 @@ console.log('[OOB] Script loaded v2.9.3');
 
     function getNavMenuVisualLayout() {
         const vv = window.visualViewport;
-        const root = document.documentElement;
-        const safeTop =
-            parseFloat(getComputedStyle(root).getPropertyValue('--oob-safe-top')) || 0;
-        const top = Math.max(safeTop, Math.max(0, Math.round(vv?.offsetTop ?? 0)));
-        const height = Math.round(vv?.height ?? window.innerHeight);
-        return { top, height: Math.max(0, height - top + Math.min(top, 0)) };
+        return {
+            top: Math.max(0, Math.round(vv?.offsetTop ?? 0)),
+            height: Math.round(vv?.height ?? window.innerHeight),
+        };
     }
 
     function syncNavMenuToVisualViewport(menu) {
