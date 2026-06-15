@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.8 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.0 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.8');
+console.log('[OOB] Script loaded v2.9.0');
 
 (function () {
     'use strict';
@@ -368,6 +368,8 @@ console.log('[OOB] Script loaded v2.8.8');
     // -----------------------------------------
 
     function initOnceFunctions() {
+        ensureViewportFitCover();
+        ensureTranslucentSafariChrome();
         initLenis();
         if (onceFunctionsInitialized) return;
         onceFunctionsInitialized = true;
@@ -1403,6 +1405,53 @@ console.log('[OOB] Script loaded v2.8.8');
 
     let mobileNavState = null;
 
+    function ensureViewportFitCover() {
+        let meta = document.querySelector('meta[name="viewport"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = 'viewport';
+            meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+            document.head.appendChild(meta);
+            console.log('[OOB] Added viewport meta with viewport-fit=cover');
+            return;
+        }
+
+        const content = meta.getAttribute('content') || '';
+        if (/viewport-fit\s*=\s*cover/i.test(content)) return;
+
+        const next = content.trim().replace(/,?\s*$/, '');
+        meta.setAttribute('content', `${next}, viewport-fit=cover`);
+        console.log('[OOB] Patched viewport meta with viewport-fit=cover');
+    }
+
+    /** Opaque theme-color blocks translucent Safari chrome (content behind URL bar). */
+    function ensureTranslucentSafariChrome() {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) return;
+
+        const color = (meta.getAttribute('content') || '').trim().toLowerCase();
+        const stale =
+            color === '#111111' ||
+            color === '#111' ||
+            color === '#1c1b1b' ||
+            color === 'rgb(17, 17, 17)' ||
+            color === 'rgb(28, 27, 27)';
+
+        if (stale) {
+            meta.remove();
+            console.log('[OOB] Removed opaque theme-color meta (translucent Safari chrome)');
+        }
+    }
+
+    function placeNavMenuOnBody(menu) {
+        if (!menu || menu.parentElement === document.body) return;
+        document.body.appendChild(menu);
+        console.log('[OOB] Moved [data-nav-menu] to document.body for full viewport coverage');
+    }
+
+    ensureViewportFitCover();
+    ensureTranslucentSafariChrome();
+
     function isMobileNavViewport() {
         return window.matchMedia(NAV_MENU_BREAKPOINT).matches;
     }
@@ -1522,23 +1571,8 @@ console.log('[OOB] Script loaded v2.8.8');
         state.els?.openBtn?.focus();
     }
 
-    function syncNavMenuViewportHeight(menu) {
-        const height = Math.round(window.visualViewport?.height ?? window.innerHeight);
-        const value = `${height}px`;
-        document.documentElement.style.setProperty('--nav-menu-vh', value);
-        menu?.style.setProperty('--nav-menu-vh', value);
-    }
-
-    function clearNavMenuViewportHeight(menu) {
-        document.documentElement.style.removeProperty('--nav-menu-vh');
-        menu?.style.removeProperty('--nav-menu-vh');
-    }
-
     function setNavMenuScrollLock(active) {
-        const menu = mobileNavState?.els?.menu;
         document.documentElement.classList.toggle(NAV_MENU_OPEN_CLASS, active);
-        if (active) syncNavMenuViewportHeight(menu);
-        else clearNavMenuViewportHeight(menu);
     }
 
     function restoreNavMenuScroll() {
@@ -1688,6 +1722,7 @@ console.log('[OOB] Script loaded v2.8.8');
         }
 
         placeNavToggleInBar(els.openBtn);
+        placeNavMenuOnBody(els.menu);
         ensureNavStacking();
 
         if (!els.menu.id) els.menu.id = 'oob-nav-menu';
@@ -1737,12 +1772,6 @@ console.log('[OOB] Script loaded v2.8.8');
         };
         mobileNavMQ.addEventListener?.('change', onBreakpointChange);
         mobileNavMQ.addListener?.(onBreakpointChange);
-
-        const onNavMenuViewportChange = () => {
-            if (mobileNavState?.isOpen) syncNavMenuViewportHeight(els.menu);
-        };
-        window.visualViewport?.addEventListener('resize', onNavMenuViewportChange);
-        window.addEventListener('orientationchange', onNavMenuViewportChange);
 
         mobileNavState = { initialized: true, isOpen: false, els, tl: null, focusTrapHandler: null };
 

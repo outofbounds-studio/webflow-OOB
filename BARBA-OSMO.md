@@ -379,6 +379,20 @@ Set the embed or parent `color` in Webflow so `currentColor` picks up your icon 
 
 **Stacking:** `.nav` / `.nav-bar` use `z-index: 110` in `oob.css`; `[data-nav-menu]` overlay uses `100`. Set **`position: fixed`** on `.nav` in Webflow — `oob.js` / `oob.css` do not override position (a previous `position: relative` rule was breaking fixed on mobile).
 
+#### iOS Safari edge-to-edge (tux.co-style)
+
+**Closed page:** Content bleeds behind translucent Safari chrome (status bar + floating URL bar). Requires:
+
+| Requirement | How |
+|-------------|-----|
+| `viewport-fit=cover` | Webflow Head viewport meta, or `oob.js` patches it on init |
+| No opaque `theme-color` | Remove from Webflow Head — opaque values tint the URL bar and hide content behind it |
+| Safe-area insets | `env(safe-area-inset-top)` on fixed nav; menu overlay starts below the notch |
+
+**Open menu:** Orange `[data-nav-menu-bg]` scales Y from the **bottom**; overlay runs from the physical bottom up to `safe-area-inset-top` (below the notch). No `html`/`body` background fill, no `theme-color` swap.
+
+`oob.js` moves `[data-nav-menu]` to `document.body` on init so `position: fixed` is not clipped by a transformed parent.
+
 #### Styling (Webflow + `oob.css`)
 
 Desktop header: keep your transparent + `backdrop-filter: blur()` on `.navbar` — **do not** animate the header background on open.

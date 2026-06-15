@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.1 */
+/* Version: 1.7.2 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -220,19 +220,19 @@ h6,
   --nav-menu-link-size: 4em;
   --nav-menu-link-kerning: -0.03em;
   --nav-menu-link-gap: 0.5em;
-  --nav-menu-vh: 100dvh;
+  --nav-menu-safe-top: env(safe-area-inset-top, 0px);
+  --nav-menu-safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-bar-z: 110;
   --nav-menu-z: 100;
 }
 
 [data-nav-menu] {
   position: fixed;
-  top: 0;
+  top: var(--nav-menu-safe-top);
   left: 0;
   right: 0;
+  bottom: 0;
   width: 100%;
-  height: var(--nav-menu-vh, 100dvh);
-  min-height: -webkit-fill-available;
   z-index: var(--nav-menu-z);
   visibility: hidden;
   pointer-events: none;
@@ -244,8 +244,8 @@ h6,
   top: 0;
   left: 0;
   right: 0;
-  bottom: -8px;
-  min-height: calc(100% + 8px);
+  bottom: calc(-1 * max(8px, var(--nav-menu-safe-bottom)));
+  min-height: calc(100% + max(8px, var(--nav-menu-safe-bottom)));
   background-color: var(--nav-menu-bg);
   transform: scaleY(0);
   transform-origin: bottom center;
@@ -262,7 +262,7 @@ h6,
   gap: var(--nav-menu-link-gap);
   min-height: 100%;
   padding: var(--nav-menu-panel-padding-top) var(--nav-menu-panel-padding-x)
-    var(--nav-menu-panel-padding-bottom);
+    calc(var(--nav-menu-panel-padding-bottom) + var(--nav-menu-safe-bottom));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -339,6 +339,13 @@ html.is-nav-menu-open body {
 @media screen and (max-width: 767px) {
   .nav-links-wrap {
     display: none !important;
+  }
+
+  /* Fixed nav clears the notch; page content still bleeds edge-to-edge behind Safari chrome */
+  .nav,
+  .navbar_wrap,
+  .navbar {
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   [data-oob-nav-toggle] {
