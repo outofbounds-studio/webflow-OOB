@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.8.5 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.8.6 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.8.5');
+console.log('[OOB] Script loaded v2.8.6');
 
 (function () {
     'use strict';
@@ -1214,17 +1214,34 @@ console.log('[OOB] Script loaded v2.8.5');
         });
     }
 
-    /** Keep nav above Barba enter layer (container uses z-index 3 during parallax). */
+    const NAV_BAR_STACK_Z = 110;
+
+    /** Keep nav above Barba enter layer and [data-nav-menu] overlay (z-index 100). */
     function ensureNavStacking() {
-        const navEl = document.querySelector('.nav, .navbar_wrap, nav');
-        if (!navEl) return;
-        const style = getComputedStyle(navEl);
-        if (style.position === 'static') {
-            navEl.style.position = 'relative';
-        }
-        if (!navEl.style.zIndex || Number(navEl.style.zIndex) < 10) {
-            navEl.style.zIndex = '10';
-        }
+        document.querySelectorAll('.nav, .navbar_wrap, .navbar, .nav-bar').forEach((navEl) => {
+            const style = getComputedStyle(navEl);
+            if (style.position === 'static') {
+                navEl.style.position = 'relative';
+            }
+            const current = Number(navEl.style.zIndex);
+            if (!navEl.style.zIndex || current < NAV_BAR_STACK_Z) {
+                navEl.style.zIndex = String(NAV_BAR_STACK_Z);
+            }
+        });
+    }
+
+    function placeNavToggleInBar(openBtn) {
+        if (!openBtn) return;
+
+        const navBar =
+            document.querySelector('.nav-bar') ||
+            document.querySelector('.nav .nav-bar') ||
+            document.querySelector('.navbar_wrap .nav-bar');
+
+        if (!navBar || navBar.contains(openBtn)) return;
+
+        navBar.appendChild(openBtn);
+        console.log('[OOB] Moved [data-oob-nav-toggle] into .nav-bar for layout');
     }
 
     function getActiveNavLink(links) {
@@ -1431,7 +1448,14 @@ console.log('[OOB] Script loaded v2.8.5');
         const duration = reducedMotion ? 0 : 0.4;
         const ease = 'power3.inOut';
         const rotate = isOpen ? getNavMenuIconRotateDegrees(icon) : 0;
-        const anim = { rotate, duration, ease, transformOrigin: '50% 50%', force3D: true };
+        const anim = {
+            rotate,
+            duration,
+            ease,
+            transformOrigin: '50% 50%',
+            force3D: true,
+            overwrite: 'auto',
+        };
 
         if (tl) tl.to(icon, anim, position);
         else gsap.to(icon, anim);
@@ -1643,6 +1667,9 @@ console.log('[OOB] Script loaded v2.8.5');
                 '[OOB] Mobile nav: missing [data-nav-menu-icon] inside toggle (see BARBA-OSMO.md)'
             );
         }
+
+        placeNavToggleInBar(els.openBtn);
+        ensureNavStacking();
 
         if (!els.menu.id) els.menu.id = 'oob-nav-menu';
         els.openBtn.setAttribute('aria-controls', els.menu.id);

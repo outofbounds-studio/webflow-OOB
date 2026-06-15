@@ -375,7 +375,9 @@ Example SVG for Webflow Embed (tune `fill` / size in Designer):
 
 Set the embed or parent `color` in Webflow so `currentColor` picks up your icon colour.
 
-**Toggle styling:** `oob.css` does **not** set background, size, position, or display on `[data-oob-nav-toggle]`. Use a Webflow class (e.g. `.nav-menu-open-button`) for all appearance. If the toggle lives inside `[data-nav-menu]`, `oob.css` only sets `visibility: visible` and `pointer-events: auto` so it stays visible/clickable when the overlay is closed.
+**Toggle styling:** `oob.css` does **not** set background or colours on `[data-oob-nav-toggle]`. Style `.nav-menu-open-button` in Webflow (size, background, border-radius). On init, `oob.js` moves the toggle into `.nav-bar` if it was nested elsewhere so flex layout and Webflow styles apply. `overflow: hidden` on the toggle clips icon rotation so the nav bar does not change width.
+
+**Stacking:** `.nav` / `.nav-bar` use `z-index: 110`; `[data-nav-menu]` overlay uses `100` — the nav pill stays above the menu background when open.
 
 #### Styling (Webflow + `oob.css`)
 

@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.6.5 */
+/* Version: 1.6.6 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -275,8 +275,8 @@ h6,
   text-shadow: none;
 }
 
-/* Toggle (.nav-menu-open-button + data-oob-nav-toggle): style entirely in Webflow.
-   If nested inside [data-nav-menu], keep visible/clickable when overlay is closed. */
+/* Toggle: layout only — background/size/border-radius from Webflow (.nav-menu-open-button).
+   If still inside [data-nav-menu], keep visible when overlay is closed. */
 [data-nav-menu] [data-oob-nav-toggle] {
   visibility: visible;
   pointer-events: auto;
@@ -286,10 +286,16 @@ h6,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* GSAP rotates [data-nav-menu-icon] — size/layout in Webflow */
+/* Icon rotation is clipped inside the toggle — prevents nav bar width jump */
 [data-nav-menu-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   transform-origin: center center;
   pointer-events: none;
+  will-change: transform;
 }
 
 html.is-nav-menu-open {
@@ -307,8 +313,16 @@ html.is-nav-menu-open body {
 
   .nav,
   .navbar_wrap,
-  .navbar {
+  .navbar,
+  .nav-bar {
+    position: relative;
     z-index: var(--nav-bar-z);
+  }
+
+  [data-oob-nav-toggle] {
+    flex-shrink: 0;
+    overflow: hidden;
+    isolation: isolate;
   }
 }
 
