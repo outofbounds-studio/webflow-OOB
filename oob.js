@@ -388,12 +388,15 @@ console.log('[OOB] Script loaded v2.9.6');
 
     function initBeforeEnterFunctions(next) {
         nextPage = next || document;
+        // Route changes can interrupt close animation; clear Safari chrome immediately.
+        setNavMenuSafariChrome(false);
         closeMobileNavMenu({ immediate: true, restoreScroll: false });
     }
 
     function initAfterEnterFunctions(next, options = {}) {
         nextPage = next || document;
         const { reinitWebflow: shouldReinitWebflow = true, afterBarbaNav = false } = options;
+        if (!mobileNavState?.isOpen) setNavMenuSafariChrome(false);
         if (shouldReinitWebflow) reinitWebflow();
         syncNavActiveFromContainer(nextPage);
         refreshNavHighlightBlob();
@@ -1406,6 +1409,7 @@ console.log('[OOB] Script loaded v2.9.6');
     const NAV_MENU_CLOSE_DURATION = 0.6;
     const NAV_MENU_LINK_STAGGER = 0.085;
     const NAV_MENU_BG_ORIGIN = 'bottom center';
+    const NAV_MENU_CHROME_OPEN_SYNC = 0.14;
 
     let mobileNavState = null;
 
@@ -1698,7 +1702,6 @@ console.log('[OOB] Script loaded v2.9.6');
         state.isOpen = true;
 
         setNavMenuScrollLock(true);
-        setNavMenuSafariChrome(true);
         syncNavMenuToVisualViewport(els.menu);
         els.menu.setAttribute('aria-hidden', 'false');
         gsap.set(els.menu, { visibility: 'visible', pointerEvents: 'auto' });
@@ -1713,6 +1716,7 @@ console.log('[OOB] Script loaded v2.9.6');
         gsap.set(targets, { yPercent: 110, autoAlpha: 0 });
 
         if (reducedMotion) {
+            setNavMenuSafariChrome(true);
             gsap.set(els.bg, { scaleY: 1 });
             gsap.set(targets, { yPercent: 0, autoAlpha: 1 });
             setNavMenuToggleOpen(true);
@@ -1729,6 +1733,11 @@ console.log('[OOB] Script loaded v2.9.6');
             els.bg,
             { scaleY: 1, duration: openDuration, ease: 'power3.inOut' },
             0
+        );
+        tl.call(
+            () => setNavMenuSafariChrome(true),
+            null,
+            Math.min(openDuration * NAV_MENU_CHROME_OPEN_SYNC, openDuration * 0.2)
         );
         tl.to(
             targets,
@@ -1760,6 +1769,8 @@ console.log('[OOB] Script loaded v2.9.6');
         els.menu.setAttribute('aria-hidden', 'true');
         els.openBtn?.setAttribute('aria-expanded', 'false');
         releaseNavMenuFocus();
+        // Clear orange chrome at close start so fast nav/clicks can't leave it stuck on.
+        setNavMenuSafariChrome(false);
 
         const targets = getNavMenuAnimTargets(els);
         const closeDuration = reducedMotion ? 0 : NAV_MENU_CLOSE_DURATION;
@@ -1771,7 +1782,6 @@ console.log('[OOB] Script loaded v2.9.6');
             resetNavMenuToggleIcon();
             document.documentElement.classList.remove(NAV_MENU_SCROLL_LOCK_CLASS);
             clearNavMenuOpenLayout(els.menu);
-            setNavMenuSafariChrome(false);
             if (restoreScroll) restoreNavMenuScroll();
         };
 
