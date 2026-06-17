@@ -481,7 +481,7 @@ html.is-nav-menu-open [data-nav-menu-bg] {
 /* ------------ Secondary CTA button (065) ------------- */
 :root {
   --button-065-color: #fff;
-  --button-065-color-background: #131313;
+  --button-065-color-background: #1c1b1b;
   --button-065-color-focus: #fff;
   --button-065-color-border: #ff4802;
   --button-065-border-width: 1px;
