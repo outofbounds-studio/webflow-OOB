@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.16 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.17 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.16');
+console.log('[OOB] Script loaded v2.9.17');
 
 (function () {
     'use strict';
@@ -1353,12 +1353,19 @@ console.log('[OOB] Script loaded v2.9.16');
 
     function getHomeNavDockMoveEl(configEl) {
         if (!configEl) return null;
-        return (
-            configEl.querySelector(NAV_DOCK_MOVE_SELECTOR) ||
-            configEl.querySelector('.nav-bar') ||
-            configEl.querySelector('.navbar_wrap') ||
-            configEl
-        );
+        const explicit = configEl.querySelector(NAV_DOCK_MOVE_SELECTOR);
+        if (explicit) return explicit;
+
+        const navBar = configEl.querySelector('.nav-bar');
+        if (navBar) return navBar;
+
+        const navInner = configEl.querySelector('.nav-inner');
+        if (navInner?.querySelector('.nav-links-wrap, .navbar_link, .nav-link')) return navInner;
+
+        const navbarWrap = configEl.querySelector('.navbar_wrap');
+        if (navbarWrap) return navbarWrap;
+
+        return configEl;
     }
 
     function measureHomeNavDockTravelY(moveEl, bottomOffset) {

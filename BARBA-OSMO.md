@@ -309,8 +309,8 @@ header.nav [data-oob-nav-dock]
 
 | Attribute | Default | Notes |
 |-----------|---------|--------|
-| `data-oob-nav-dock` | — | On outer `.nav` — config + `pointer-events: none` wrapper |
-| `data-oob-nav-dock-move` | `.nav-bar` | Element that actually moves (keeps hovers working on the pill) |
+| `data-oob-nav-dock` | — | On outer `.nav` — config wrapper (pointer-events pass-through only while `html.is-home-nav-docked`) |
+| `data-oob-nav-dock-move` | `.nav-bar` or `.nav-inner` | Element that moves — should wrap **all** interactive nav UI (links, logo, CTA) |
 | `data-oob-nav-dock-bottom` | `3em` | Distance from viewport bottom when docked |
 | `data-oob-nav-dock-scroll` | `120` | Scroll down this many px to **lift** nav to top |
 | `data-oob-nav-dock-redock-top` | nav top + scroll | Scroll up — re-dock when `scrollY` falls **below** this px from page top. Default: measured nav `top` + `data-oob-nav-dock-scroll` (e.g. ~240 when nav sits 120px from viewport top). Set `120` for exactly 120px from page top |

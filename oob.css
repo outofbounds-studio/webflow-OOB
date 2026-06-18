@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.8.5 */
+/* Version: 1.8.6 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -350,20 +350,32 @@ html.is-nav-menu-open [data-nav-menu] {
   z-index: var(--nav-bar-z);
 }
 
-/* Home dock: transform the pill only — keep outer .nav from blocking hovers */
-[data-oob-nav-dock] {
+/* Home dock: when pill is at bottom, outer .nav must not block the page — re-enable hits on nav UI */
+html.is-home-nav-docked [data-oob-nav-dock] {
   pointer-events: none;
 }
 
-[data-oob-nav-dock-move],
-[data-oob-nav-dock] .nav-bar,
-[data-oob-nav-dock] .navbar_wrap,
-[data-oob-nav-dock].is-nav-dock-active {
+html.is-home-nav-docked [data-oob-nav-dock-move],
+html.is-home-nav-docked [data-oob-nav-dock] .nav-bar,
+html.is-home-nav-docked [data-oob-nav-dock] .nav-inner,
+html.is-home-nav-docked [data-oob-nav-dock] .navbar_wrap,
+html.is-home-nav-docked [data-oob-nav-dock] .nav-links-wrap,
+html.is-home-nav-docked [data-oob-nav-dock] .nav-logo,
+html.is-home-nav-docked [data-oob-nav-dock] a,
+html.is-home-nav-docked [data-oob-nav-dock] button,
+html.is-home-nav-docked [data-oob-nav-dock] [role='button'],
+html.is-home-nav-docked [data-oob-nav-dock] [data-oob-nav-toggle],
+html.is-home-nav-docked [data-oob-nav-dock] [data-oob-calendly-open] {
   pointer-events: auto;
 }
 
+html.is-home-nav-docked [data-oob-nav-dock] .nav-highlight {
+  pointer-events: none;
+}
+
 [data-oob-nav-dock-move].is-nav-dock-active,
-[data-oob-nav-dock] .nav-bar.is-nav-dock-active {
+[data-oob-nav-dock] .nav-bar.is-nav-dock-active,
+[data-oob-nav-dock] .nav-inner.is-nav-dock-active {
   will-change: transform;
 }
 
