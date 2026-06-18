@@ -296,19 +296,29 @@ Add to your nav Symbol root (`.nav`):
 
 ```
 header.nav [data-oob-nav-dock]
+├── Div.nav-bar [data-oob-nav-dock-move]   ← recommended: only the pill moves
 ├── Optional: data-oob-nav-dock-bottom = 3em
 ├── Optional: data-oob-nav-dock-scroll = 120
+├── Optional: data-oob-nav-dock-duration = 0.55
 ├── Optional: data-oob-nav-dock-ease = power4.out
-└── Optional: data-oob-nav-dock-scrub = false
+├── Optional: data-oob-nav-dock-leave-duration = 1.2
+└── Optional: data-oob-nav-dock-leave-ease = parallax
 ```
 
 | Attribute | Default | Notes |
 |-----------|---------|--------|
-| `data-oob-nav-dock` | — | Enables dock behaviour (home + desktop only) |
+| `data-oob-nav-dock` | — | On outer `.nav` — config + `pointer-events: none` wrapper |
+| `data-oob-nav-dock-move` | `.nav-bar` | Element that actually moves (keeps hovers working on the pill) |
 | `data-oob-nav-dock-bottom` | `3em` | Distance from viewport bottom when docked |
-| `data-oob-nav-dock-scroll` | `120` | Pixels of scroll over which the nav moves to its default position |
-| `data-oob-nav-dock-ease` | `power4.out` | Easing curve on scroll progress (snappy lift) |
-| `data-oob-nav-dock-scrub` | `false` | Set to `0.12` (or similar) for scroll-linked lag instead of eased progress |
+| `data-oob-nav-dock-scroll` | `120` | **Trigger only** — px scrolled before the lift animation runs |
+| `data-oob-nav-dock-duration` | `0.55` | Seconds for dock ↔ top tween on scroll trigger |
+| `data-oob-nav-dock-ease` | `power4.out` | GSAP ease on scroll-triggered tweens |
+| `data-oob-nav-dock-leave-duration` | `1.2` | Barba leave — lift to top in sync with page transition |
+| `data-oob-nav-dock-leave-ease` | `parallax` | Ease for Barba leave lift (matches `[data-transition-wrap]`) |
+
+Scroll past the trigger distance → nav plays a **one-shot** GSAP tween to its default top position. Scroll back to the top → plays the return tween to the docked position. Animation progress is **not** tied to scroll amount after the trigger fires.
+
+**Barba:** leaving home while docked lifts the pill to the top **during** the leave transition (no jump). Arriving on home animates the pill down to the dock when scroll is at the top.
 
 **Webflow:** keep `position: fixed` and your usual **top** offset on `.nav` — JS measures that as the “home” position and only animates `transform: translateY()`.
 

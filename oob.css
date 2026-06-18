@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.8.4 */
+/* Version: 1.8.5 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -350,9 +350,20 @@ html.is-nav-menu-open [data-nav-menu] {
   z-index: var(--nav-bar-z);
 }
 
-/* Home dock: y-transform driven by oob.js ScrollTrigger (desktop home only) */
-[data-oob-nav-dock].is-nav-dock-active,
-.nav.is-nav-dock-active {
+/* Home dock: transform the pill only — keep outer .nav from blocking hovers */
+[data-oob-nav-dock] {
+  pointer-events: none;
+}
+
+[data-oob-nav-dock-move],
+[data-oob-nav-dock] .nav-bar,
+[data-oob-nav-dock] .navbar_wrap,
+[data-oob-nav-dock].is-nav-dock-active {
+  pointer-events: auto;
+}
+
+[data-oob-nav-dock-move].is-nav-dock-active,
+[data-oob-nav-dock] .nav-bar.is-nav-dock-active {
   will-change: transform;
 }
 

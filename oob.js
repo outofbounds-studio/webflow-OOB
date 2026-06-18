@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.12 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.14 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.12');
+console.log('[OOB] Script loaded v2.9.14');
 
 (function () {
     'use strict';
@@ -415,7 +415,9 @@ console.log('[OOB] Script loaded v2.9.12');
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
         }
-        refreshHomeNavDock(nextPage);
+        refreshHomeNavDock(nextPage, {
+            animateIn: afterBarbaNav && isHomeContainer(nextPage),
+        });
         // Runs after enter animation completes
 
         if (lenis) lenis.resize();
@@ -794,13 +796,17 @@ console.log('[OOB] Script loaded v2.9.12');
         CustomEase.create('parallax', '0.7, 0.05, 0.13, 1');
 
         if (reducedMotion) {
+            appendHomeNavDockLeaveTween(tl, current);
             return tl.set(current, { autoAlpha: 0 });
         }
 
         if (!transitionWrap || !transitionDark) {
             console.warn('[OOB] Missing [data-transition-wrap] or [data-transition-dark]');
+            appendHomeNavDockLeaveTween(tl, current);
             return tl.to(current, { autoAlpha: 0, duration: 0.4 });
         }
+
+        appendHomeNavDockLeaveTween(tl, current);
 
         tl.set(transitionWrap, { zIndex: 2 });
 
@@ -1265,9 +1271,13 @@ console.log('[OOB] Script loaded v2.9.12');
     // -----------------------------------------
 
     const NAV_DOCK_SELECTOR = '[data-oob-nav-dock]';
+    const NAV_DOCK_MOVE_SELECTOR = '[data-oob-nav-dock-move]';
     const NAV_DOCK_BOTTOM_DEFAULT = '3em';
     const NAV_DOCK_SCROLL_DEFAULT = 120;
+    const NAV_DOCK_DURATION_DEFAULT = 0.55;
+    const NAV_DOCK_LEAVE_DURATION_DEFAULT = 1.2;
     const NAV_DOCK_EASE_DEFAULT = 'power4.out';
+    const NAV_DOCK_LEAVE_EASE_DEFAULT = 'parallax';
     const NAV_DOCK_DESKTOP_MQ = '(min-width: 768px)';
 
     let homeNavDockState = null;
@@ -1283,55 +1293,160 @@ console.log('[OOB] Script loaded v2.9.12');
         return px;
     }
 
-    function getHomeNavDockEl() {
+    function getHomeNavDockConfigEl() {
         return document.querySelector(NAV_DOCK_SELECTOR);
     }
 
-    function measureHomeNavDockTravelY(nav, bottomOffset) {
-        gsap.set(nav, { y: 0 });
-        const rect = nav.getBoundingClientRect();
-        const bottomPx = cssOffsetToPx(bottomOffset, nav);
+    function getHomeNavDockMoveEl(configEl) {
+        if (!configEl) return null;
+        return (
+            configEl.querySelector(NAV_DOCK_MOVE_SELECTOR) ||
+            configEl.querySelector('.nav-bar') ||
+            configEl.querySelector('.navbar_wrap') ||
+            configEl
+        );
+    }
+
+    function measureHomeNavDockTravelY(moveEl, bottomOffset) {
+        gsap.set(moveEl, { y: 0 });
+        const rect = moveEl.getBoundingClientRect();
+        const bottomPx = cssOffsetToPx(bottomOffset, moveEl);
         const dockedTop = window.innerHeight - bottomPx - rect.height;
         return dockedTop - rect.top;
     }
 
-    function applyHomeNavDockProgress(nav, travelY, progress) {
-        gsap.set(nav, { y: travelY * (1 - progress), force3D: true });
-        document.documentElement.classList.toggle('is-home-nav-docked', progress < 0.02);
+    function setHomeNavDockClass(docked) {
+        document.documentElement.classList.toggle('is-home-nav-docked', docked);
+    }
+
+    function setHomeNavDockPosition(moveEl, travelY, docked) {
+        gsap.set(moveEl, { y: docked ? travelY : 0, force3D: true });
+        setHomeNavDockClass(docked);
+        syncNavHighlightBlob();
+    }
+
+    function isHomeNavDockedAtBottom() {
+        const state = homeNavDockState;
+        if (!state?.moveEl) return false;
+        if (state.phase === 'docked') return true;
+        if (state.phase === 'animating' && state.animTargetDocked) return true;
+        const y = gsap.getProperty(state.moveEl, 'y');
+        return typeof y === 'number' && Math.abs(y) > 2;
+    }
+
+    function animateHomeNavDock(docked, overrides = {}) {
+        const state = homeNavDockState;
+        if (!state?.moveEl || !state?.configEl) return null;
+
+        const targetPhase = docked ? 'docked' : 'undocked';
+        if (state.phase === targetPhase && !overrides.force) return null;
+
+        const { configEl, moveEl } = state;
+        const travelY = state.travelY;
+        const duration =
+            overrides.duration ??
+            (parseFloat(configEl.getAttribute('data-oob-nav-dock-duration')) || NAV_DOCK_DURATION_DEFAULT);
+        const ease =
+            overrides.ease ??
+            (configEl.getAttribute('data-oob-nav-dock-ease')?.trim() || NAV_DOCK_EASE_DEFAULT);
+
+        state.tl?.kill();
+        state.phase = 'animating';
+        state.animTargetDocked = docked;
+
+        state.tl = gsap.to(moveEl, {
+            y: docked ? travelY : 0,
+            duration: reducedMotion ? 0 : duration,
+            ease,
+            force3D: true,
+            overwrite: true,
+            onUpdate: () => syncNavHighlightBlob(),
+            onComplete: () => {
+                if (!homeNavDockState || homeNavDockState.moveEl !== moveEl) return;
+                state.phase = targetPhase;
+                setHomeNavDockClass(docked);
+                syncNavHighlightBlob();
+            },
+        });
+
+        return state.tl;
+    }
+
+    function appendHomeNavDockLeaveTween(tl, currentContainer) {
+        if (!isHomeContainer(currentContainer) || !isHomeNavDockedAtBottom()) return;
+
+        const state = homeNavDockState;
+        const { configEl, moveEl } = state;
+        state.tl?.kill();
+        state.st?.kill();
+
+        const duration =
+            parseFloat(configEl.getAttribute('data-oob-nav-dock-leave-duration')) ||
+            NAV_DOCK_LEAVE_DURATION_DEFAULT;
+        const ease =
+            configEl.getAttribute('data-oob-nav-dock-leave-ease')?.trim() || NAV_DOCK_LEAVE_EASE_DEFAULT;
+
+        tl.to(
+            moveEl,
+            {
+                y: 0,
+                duration: reducedMotion ? 0 : duration,
+                ease,
+                force3D: true,
+                onUpdate: () => syncNavHighlightBlob(),
+                onComplete: () => {
+                    if (homeNavDockState?.moveEl !== moveEl) return;
+                    homeNavDockState.phase = 'undocked';
+                    setHomeNavDockClass(false);
+                    syncNavHighlightBlob();
+                },
+            },
+            0
+        );
     }
 
     function revertHomeNavDock() {
-        const nav = homeNavDockState?.nav;
+        const moveEl = homeNavDockState?.moveEl;
+        homeNavDockState?.tl?.kill();
         homeNavDockState?.st?.kill();
         if (homeNavDockState?.mq && homeNavDockState?.mqListener) {
             homeNavDockState.mq.removeEventListener('change', homeNavDockState.mqListener);
         }
-        if (nav) {
-            gsap.set(nav, { clearProps: 'transform' });
-            nav.classList.remove('is-nav-dock-active');
+        if (moveEl) {
+            gsap.set(moveEl, { clearProps: 'transform' });
+            moveEl.classList.remove('is-nav-dock-active');
         }
         document.documentElement.classList.remove('is-home-nav-docked');
         homeNavDockState = null;
+        syncNavHighlightBlob();
     }
 
     function remeasureHomeNavDock() {
         const state = homeNavDockState;
-        if (!state?.nav || !state?.st) return;
+        if (!state?.moveEl || !state?.st) return;
 
-        const travelY = measureHomeNavDockTravelY(state.nav, state.bottomOffset);
+        const travelY = measureHomeNavDockTravelY(state.moveEl, state.bottomOffset);
         state.travelY = travelY;
         state.st.refresh();
-        applyHomeNavDockProgress(state.nav, travelY, state.st.progress);
+
+        if (state.phase === 'animating') {
+            state.tl?.kill();
+            animateHomeNavDock(state.animTargetDocked, { force: true });
+            return;
+        }
+
+        setHomeNavDockPosition(state.moveEl, travelY, state.phase === 'docked');
     }
 
-    function initHomeNavDock(container) {
+    function initHomeNavDock(container, options = {}) {
         if (!container || !isHomeContainer(container)) {
             revertHomeNavDock();
             return;
         }
 
-        const nav = getHomeNavDockEl();
-        if (!nav) return;
+        const configEl = getHomeNavDockConfigEl();
+        const moveEl = getHomeNavDockMoveEl(configEl);
+        if (!configEl || !moveEl) return;
 
         const mq = window.matchMedia(NAV_DOCK_DESKTOP_MQ);
         if (!mq.matches || reducedMotion) {
@@ -1347,38 +1462,31 @@ console.log('[OOB] Script loaded v2.9.12');
         }
 
         const bottomOffset =
-            nav.getAttribute('data-oob-nav-dock-bottom')?.trim() || NAV_DOCK_BOTTOM_DEFAULT;
-        const scrollAmount =
-            parseFloat(nav.getAttribute('data-oob-nav-dock-scroll')) || NAV_DOCK_SCROLL_DEFAULT;
-        const easeName = nav.getAttribute('data-oob-nav-dock-ease')?.trim() || NAV_DOCK_EASE_DEFAULT;
-        const scrubAttr = nav.getAttribute('data-oob-nav-dock-scrub');
-        const useScrub =
-            scrubAttr !== null && scrubAttr !== '' && scrubAttr !== 'false' && scrubAttr !== '0';
-        const scrubVal = useScrub ? parseFloat(scrubAttr) || 0.12 : false;
-        const easeFn = gsap.parseEase(easeName);
+            configEl.getAttribute('data-oob-nav-dock-bottom')?.trim() || NAV_DOCK_BOTTOM_DEFAULT;
+        const scrollThreshold =
+            parseFloat(configEl.getAttribute('data-oob-nav-dock-scroll')) || NAV_DOCK_SCROLL_DEFAULT;
 
-        if (homeNavDockState?.nav === nav && homeNavDockState?.container === container) {
+        if (
+            homeNavDockState?.configEl === configEl &&
+            homeNavDockState?.moveEl === moveEl &&
+            homeNavDockState?.container === container
+        ) {
             remeasureHomeNavDock();
             return;
         }
 
         revertHomeNavDock();
 
-        const travelY = measureHomeNavDockTravelY(nav, bottomOffset);
-        nav.classList.add('is-nav-dock-active');
-        applyHomeNavDockProgress(nav, travelY, 0);
+        const travelY = measureHomeNavDockTravelY(moveEl, bottomOffset);
+        moveEl.classList.add('is-nav-dock-active');
 
         const st = ScrollTrigger.create({
             trigger: container,
             start: 'top top',
-            end: `+=${scrollAmount}`,
-            scrub: scrubVal,
+            end: `+=${scrollThreshold}`,
             invalidateOnRefresh: true,
-            onUpdate: (self) => {
-                const progress = useScrub ? self.progress : easeFn(self.progress);
-                const currentTravelY = homeNavDockState?.travelY ?? travelY;
-                applyHomeNavDockProgress(nav, currentTravelY, progress);
-            },
+            onLeave: () => animateHomeNavDock(false),
+            onLeaveBack: () => animateHomeNavDock(true),
         });
 
         const mqListener = () => {
@@ -1388,31 +1496,64 @@ console.log('[OOB] Script loaded v2.9.12');
         mq.addEventListener('change', mqListener);
 
         homeNavDockState = {
-            nav,
+            configEl,
+            moveEl,
             container,
             st,
+            tl: null,
             travelY,
             bottomOffset,
-            scrollAmount,
+            scrollThreshold,
+            phase: 'docked',
+            animTargetDocked: true,
             mq,
             mqListener,
         };
 
+        st.refresh();
+        const shouldDock = st.progress < 1;
+        const animateIn = options.animateIn === true && shouldDock;
+
+        if (animateIn) {
+            setHomeNavDockPosition(moveEl, travelY, false);
+            homeNavDockState.phase = 'undocked';
+            animateHomeNavDock(true);
+        } else if (shouldDock) {
+            setHomeNavDockPosition(moveEl, travelY, true);
+        } else {
+            setHomeNavDockPosition(moveEl, travelY, false);
+            homeNavDockState.phase = 'undocked';
+        }
+
         console.log('[OOB] Home nav dock initialized', {
+            moveTarget: moveEl.className || moveEl.tagName,
             bottom: bottomOffset,
-            scroll: scrollAmount,
-            ease: easeName,
-            scrub: scrubVal,
+            scrollTrigger: scrollThreshold,
+            duration:
+                parseFloat(configEl.getAttribute('data-oob-nav-dock-duration')) ||
+                NAV_DOCK_DURATION_DEFAULT,
+            ease: configEl.getAttribute('data-oob-nav-dock-ease')?.trim() || NAV_DOCK_EASE_DEFAULT,
         });
     }
 
-    function refreshHomeNavDock(container) {
+    function refreshHomeNavDock(container, options = {}) {
         const page =
             container?.getAttribute?.('data-barba') === 'container'
                 ? container
                 : document.querySelector('[data-barba="container"]');
+        const enteringHome = page && isHomeContainer(page);
+        const configEl = getHomeNavDockConfigEl();
+        const scrollThreshold =
+            parseFloat(configEl?.getAttribute('data-oob-nav-dock-scroll')) || NAV_DOCK_SCROLL_DEFAULT;
+        const scrollY = lenis?.scroll ?? window.scrollY ?? 0;
+
         revertHomeNavDock();
-        initHomeNavDock(page);
+
+        if (!enteringHome) return;
+
+        initHomeNavDock(page, {
+            animateIn: options.animateIn === true && scrollY < scrollThreshold,
+        });
         if (hasScrollTrigger) ScrollTrigger.refresh();
     }
 
@@ -1423,6 +1564,17 @@ console.log('[OOB] Script loaded v2.9.12');
             links.find((a) => a.getAttribute('aria-current') === 'page') ||
             null
         );
+    }
+
+    function syncNavHighlightBlob() {
+        const { wrap, links } = getNavHighlightElements();
+        if (!wrap || wrap.dataset.oobNavBlobInit !== 'true' || !links.length) return;
+
+        const hovered = links.find((l) => l.matches(':hover'));
+        const current = hovered || getActiveNavLink(links);
+
+        if (current) moveNavHighlightTo(current, true);
+        else hideNavHighlight();
     }
 
     function hideNavHighlight() {
