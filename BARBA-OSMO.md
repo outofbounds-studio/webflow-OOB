@@ -303,6 +303,7 @@ header.nav [data-oob-nav-dock]
 ├── Optional: data-oob-nav-dock-duration = 0.55
 ├── Optional: data-oob-nav-dock-ease = power4.out
 ├── Optional: data-oob-nav-dock-leave-duration = 1.2
+├── Optional: data-oob-nav-dock-leave-delay = 0.2
 └── Optional: data-oob-nav-dock-leave-ease = parallax
 ```
 
@@ -316,6 +317,7 @@ header.nav [data-oob-nav-dock]
 | `data-oob-nav-dock-duration` | `0.55` | Seconds for dock ↔ top tween |
 | `data-oob-nav-dock-ease` | `power4.out` | GSAP ease on scroll-triggered tweens |
 | `data-oob-nav-dock-leave-duration` | `1.2` | Barba leave — lift to top in sync with page transition |
+| `data-oob-nav-dock-leave-delay` | `0.2` | Seconds before the leave lift starts (home → other page) |
 | `data-oob-nav-dock-leave-ease` | `parallax` | Ease for Barba leave lift (matches `[data-transition-wrap]`) |
 
 Scroll down past the lift threshold → one-shot tween to top. Scroll up past the (higher) re-dock threshold → one-shot tween back to bottom — **without** needing to reach the very top of the page.

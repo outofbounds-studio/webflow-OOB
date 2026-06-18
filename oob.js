@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.15 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.16 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.15');
+console.log('[OOB] Script loaded v2.9.16');
 
 (function () {
     'use strict';
@@ -1277,6 +1277,7 @@ console.log('[OOB] Script loaded v2.9.15');
     const NAV_DOCK_REDOCK_TOP_DEFAULT = 120;
     const NAV_DOCK_DURATION_DEFAULT = 0.55;
     const NAV_DOCK_LEAVE_DURATION_DEFAULT = 1.2;
+    const NAV_DOCK_LEAVE_DELAY_DEFAULT = 0.2;
     const NAV_DOCK_EASE_DEFAULT = 'power4.out';
     const NAV_DOCK_LEAVE_EASE_DEFAULT = 'parallax';
     const NAV_DOCK_DESKTOP_MQ = '(min-width: 768px)';
@@ -1435,6 +1436,11 @@ console.log('[OOB] Script loaded v2.9.15');
         const duration =
             parseFloat(configEl.getAttribute('data-oob-nav-dock-leave-duration')) ||
             NAV_DOCK_LEAVE_DURATION_DEFAULT;
+        const delayAttr = configEl.getAttribute('data-oob-nav-dock-leave-delay');
+        const delay =
+            delayAttr != null && delayAttr.trim() !== '' && !Number.isNaN(parseFloat(delayAttr))
+                ? parseFloat(delayAttr)
+                : NAV_DOCK_LEAVE_DELAY_DEFAULT;
         const ease =
             configEl.getAttribute('data-oob-nav-dock-leave-ease')?.trim() || NAV_DOCK_LEAVE_EASE_DEFAULT;
 
@@ -1453,7 +1459,7 @@ console.log('[OOB] Script loaded v2.9.15');
                     syncNavHighlightBlob();
                 },
             },
-            0
+            reducedMotion ? 0 : delay
         );
     }
 
