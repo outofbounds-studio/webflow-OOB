@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.8.2 */
+/* Version: 1.8.4 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -348,6 +348,12 @@ html.is-nav-menu-open [data-nav-menu] {
 .navbar,
 .nav-bar {
   z-index: var(--nav-bar-z);
+}
+
+/* Home dock: y-transform driven by oob.js ScrollTrigger (desktop home only) */
+[data-oob-nav-dock].is-nav-dock-active,
+.nav.is-nav-dock-active {
+  will-change: transform;
 }
 
 html.is-nav-menu-scroll-lock {
@@ -807,8 +813,6 @@ html.is-nav-menu-open [data-nav-menu-bg] {
   position: absolute;
   inset: 0;
   background: var(--calendly-backdrop);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
 }
 
 /* Sheet: panel + close move together during scaleY animation */

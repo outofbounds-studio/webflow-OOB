@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.11 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.12 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.11');
+console.log('[OOB] Script loaded v2.9.12');
 
 (function () {
     'use strict';
@@ -415,6 +415,7 @@ console.log('[OOB] Script loaded v2.9.11');
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
         }
+        refreshHomeNavDock(nextPage);
         // Runs after enter animation completes
 
         if (lenis) lenis.resize();
@@ -887,6 +888,7 @@ console.log('[OOB] Script loaded v2.9.11');
             revertButton065(current);
             revertBelieveScroll(current);
             revertFooterLogotypeScroll(current);
+            revertHomeNavDock();
             revertAdvancedFormValidation(current);
             cleanupCloudflareTurnstile(current);
         }
@@ -940,6 +942,7 @@ console.log('[OOB] Script loaded v2.9.11');
                         if (!container.querySelector(BELIEVE_SELECTOR)) {
                             refreshFooterLogotypeScroll();
                         }
+                        refreshHomeNavDock(container);
                         scheduleDisplayReadTime(container);
                         // Cold load / refresh: Webflow IX can restore Designer placeholder after once
                         scheduleDisplayReadTimeAfterWebflow(container);
@@ -1254,6 +1257,163 @@ console.log('[OOB] Script loaded v2.9.11');
 
         navBar.appendChild(openBtn);
         console.log('[OOB] Moved [data-oob-nav-toggle] into .nav-bar for layout');
+    }
+
+    // -----------------------------------------
+    // HOME NAV DOCK — bottom pill → default top on scroll (desktop home only)
+    // Webflow: data-oob-nav-dock on .nav (see BARBA-OSMO.md)
+    // -----------------------------------------
+
+    const NAV_DOCK_SELECTOR = '[data-oob-nav-dock]';
+    const NAV_DOCK_BOTTOM_DEFAULT = '3em';
+    const NAV_DOCK_SCROLL_DEFAULT = 120;
+    const NAV_DOCK_EASE_DEFAULT = 'power4.out';
+    const NAV_DOCK_DESKTOP_MQ = '(min-width: 768px)';
+
+    let homeNavDockState = null;
+
+    function cssOffsetToPx(value, contextEl) {
+        if (!value) return 0;
+        const probe = document.createElement('div');
+        probe.style.cssText =
+            'position:absolute;visibility:hidden;pointer-events:none;height:0;width:0;bottom:' + value;
+        contextEl.appendChild(probe);
+        const px = parseFloat(getComputedStyle(probe).bottom) || 0;
+        probe.remove();
+        return px;
+    }
+
+    function getHomeNavDockEl() {
+        return document.querySelector(NAV_DOCK_SELECTOR);
+    }
+
+    function measureHomeNavDockTravelY(nav, bottomOffset) {
+        gsap.set(nav, { y: 0 });
+        const rect = nav.getBoundingClientRect();
+        const bottomPx = cssOffsetToPx(bottomOffset, nav);
+        const dockedTop = window.innerHeight - bottomPx - rect.height;
+        return dockedTop - rect.top;
+    }
+
+    function applyHomeNavDockProgress(nav, travelY, progress) {
+        gsap.set(nav, { y: travelY * (1 - progress), force3D: true });
+        document.documentElement.classList.toggle('is-home-nav-docked', progress < 0.02);
+    }
+
+    function revertHomeNavDock() {
+        const nav = homeNavDockState?.nav;
+        homeNavDockState?.st?.kill();
+        if (homeNavDockState?.mq && homeNavDockState?.mqListener) {
+            homeNavDockState.mq.removeEventListener('change', homeNavDockState.mqListener);
+        }
+        if (nav) {
+            gsap.set(nav, { clearProps: 'transform' });
+            nav.classList.remove('is-nav-dock-active');
+        }
+        document.documentElement.classList.remove('is-home-nav-docked');
+        homeNavDockState = null;
+    }
+
+    function remeasureHomeNavDock() {
+        const state = homeNavDockState;
+        if (!state?.nav || !state?.st) return;
+
+        const travelY = measureHomeNavDockTravelY(state.nav, state.bottomOffset);
+        state.travelY = travelY;
+        state.st.refresh();
+        applyHomeNavDockProgress(state.nav, travelY, state.st.progress);
+    }
+
+    function initHomeNavDock(container) {
+        if (!container || !isHomeContainer(container)) {
+            revertHomeNavDock();
+            return;
+        }
+
+        const nav = getHomeNavDockEl();
+        if (!nav) return;
+
+        const mq = window.matchMedia(NAV_DOCK_DESKTOP_MQ);
+        if (!mq.matches || reducedMotion) {
+            revertHomeNavDock();
+            return;
+        }
+
+        if (!hasScrollTrigger) {
+            console.warn(
+                '[OOB] Home nav dock: ScrollTrigger not loaded — add ScrollTrigger to Head (see BARBA-OSMO.md).'
+            );
+            return;
+        }
+
+        const bottomOffset =
+            nav.getAttribute('data-oob-nav-dock-bottom')?.trim() || NAV_DOCK_BOTTOM_DEFAULT;
+        const scrollAmount =
+            parseFloat(nav.getAttribute('data-oob-nav-dock-scroll')) || NAV_DOCK_SCROLL_DEFAULT;
+        const easeName = nav.getAttribute('data-oob-nav-dock-ease')?.trim() || NAV_DOCK_EASE_DEFAULT;
+        const scrubAttr = nav.getAttribute('data-oob-nav-dock-scrub');
+        const useScrub =
+            scrubAttr !== null && scrubAttr !== '' && scrubAttr !== 'false' && scrubAttr !== '0';
+        const scrubVal = useScrub ? parseFloat(scrubAttr) || 0.12 : false;
+        const easeFn = gsap.parseEase(easeName);
+
+        if (homeNavDockState?.nav === nav && homeNavDockState?.container === container) {
+            remeasureHomeNavDock();
+            return;
+        }
+
+        revertHomeNavDock();
+
+        const travelY = measureHomeNavDockTravelY(nav, bottomOffset);
+        nav.classList.add('is-nav-dock-active');
+        applyHomeNavDockProgress(nav, travelY, 0);
+
+        const st = ScrollTrigger.create({
+            trigger: container,
+            start: 'top top',
+            end: `+=${scrollAmount}`,
+            scrub: scrubVal,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+                const progress = useScrub ? self.progress : easeFn(self.progress);
+                const currentTravelY = homeNavDockState?.travelY ?? travelY;
+                applyHomeNavDockProgress(nav, currentTravelY, progress);
+            },
+        });
+
+        const mqListener = () => {
+            if (mq.matches) remeasureHomeNavDock();
+            else revertHomeNavDock();
+        };
+        mq.addEventListener('change', mqListener);
+
+        homeNavDockState = {
+            nav,
+            container,
+            st,
+            travelY,
+            bottomOffset,
+            scrollAmount,
+            mq,
+            mqListener,
+        };
+
+        console.log('[OOB] Home nav dock initialized', {
+            bottom: bottomOffset,
+            scroll: scrollAmount,
+            ease: easeName,
+            scrub: scrubVal,
+        });
+    }
+
+    function refreshHomeNavDock(container) {
+        const page =
+            container?.getAttribute?.('data-barba') === 'container'
+                ? container
+                : document.querySelector('[data-barba="container"]');
+        revertHomeNavDock();
+        initHomeNavDock(page);
+        if (hasScrollTrigger) ScrollTrigger.refresh();
     }
 
     function getActiveNavLink(links) {

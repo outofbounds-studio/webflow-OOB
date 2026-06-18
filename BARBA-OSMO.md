@@ -286,6 +286,36 @@ Do not use `data-link-hover` CSS on the same links if you use the blob (remove `
 
 The blob stays on the current page link (`w--current` / `aria-current="page"`) after click and when the pointer leaves the nav; it only moves away while hovering other links.
 
+### Home nav dock (desktop home only)
+
+On the **home** page (`data-barba-namespace="home"`), the nav can start **docked to the bottom** of the viewport (3em from the bottom) and animate up to its normal fixed top position when the user scrolls.
+
+**No GSAP Flip** — one fixed element, two positions. `oob.js` uses a `y` transform + ScrollTrigger (lighter and easier to tune than Flip).
+
+Add to your nav Symbol root (`.nav`):
+
+```
+header.nav [data-oob-nav-dock]
+├── Optional: data-oob-nav-dock-bottom = 3em
+├── Optional: data-oob-nav-dock-scroll = 120
+├── Optional: data-oob-nav-dock-ease = power4.out
+└── Optional: data-oob-nav-dock-scrub = false
+```
+
+| Attribute | Default | Notes |
+|-----------|---------|--------|
+| `data-oob-nav-dock` | — | Enables dock behaviour (home + desktop only) |
+| `data-oob-nav-dock-bottom` | `3em` | Distance from viewport bottom when docked |
+| `data-oob-nav-dock-scroll` | `120` | Pixels of scroll over which the nav moves to its default position |
+| `data-oob-nav-dock-ease` | `power4.out` | Easing curve on scroll progress (snappy lift) |
+| `data-oob-nav-dock-scrub` | `false` | Set to `0.12` (or similar) for scroll-linked lag instead of eased progress |
+
+**Webflow:** keep `position: fixed` and your usual **top** offset on `.nav` — JS measures that as the “home” position and only animates `transform: translateY()`.
+
+**Hooks:** `html.is-home-nav-docked` while docked (progress &lt; 2%). Disabled below 768px and on non-home routes. Skipped when `prefers-reduced-motion`.
+
+Console: `[OOB] Home nav dock initialized`.
+
 ---
 
 ### Mobile nav menu (<768px)
@@ -530,7 +560,7 @@ data-calendly-url = https://calendly.com/YOUR-ACCOUNT/OTHER-EVENT
 
 ### Behaviour (`oob.js`)
 
-- Backdrop fades in with blur; **sheet** (panel + close) **scaleY from bottom** (same motion as mobile nav `[data-nav-menu-bg]`)
+- Backdrop fades in (solid dim overlay); **sheet** (panel + close) **scaleY from bottom** (same motion as mobile nav `[data-nav-menu-bg]`)
 - Close button fades in after sheet starts opening; positioned **0.8em up and right** of the panel via CSS
 - `lenis.stop()` while open (or `html.is-calendly-open` scroll lock on touch)
 - `Escape` / backdrop / close button dismiss
