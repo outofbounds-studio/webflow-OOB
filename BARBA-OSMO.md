@@ -466,7 +466,9 @@ Wrap each link in `[data-nav-menu-item]` (`overflow: hidden`) so link text revea
 
 ## Calendly booking modal
 
-Inline Calendly inside a centered overlay (Series Eight–style). Modal lives **outside** `[data-barba="container"]` on the site template — same as nav overlay.
+Inline Calendly inside a centered overlay (Series Eight–style). Modal lives **outside** `[data-barba="container"]` on the **site template** so it exists on **every page** (not only the homepage).
+
+Optional fallback: add `data-oob-calendly-url="https://calendly.com/..."` on **Body** — `oob.js` can inject a minimal modal shell if the markup is missing on a page.
 
 ### Head code
 
