@@ -549,8 +549,8 @@ Tune on `:root`:
 | `--calendly-panel-bg` | `#f8f4f0` |
 | `--calendly-panel-max-width` | `56rem` |
 | `--calendly-inline-min-height` | `40rem` (36rem mobile) |
-| `--calendly-close-offset-x` | `0.8em` — close button horizontal offset from panel top-right |
-| `--calendly-close-offset-y` | `0.8em` — close button vertical gap above panel |
+| `--calendly-close-offset-x` | `0.8em` — gap to the **right** of the panel’s top-right corner |
+| `--calendly-close-offset-y` | `0.8em` — gap **above** the panel’s top edge |
 
 Style the close button **colour, size, and icon** in Webflow. Layout, offset, z-index, and scroll lock are in `oob.css`.
 

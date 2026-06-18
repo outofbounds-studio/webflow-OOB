@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.8.1 */
+/* Version: 1.8.2 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -836,10 +836,11 @@ html.is-nav-menu-open [data-nav-menu-bg] {
   box-shadow: 0 -0.5rem 3rem rgb(0 0 0 / 22%);
 }
 
-/* Outside panel — colour, size, icon in Webflow; offset tuned via CSS vars above */
+/* Outside panel top-right corner — colour, size, icon in Webflow */
 [data-oob-calendly-close] {
   position: absolute;
-  right: var(--calendly-close-offset-x);
+  right: auto;
+  left: calc(100% + var(--calendly-close-offset-x));
   bottom: calc(100% + var(--calendly-close-offset-y));
   z-index: 2;
   cursor: pointer;
