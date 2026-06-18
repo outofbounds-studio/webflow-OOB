@@ -322,7 +322,7 @@ header.nav [data-oob-nav-dock]
 
 Scroll down past the lift threshold → one-shot tween to top. Scroll up past the (higher) re-dock threshold → one-shot tween back to bottom — **without** needing to reach the very top of the page.
 
-**Barba:** leaving home while docked lifts the pill to the top **during** the leave transition (no jump). Arriving on home animates the pill down to the dock when scroll is at the top.
+**Barba:** leaving home while docked applies the transition overlay instantly in `beforeLeave`, keeps the next page hidden until the enter slide (`autoAlpha: 0`), and lifts the pill during leave (no jump). The enter slide waits for `data-oob-nav-dock-leave-delay`. Arriving on home animates the pill down to the dock when scroll is at the top.
 
 **Webflow:** keep `position: fixed` and your usual **top** offset on `.nav` — JS measures that as the “home” position and only animates `transform: translateY()`.
 

@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.17 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.19 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.17');
+console.log('[OOB] Script loaded v2.9.19');
 
 (function () {
     'use strict';
@@ -38,6 +38,7 @@ console.log('[OOB] Script loaded v2.9.17');
     let nextPage = document;
     let onceFunctionsInitialized = false;
     let barbaViewCount = 0;
+    let barbaLeavingHomeDocked = false;
 
     const rmMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reducedMotion = rmMQ.matches;
@@ -808,14 +809,18 @@ console.log('[OOB] Script loaded v2.9.17');
 
         appendHomeNavDockLeaveTween(tl, current);
 
+        const leavingHomeDocked = barbaLeavingHomeDocked;
+
         tl.set(transitionWrap, { zIndex: 2 });
 
-        tl.fromTo(
-            transitionDark,
-            { autoAlpha: 0 },
-            { autoAlpha: 0.8, duration: 1.2, ease: 'parallax' },
-            0
-        );
+        if (!leavingHomeDocked) {
+            tl.fromTo(
+                transitionDark,
+                { autoAlpha: 0 },
+                { autoAlpha: 0.8, duration: 1.2, ease: 'parallax' },
+                0
+            );
+        }
 
         tl.fromTo(
             current,
@@ -824,13 +829,19 @@ console.log('[OOB] Script loaded v2.9.17');
             0
         );
 
-        tl.set(transitionDark, { autoAlpha: 0 });
+        if (!leavingHomeDocked) {
+            tl.set(transitionDark, { autoAlpha: 0 });
+        }
 
         return tl;
     }
 
     function runPageEnterAnimation(next) {
         const tl = gsap.timeline();
+        const leavingHomeDocked = barbaLeavingHomeDocked;
+        const configEl = getHomeNavDockConfigEl();
+        const enterDelay =
+            leavingHomeDocked && configEl ? getHomeNavDockLeaveDelay(configEl) : 0;
 
         if (reducedMotion) {
             tl.set(next, { autoAlpha: 1 });
@@ -839,12 +850,12 @@ console.log('[OOB] Script loaded v2.9.17');
             return new Promise((resolve) => tl.call(resolve, null, 'pageReady'));
         }
 
-        tl.add('startEnter', 0);
-        tl.set(next, { zIndex: 3 });
+        tl.add('startEnter', enterDelay);
+        gsap.set(next, { y: '100vh', zIndex: 3, autoAlpha: leavingHomeDocked ? 0 : 1 });
         tl.fromTo(
             next,
-            { y: '100vh' },
-            { y: '0vh', duration: 1.2, clearProps: 'all', ease: 'parallax' },
+            { y: '100vh', autoAlpha: leavingHomeDocked ? 0 : 1 },
+            { y: '0vh', autoAlpha: 1, duration: 1.2, clearProps: 'all', ease: 'parallax' },
             'startEnter'
         );
         tl.add('pageReady');
@@ -853,6 +864,29 @@ console.log('[OOB] Script loaded v2.9.17');
         return new Promise((resolve) => {
             tl.call(resolve, null, 'pageReady');
         });
+    }
+
+    function prepareBarbaLeaveFromHomeDocked(currentContainer) {
+        barbaLeavingHomeDocked =
+            isHomeContainer(currentContainer) && isHomeNavDockedAtBottom();
+
+        if (!barbaLeavingHomeDocked) return;
+
+        document.documentElement.classList.add('is-oob-leaving-home-docked');
+
+        const transitionWrap = document.querySelector('[data-transition-wrap]');
+        const transitionDark = transitionWrap?.querySelector('[data-transition-dark]');
+        if (!transitionWrap || !transitionDark) return;
+
+        gsap.set(transitionWrap, { zIndex: 2 });
+        gsap.set(transitionDark, { autoAlpha: 0.8 });
+    }
+
+    function cleanupBarbaTransitionOverlay() {
+        const transitionDark = document.querySelector('[data-transition-dark]');
+        if (transitionDark) gsap.set(transitionDark, { autoAlpha: 0 });
+        document.documentElement.classList.remove('is-oob-leaving-home-docked');
+        barbaLeavingHomeDocked = false;
     }
 
     // -----------------------------------------
@@ -873,12 +907,25 @@ console.log('[OOB] Script loaded v2.9.17');
     ensureBarbaWrapper();
     scheduleDisplayReadTimeAfterWebflow(document.querySelector('[data-barba="container"]') || document);
 
+    barba.hooks.beforeLeave((data) => {
+        prepareBarbaLeaveFromHomeDocked(data.current.container);
+        if (data.next?.container) {
+            gsap.set(data.next.container, {
+                autoAlpha: 0,
+                y: '100vh',
+            });
+        }
+    });
+
     barba.hooks.beforeEnter((data) => {
         gsap.set(data.next.container, {
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
+            y: '100vh',
+            zIndex: 3,
+            autoAlpha: barbaLeavingHomeDocked ? 0 : 1,
         });
 
         if (lenis && typeof lenis.stop === 'function') lenis.stop();
@@ -894,7 +941,7 @@ console.log('[OOB] Script loaded v2.9.17');
             revertButton065(current);
             revertBelieveScroll(current);
             revertFooterLogotypeScroll(current);
-            revertHomeNavDock();
+            finalizeHomeNavDockAfterLeave();
             revertAdvancedFormValidation(current);
             cleanupCloudflareTurnstile(current);
         }
@@ -909,6 +956,7 @@ console.log('[OOB] Script loaded v2.9.17');
     });
 
     barba.hooks.afterEnter((data) => {
+        cleanupBarbaTransitionOverlay();
         barbaViewCount += 1;
         // Webflow forms/Turnstile: initResetWebflow() in enter hook (Barba nav only)
         initAfterEnterFunctions(data.next.container, {
@@ -1336,6 +1384,15 @@ console.log('[OOB] Script loaded v2.9.17');
         }
     }
 
+    function getHomeNavDockLeaveDelay(configEl) {
+        if (!configEl) return NAV_DOCK_LEAVE_DELAY_DEFAULT;
+        const delayAttr = configEl.getAttribute('data-oob-nav-dock-leave-delay');
+        if (delayAttr != null && delayAttr.trim() !== '' && !Number.isNaN(parseFloat(delayAttr))) {
+            return parseFloat(delayAttr);
+        }
+        return NAV_DOCK_LEAVE_DELAY_DEFAULT;
+    }
+
     function cssOffsetToPx(value, contextEl) {
         if (!value) return 0;
         const probe = document.createElement('div');
@@ -1443,11 +1500,7 @@ console.log('[OOB] Script loaded v2.9.17');
         const duration =
             parseFloat(configEl.getAttribute('data-oob-nav-dock-leave-duration')) ||
             NAV_DOCK_LEAVE_DURATION_DEFAULT;
-        const delayAttr = configEl.getAttribute('data-oob-nav-dock-leave-delay');
-        const delay =
-            delayAttr != null && delayAttr.trim() !== '' && !Number.isNaN(parseFloat(delayAttr))
-                ? parseFloat(delayAttr)
-                : NAV_DOCK_LEAVE_DELAY_DEFAULT;
+        const delay = reducedMotion ? 0 : getHomeNavDockLeaveDelay(configEl);
         const ease =
             configEl.getAttribute('data-oob-nav-dock-leave-ease')?.trim() || NAV_DOCK_LEAVE_EASE_DEFAULT;
 
@@ -1458,6 +1511,7 @@ console.log('[OOB] Script loaded v2.9.17');
                 duration: reducedMotion ? 0 : duration,
                 ease,
                 force3D: true,
+                onStart: () => setHomeNavDockClass(false),
                 onUpdate: () => syncNavHighlightBlob(),
                 onComplete: () => {
                     if (homeNavDockState?.moveEl !== moveEl) return;
@@ -1466,8 +1520,25 @@ console.log('[OOB] Script loaded v2.9.17');
                     syncNavHighlightBlob();
                 },
             },
-            reducedMotion ? 0 : delay
+            delay
         );
+    }
+
+    function finalizeHomeNavDockAfterLeave() {
+        const state = homeNavDockState;
+        if (!state?.moveEl) {
+            homeNavDockState = null;
+            document.documentElement.classList.remove('is-home-nav-docked');
+            return;
+        }
+
+        unbindHomeNavDockScroll(state);
+        state.tl?.kill();
+        gsap.set(state.moveEl, { y: 0, force3D: true });
+        state.moveEl.classList.remove('is-nav-dock-active');
+        document.documentElement.classList.remove('is-home-nav-docked');
+        homeNavDockState = null;
+        syncNavHighlightBlob();
     }
 
     function revertHomeNavDock() {
