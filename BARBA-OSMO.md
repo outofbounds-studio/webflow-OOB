@@ -303,7 +303,6 @@ header.nav [data-oob-nav-dock]
 ├── Optional: data-oob-nav-dock-duration = 0.55
 ├── Optional: data-oob-nav-dock-ease = power4.out
 ├── Optional: data-oob-nav-dock-leave-duration = 1.2
-├── Optional: data-oob-nav-dock-leave-delay = 0.2
 └── Optional: data-oob-nav-dock-leave-ease = parallax
 ```
 
@@ -316,13 +315,12 @@ header.nav [data-oob-nav-dock]
 | `data-oob-nav-dock-redock-top` | nav top + scroll | Scroll up — re-dock when `scrollY` falls **below** this px from page top. Default: measured nav `top` + `data-oob-nav-dock-scroll` (e.g. ~240 when nav sits 120px from viewport top). Set `120` for exactly 120px from page top |
 | `data-oob-nav-dock-duration` | `0.55` | Seconds for dock ↔ top tween |
 | `data-oob-nav-dock-ease` | `power4.out` | GSAP ease on scroll-triggered tweens |
-| `data-oob-nav-dock-leave-duration` | `1.2` | Barba leave — lift to top in sync with page transition |
-| `data-oob-nav-dock-leave-delay` | `0.2` | Seconds before the leave lift starts (home → other page) |
-| `data-oob-nav-dock-leave-ease` | `parallax` | Ease for Barba leave lift (matches `[data-transition-wrap]`) |
+| `data-oob-nav-dock-leave-duration` | `1.2` | Barba leave — nav lift in parallel with Osmo transition (same timeline, `t=0`) |
+| `data-oob-nav-dock-leave-ease` | `parallax` | Ease for Barba leave nav lift (matches `[data-transition-wrap]`) |
 
 Scroll down past the lift threshold → one-shot tween to top. Scroll up past the (higher) re-dock threshold → one-shot tween back to bottom — **without** needing to reach the very top of the page.
 
-**Barba:** leaving home while docked applies the transition overlay instantly in `beforeLeave`, keeps the next page hidden until the enter slide (`autoAlpha: 0`), and lifts the pill during leave (no jump). The enter slide waits for `data-oob-nav-dock-leave-delay`. Arriving on home animates the pill down to the dock when scroll is at the top.
+**Barba:** Osmo leave/enter is unchanged. When leaving home **docked**, the nav pill lifts on the **same** leave timeline (`appendHomeNavDockLeaveTween`) — it must start at `t=0`, not delayed, because Osmo’s enter slide rises from the bottom (`100vh → 0`); a delayed nav lift leaves the pill at the bottom while new page content appears there (visible flicker). `finalizeHomeNavDockAfterLeave()` after leave avoids a transform snap. Arriving on home animates the pill down to the dock when scroll is at the top.
 
 **Webflow:** keep `position: fixed` and your usual **top** offset on `.nav` — JS measures that as the “home” position and only animates `transform: translateY()`.
 
