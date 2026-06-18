@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.14 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.15 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.14');
+console.log('[OOB] Script loaded v2.9.15');
 
 (function () {
     'use strict';
@@ -1274,6 +1274,7 @@ console.log('[OOB] Script loaded v2.9.14');
     const NAV_DOCK_MOVE_SELECTOR = '[data-oob-nav-dock-move]';
     const NAV_DOCK_BOTTOM_DEFAULT = '3em';
     const NAV_DOCK_SCROLL_DEFAULT = 120;
+    const NAV_DOCK_REDOCK_TOP_DEFAULT = 120;
     const NAV_DOCK_DURATION_DEFAULT = 0.55;
     const NAV_DOCK_LEAVE_DURATION_DEFAULT = 1.2;
     const NAV_DOCK_EASE_DEFAULT = 'power4.out';
@@ -1281,6 +1282,58 @@ console.log('[OOB] Script loaded v2.9.14');
     const NAV_DOCK_DESKTOP_MQ = '(min-width: 768px)';
 
     let homeNavDockState = null;
+
+    function getHomeNavDockScrollY() {
+        return lenis?.scroll ?? window.scrollY ?? 0;
+    }
+
+    function measureNavFixedTopPx(configEl, moveEl) {
+        gsap.set(moveEl, { y: 0 });
+        const rectTop = moveEl.getBoundingClientRect().top;
+        if (rectTop > 0) return rectTop;
+        const top = parseFloat(getComputedStyle(configEl).top);
+        return Number.isNaN(top) ? NAV_DOCK_REDOCK_TOP_DEFAULT : top;
+    }
+
+    function getHomeNavDockRedockScrollY(configEl, moveEl, undockScroll) {
+        const attr = configEl.getAttribute('data-oob-nav-dock-redock-top');
+        if (attr != null && attr.trim() !== '') {
+            const v = parseFloat(attr);
+            if (!Number.isNaN(v)) return v;
+        }
+        return measureNavFixedTopPx(configEl, moveEl) + undockScroll;
+    }
+
+    function bindHomeNavDockScroll(state) {
+        if (state.scrollBound) return;
+        state.scrollBound = true;
+        state.scrollHandler = () => updateHomeNavDockFromScroll();
+        if (lenis) lenis.on('scroll', state.scrollHandler);
+        else window.addEventListener('scroll', state.scrollHandler, { passive: true });
+    }
+
+    function unbindHomeNavDockScroll(state) {
+        if (!state?.scrollBound) return;
+        if (lenis && state.scrollHandler) lenis.off('scroll', state.scrollHandler);
+        else if (state.scrollHandler) window.removeEventListener('scroll', state.scrollHandler);
+        state.scrollBound = false;
+        state.scrollHandler = null;
+    }
+
+    function updateHomeNavDockFromScroll() {
+        const state = homeNavDockState;
+        if (!state?.moveEl || state.phase === 'animating') return;
+
+        const scrollY = getHomeNavDockScrollY();
+        const undockAt = state.scrollThreshold;
+        const redockAt = state.redockScrollTop;
+
+        if (scrollY >= undockAt && state.phase === 'docked') {
+            animateHomeNavDock(false);
+        } else if (scrollY <= redockAt && state.phase === 'undocked') {
+            animateHomeNavDock(true);
+        }
+    }
 
     function cssOffsetToPx(value, contextEl) {
         if (!value) return 0;
@@ -1378,7 +1431,6 @@ console.log('[OOB] Script loaded v2.9.14');
         const state = homeNavDockState;
         const { configEl, moveEl } = state;
         state.tl?.kill();
-        state.st?.kill();
 
         const duration =
             parseFloat(configEl.getAttribute('data-oob-nav-dock-leave-duration')) ||
@@ -1407,8 +1459,8 @@ console.log('[OOB] Script loaded v2.9.14');
 
     function revertHomeNavDock() {
         const moveEl = homeNavDockState?.moveEl;
+        unbindHomeNavDockScroll(homeNavDockState);
         homeNavDockState?.tl?.kill();
-        homeNavDockState?.st?.kill();
         if (homeNavDockState?.mq && homeNavDockState?.mqListener) {
             homeNavDockState.mq.removeEventListener('change', homeNavDockState.mqListener);
         }
@@ -1423,11 +1475,15 @@ console.log('[OOB] Script loaded v2.9.14');
 
     function remeasureHomeNavDock() {
         const state = homeNavDockState;
-        if (!state?.moveEl || !state?.st) return;
+        if (!state?.moveEl) return;
 
         const travelY = measureHomeNavDockTravelY(state.moveEl, state.bottomOffset);
         state.travelY = travelY;
-        state.st.refresh();
+        state.redockScrollTop = getHomeNavDockRedockScrollY(
+            state.configEl,
+            state.moveEl,
+            state.scrollThreshold
+        );
 
         if (state.phase === 'animating') {
             state.tl?.kill();
@@ -1454,24 +1510,20 @@ console.log('[OOB] Script loaded v2.9.14');
             return;
         }
 
-        if (!hasScrollTrigger) {
-            console.warn(
-                '[OOB] Home nav dock: ScrollTrigger not loaded — add ScrollTrigger to Head (see BARBA-OSMO.md).'
-            );
-            return;
-        }
-
         const bottomOffset =
             configEl.getAttribute('data-oob-nav-dock-bottom')?.trim() || NAV_DOCK_BOTTOM_DEFAULT;
         const scrollThreshold =
             parseFloat(configEl.getAttribute('data-oob-nav-dock-scroll')) || NAV_DOCK_SCROLL_DEFAULT;
+        const redockScrollTop = getHomeNavDockRedockScrollY(configEl, moveEl, scrollThreshold);
 
         if (
             homeNavDockState?.configEl === configEl &&
             homeNavDockState?.moveEl === moveEl &&
             homeNavDockState?.container === container
         ) {
+            homeNavDockState.redockScrollTop = redockScrollTop;
             remeasureHomeNavDock();
+            updateHomeNavDockFromScroll();
             return;
         }
 
@@ -1479,15 +1531,6 @@ console.log('[OOB] Script loaded v2.9.14');
 
         const travelY = measureHomeNavDockTravelY(moveEl, bottomOffset);
         moveEl.classList.add('is-nav-dock-active');
-
-        const st = ScrollTrigger.create({
-            trigger: container,
-            start: 'top top',
-            end: `+=${scrollThreshold}`,
-            invalidateOnRefresh: true,
-            onLeave: () => animateHomeNavDock(false),
-            onLeaveBack: () => animateHomeNavDock(true),
-        });
 
         const mqListener = () => {
             if (mq.matches) remeasureHomeNavDock();
@@ -1499,36 +1542,41 @@ console.log('[OOB] Script loaded v2.9.14');
             configEl,
             moveEl,
             container,
-            st,
+            st: null,
             tl: null,
             travelY,
             bottomOffset,
             scrollThreshold,
+            redockScrollTop,
             phase: 'docked',
             animTargetDocked: true,
+            scrollBound: false,
+            scrollHandler: null,
             mq,
             mqListener,
         };
 
-        st.refresh();
-        const shouldDock = st.progress < 1;
-        const animateIn = options.animateIn === true && shouldDock;
+        bindHomeNavDockScroll(homeNavDockState);
+
+        const scrollY = getHomeNavDockScrollY();
+        const animateIn = options.animateIn === true && scrollY <= redockScrollTop;
 
         if (animateIn) {
             setHomeNavDockPosition(moveEl, travelY, false);
             homeNavDockState.phase = 'undocked';
             animateHomeNavDock(true);
-        } else if (shouldDock) {
-            setHomeNavDockPosition(moveEl, travelY, true);
-        } else {
+        } else if (scrollY >= scrollThreshold) {
             setHomeNavDockPosition(moveEl, travelY, false);
             homeNavDockState.phase = 'undocked';
+        } else {
+            setHomeNavDockPosition(moveEl, travelY, true);
         }
 
         console.log('[OOB] Home nav dock initialized', {
             moveTarget: moveEl.className || moveEl.tagName,
             bottom: bottomOffset,
-            scrollTrigger: scrollThreshold,
+            undockScroll: scrollThreshold,
+            redockScroll: redockScrollTop,
             duration:
                 parseFloat(configEl.getAttribute('data-oob-nav-dock-duration')) ||
                 NAV_DOCK_DURATION_DEFAULT,
@@ -1543,18 +1591,21 @@ console.log('[OOB] Script loaded v2.9.14');
                 : document.querySelector('[data-barba="container"]');
         const enteringHome = page && isHomeContainer(page);
         const configEl = getHomeNavDockConfigEl();
+        const moveEl = getHomeNavDockMoveEl(configEl);
         const scrollThreshold =
             parseFloat(configEl?.getAttribute('data-oob-nav-dock-scroll')) || NAV_DOCK_SCROLL_DEFAULT;
-        const scrollY = lenis?.scroll ?? window.scrollY ?? 0;
+        const redockScrollTop = configEl && moveEl
+            ? getHomeNavDockRedockScrollY(configEl, moveEl, scrollThreshold)
+            : scrollThreshold;
+        const scrollY = getHomeNavDockScrollY();
 
         revertHomeNavDock();
 
         if (!enteringHome) return;
 
         initHomeNavDock(page, {
-            animateIn: options.animateIn === true && scrollY < scrollThreshold,
+            animateIn: options.animateIn === true && scrollY <= redockScrollTop,
         });
-        if (hasScrollTrigger) ScrollTrigger.refresh();
     }
 
     function getActiveNavLink(links) {

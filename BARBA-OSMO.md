@@ -299,6 +299,7 @@ header.nav [data-oob-nav-dock]
 ├── Div.nav-bar [data-oob-nav-dock-move]   ← recommended: only the pill moves
 ├── Optional: data-oob-nav-dock-bottom = 3em
 ├── Optional: data-oob-nav-dock-scroll = 120
+├── Optional: data-oob-nav-dock-redock-top = 120
 ├── Optional: data-oob-nav-dock-duration = 0.55
 ├── Optional: data-oob-nav-dock-ease = power4.out
 ├── Optional: data-oob-nav-dock-leave-duration = 1.2
@@ -310,13 +311,14 @@ header.nav [data-oob-nav-dock]
 | `data-oob-nav-dock` | — | On outer `.nav` — config + `pointer-events: none` wrapper |
 | `data-oob-nav-dock-move` | `.nav-bar` | Element that actually moves (keeps hovers working on the pill) |
 | `data-oob-nav-dock-bottom` | `3em` | Distance from viewport bottom when docked |
-| `data-oob-nav-dock-scroll` | `120` | **Trigger only** — px scrolled before the lift animation runs |
-| `data-oob-nav-dock-duration` | `0.55` | Seconds for dock ↔ top tween on scroll trigger |
+| `data-oob-nav-dock-scroll` | `120` | Scroll down this many px to **lift** nav to top |
+| `data-oob-nav-dock-redock-top` | nav top + scroll | Scroll up — re-dock when `scrollY` falls **below** this px from page top. Default: measured nav `top` + `data-oob-nav-dock-scroll` (e.g. ~240 when nav sits 120px from viewport top). Set `120` for exactly 120px from page top |
+| `data-oob-nav-dock-duration` | `0.55` | Seconds for dock ↔ top tween |
 | `data-oob-nav-dock-ease` | `power4.out` | GSAP ease on scroll-triggered tweens |
 | `data-oob-nav-dock-leave-duration` | `1.2` | Barba leave — lift to top in sync with page transition |
 | `data-oob-nav-dock-leave-ease` | `parallax` | Ease for Barba leave lift (matches `[data-transition-wrap]`) |
 
-Scroll past the trigger distance → nav plays a **one-shot** GSAP tween to its default top position. Scroll back to the top → plays the return tween to the docked position. Animation progress is **not** tied to scroll amount after the trigger fires.
+Scroll down past the lift threshold → one-shot tween to top. Scroll up past the (higher) re-dock threshold → one-shot tween back to bottom — **without** needing to reach the very top of the page.
 
 **Barba:** leaving home while docked lifts the pill to the top **during** the leave transition (no jump). Arriving on home animates the pill down to the dock when scroll is at the top.
 
