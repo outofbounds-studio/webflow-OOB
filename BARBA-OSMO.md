@@ -483,11 +483,12 @@ Div [data-oob-calendly-modal]
 ├── Custom attribute: data-calendly-url = https://calendly.com/YOUR-ACCOUNT/YOUR-EVENT
 ├── aria-label = Book a call (optional — set on root div)
 ├── Div [data-oob-calendly-backdrop]
-├── Button [data-oob-calendly-close]          ← sibling of panel (style in Webflow)
-│   └── SVG / icon
-└── Div [data-oob-calendly-panel]
-    ├── Custom attribute: data-lenis-prevent
-    └── Div [data-oob-calendly-inline]
+└── Div [data-oob-calendly-sheet]              ← auto-created by oob.js if missing
+    ├── Button [data-oob-calendly-close]       ← 0.8em up/right of panel (oob.css); colour/size in Webflow
+    │   └── SVG / icon
+    └── Div [data-oob-calendly-panel]
+        ├── Custom attribute: data-lenis-prevent
+        └── Div [data-oob-calendly-inline]
 ```
 
 **Do not** put the Calendly iframe embed in Webflow Designer — `oob.js` mounts it into `[data-oob-calendly-inline]` on first open.
@@ -521,15 +522,16 @@ data-calendly-url = https://calendly.com/YOUR-ACCOUNT/OTHER-EVENT
 | Modal root | `data-oob-calendly-modal` | Fixed overlay; moved to `document.body` on init |
 | Default booking URL | `data-calendly-url` | On modal root (or on each trigger to override) |
 | Backdrop | `data-oob-calendly-backdrop` | Click to close |
+| Sheet | `data-oob-calendly-sheet` | Wraps close + panel; `scaleY` animation anchor (auto-wrapped by JS) |
 | Panel | `data-oob-calendly-panel` | Scrollable; add `data-lenis-prevent` |
 | Inline mount | `data-oob-calendly-inline` | Calendly widget injected here |
-| Close | `data-oob-calendly-close` | **Outside** `[data-oob-calendly-panel]` — style position/size in Webflow |
+| Close | `data-oob-calendly-close` | Inside sheet, outside panel — **colour & size in Webflow**; offset in CSS |
 | Open trigger | `data-oob-calendly-open` | Div/button anywhere; event delegation survives Barba |
 
 ### Behaviour (`oob.js`)
 
-- Backdrop fades in with blur; panel **scaleY from bottom** (same motion as mobile nav `[data-nav-menu-bg]`)
-- Close button fades in with backdrop; lives outside panel for Webflow styling
+- Backdrop fades in with blur; **sheet** (panel + close) **scaleY from bottom** (same motion as mobile nav `[data-nav-menu-bg]`)
+- Close button fades in after sheet starts opening; positioned **0.8em up and right** of the panel via CSS
 - `lenis.stop()` while open (or `html.is-calendly-open` scroll lock on touch)
 - `Escape` / backdrop / close button dismiss
 - Focus trap while open; focus returns to trigger on close
@@ -547,8 +549,10 @@ Tune on `:root`:
 | `--calendly-panel-bg` | `#f8f4f0` |
 | `--calendly-panel-max-width` | `56rem` |
 | `--calendly-inline-min-height` | `40rem` (36rem mobile) |
+| `--calendly-close-offset-x` | `0.8em` — close button horizontal offset from panel top-right |
+| `--calendly-close-offset-y` | `0.8em` — close button vertical gap above panel |
 
-Style the close button and panel chrome in Webflow if you prefer — layout/z-index/scroll lock are in `oob.css`.
+Style the close button **colour, size, and icon** in Webflow. Layout, offset, z-index, and scroll lock are in `oob.css`.
 
 ---
 

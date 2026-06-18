@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.10 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.11 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.10');
+console.log('[OOB] Script loaded v2.9.11');
 
 (function () {
     'use strict';
@@ -1922,7 +1922,7 @@ console.log('[OOB] Script loaded v2.9.10');
     const CALENDLY_OPEN_CLASS = 'is-calendly-open';
     const CALENDLY_OPEN_DURATION = 0.85;
     const CALENDLY_CLOSE_DURATION = 0.6;
-    const CALENDLY_PANEL_ORIGIN = 'bottom center';
+    const CALENDLY_SHEET_ORIGIN = 'bottom center';
     const CALENDLY_WIDGET_POLL_MS = 100;
     const CALENDLY_WIDGET_POLL_MAX = 120;
 
@@ -1940,6 +1940,30 @@ console.log('[OOB] Script loaded v2.9.10');
         if (!modal || modal.parentElement === document.body) return;
         document.body.appendChild(modal);
         console.log('[OOB] Moved [data-oob-calendly-modal] to document.body');
+    }
+
+    function ensureCalendlySheet(modal, panel, closeBtn) {
+        let sheet = modal.querySelector('[data-oob-calendly-sheet]');
+
+        if (!sheet) {
+            sheet = document.createElement('div');
+            sheet.setAttribute('data-oob-calendly-sheet', '');
+            const backdrop = modal.querySelector('[data-oob-calendly-backdrop]');
+            if (backdrop?.parentElement === modal) {
+                backdrop.insertAdjacentElement('afterend', sheet);
+            } else {
+                modal.appendChild(sheet);
+            }
+        }
+
+        if (closeBtn && closeBtn.parentElement !== sheet) {
+            sheet.appendChild(closeBtn);
+        }
+        if (panel.parentElement !== sheet) {
+            sheet.appendChild(panel);
+        }
+
+        return sheet;
     }
 
     /** Webflow often publishes backdrop/panel as siblings of the modal root — reparent on init. */
@@ -1975,6 +1999,8 @@ console.log('[OOB] Script loaded v2.9.10');
             console.log('[OOB] Calendly modal: moved [data-oob-calendly-close] outside panel');
         }
 
+        const sheet = ensureCalendlySheet(modal, panel, closeBtn);
+
         if (repaired) {
             console.warn(
                 '[OOB] Calendly modal: moved backdrop/panel inside [data-oob-calendly-modal]. Nest them in Webflow (see BARBA-OSMO.md).'
@@ -1982,7 +2008,7 @@ console.log('[OOB] Script loaded v2.9.10');
         }
 
         if (!inline) return null;
-        return { modal, backdrop, panel, inline, closeBtn };
+        return { modal, backdrop, sheet, panel, inline, closeBtn };
     }
 
     function injectCalendlyModalShell() {
@@ -2004,10 +2030,11 @@ console.log('[OOB] Script loaded v2.9.10');
         modal.className = 'calendly-modal';
         modal.innerHTML =
             '<div data-oob-calendly-backdrop class="calendly-modal-backdrop"></div>' +
+            '<div data-oob-calendly-sheet class="calendly-sheet">' +
             '<button type="button" data-oob-calendly-close class="calendly-close" aria-label="Close">Close</button>' +
             '<div data-oob-calendly-panel data-lenis-prevent class="calendly-panel">' +
             '<div data-oob-calendly-inline class="calendly-inline"></div>' +
-            '</div>';
+            '</div></div>';
 
         document.body.appendChild(modal);
         console.log('[OOB] Calendly modal: injected shell on body');
@@ -2127,16 +2154,18 @@ console.log('[OOB] Script loaded v2.9.10');
         const openDuration = reducedMotion ? 0 : CALENDLY_OPEN_DURATION;
 
         const showModal = () => {
-            const fadeTargets = [els.backdrop, els.closeBtn].filter(Boolean);
+            const fadeTargets = [els.backdrop].filter(Boolean);
 
             if (reducedMotion) {
                 gsap.set(fadeTargets, { autoAlpha: 1 });
-                gsap.set(els.panel, { scaleY: 1, transformOrigin: CALENDLY_PANEL_ORIGIN });
+                gsap.set(els.sheet, { scaleY: 1, transformOrigin: CALENDLY_SHEET_ORIGIN });
+                if (els.closeBtn) gsap.set(els.closeBtn, { autoAlpha: 1 });
                 trapCalendlyFocus();
                 return;
             }
 
-            gsap.set(els.panel, { scaleY: 0, transformOrigin: CALENDLY_PANEL_ORIGIN, autoAlpha: 1 });
+            gsap.set(els.sheet, { scaleY: 0, transformOrigin: CALENDLY_SHEET_ORIGIN, autoAlpha: 1 });
+            if (els.closeBtn) gsap.set(els.closeBtn, { autoAlpha: 0 });
 
             state.tl = gsap.timeline({
                 defaults: { ease: 'power3.inOut' },
@@ -2144,10 +2173,17 @@ console.log('[OOB] Script loaded v2.9.10');
             });
             state.tl.to(fadeTargets, { autoAlpha: 1, duration: openDuration * 0.55, ease: 'power3.out' }, 0);
             state.tl.to(
-                els.panel,
+                els.sheet,
                 { scaleY: 1, duration: openDuration, ease: 'power3.inOut' },
                 0
             );
+            if (els.closeBtn) {
+                state.tl.to(
+                    els.closeBtn,
+                    { autoAlpha: 1, duration: openDuration * 0.45, ease: 'power3.out' },
+                    openDuration * 0.2
+                );
+            }
         };
 
         showModal();
@@ -2174,8 +2210,9 @@ console.log('[OOB] Script loaded v2.9.10');
 
         const finishClose = () => {
             gsap.set(els.modal, { visibility: 'hidden', pointerEvents: 'none', autoAlpha: 1 });
-            gsap.set(els.panel, { scaleY: 0, transformOrigin: CALENDLY_PANEL_ORIGIN, autoAlpha: 1 });
-            gsap.set([els.backdrop, els.closeBtn].filter(Boolean), { autoAlpha: 0 });
+            gsap.set(els.sheet, { scaleY: 0, transformOrigin: CALENDLY_SHEET_ORIGIN, autoAlpha: 1 });
+            gsap.set(els.backdrop, { autoAlpha: 0 });
+            if (els.closeBtn) gsap.set(els.closeBtn, { autoAlpha: 0 });
             els.modal.setAttribute('aria-hidden', 'true');
             setCalendlyScrollLock(false);
         };
@@ -2186,17 +2223,19 @@ console.log('[OOB] Script loaded v2.9.10');
         }
 
         const closeDuration = CALENDLY_CLOSE_DURATION;
-        const fadeTargets = [els.backdrop, els.closeBtn].filter(Boolean);
         state.tl = gsap.timeline({
             defaults: { ease: 'power3.inOut' },
             onComplete: finishClose,
         });
+        if (els.closeBtn) {
+            state.tl.to(els.closeBtn, { autoAlpha: 0, duration: closeDuration * 0.25, ease: 'power3.in' }, 0);
+        }
         state.tl.to(
-            els.panel,
-            { scaleY: 0, transformOrigin: CALENDLY_PANEL_ORIGIN, duration: closeDuration * 0.7 },
+            els.sheet,
+            { scaleY: 0, transformOrigin: CALENDLY_SHEET_ORIGIN, duration: closeDuration * 0.7 },
             0
         );
-        state.tl.to(fadeTargets, { autoAlpha: 0, duration: closeDuration * 0.45, ease: 'power3.in' }, closeDuration * 0.12);
+        state.tl.to(els.backdrop, { autoAlpha: 0, duration: closeDuration * 0.45, ease: 'power3.in' }, closeDuration * 0.12);
     }
 
     function initCalendlyModal() {
@@ -2207,9 +2246,9 @@ console.log('[OOB] Script loaded v2.9.10');
         if (!modal) return;
 
         const els = repairCalendlyModalStructure(modal);
-        const { backdrop, panel, inline, closeBtn } = els || {};
+        const { backdrop, sheet, panel, inline, closeBtn } = els || {};
 
-        if (!backdrop || !panel || !inline) {
+        if (!backdrop || !sheet || !panel || !inline) {
             console.warn(
                 '[OOB] Calendly modal: needs [data-oob-calendly-backdrop], [data-oob-calendly-panel], and [data-oob-calendly-inline] nested inside [data-oob-calendly-modal] (see BARBA-OSMO.md)'
             );
@@ -2227,7 +2266,7 @@ console.log('[OOB] Script loaded v2.9.10');
         gsap.set(modal, { visibility: 'hidden', pointerEvents: 'none' });
         gsap.set(backdrop, { autoAlpha: 0 });
         if (closeBtn) gsap.set(closeBtn, { autoAlpha: 0 });
-        gsap.set(panel, { scaleY: 0, transformOrigin: CALENDLY_PANEL_ORIGIN, autoAlpha: 1 });
+        gsap.set(sheet, { scaleY: 0, transformOrigin: CALENDLY_SHEET_ORIGIN, autoAlpha: 1 });
 
         const onOpenClick = (event) => {
             const trigger = event.target.closest('[data-oob-calendly-open]');
@@ -2263,7 +2302,7 @@ console.log('[OOB] Script loaded v2.9.10');
             isOpen: false,
             loadedUrl: '',
             lastTrigger: null,
-            els: { modal, backdrop, panel, inline, closeBtn: closeBtn || null },
+            els: { modal, backdrop, sheet, panel, inline, closeBtn: closeBtn || null },
             tl: null,
             focusTrapHandler: null,
             onOpenClick,

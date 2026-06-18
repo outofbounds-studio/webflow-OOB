@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.8.0 */
+/* Version: 1.8.1 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -790,6 +790,8 @@ html.is-nav-menu-open [data-nav-menu-bg] {
   --calendly-panel-max-width: 56rem;
   --calendly-panel-max-height: min(90vh, 52rem);
   --calendly-inline-min-height: 40rem;
+  --calendly-close-offset-x: 0.8em;
+  --calendly-close-offset-y: 0.8em;
 }
 
 [data-oob-calendly-modal] {
@@ -809,32 +811,37 @@ html.is-nav-menu-open [data-nav-menu-bg] {
   backdrop-filter: blur(6px);
 }
 
-[data-oob-calendly-panel] {
+/* Sheet: panel + close move together during scaleY animation */
+[data-oob-calendly-sheet] {
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
   z-index: 1;
   width: min(100%, var(--calendly-panel-max-width));
-  max-height: var(--calendly-panel-max-height);
   margin-inline: auto;
+  transform-origin: bottom center;
+  will-change: transform;
+}
+
+[data-oob-calendly-panel] {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-height: var(--calendly-panel-max-height);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--calendly-panel-bg);
   border-radius: var(--calendly-panel-radius) var(--calendly-panel-radius) 0 0;
   box-shadow: 0 -0.5rem 3rem rgb(0 0 0 / 22%);
-  transform-origin: bottom center;
-  will-change: transform;
 }
 
-/* Outside panel — style position/size/colours in Webflow */
+/* Outside panel — colour, size, icon in Webflow; offset tuned via CSS vars above */
 [data-oob-calendly-close] {
   position: absolute;
+  right: var(--calendly-close-offset-x);
+  bottom: calc(100% + var(--calendly-close-offset-y));
   z-index: 2;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
   cursor: pointer;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
@@ -864,8 +871,11 @@ html.is-calendly-open body {
 }
 
 @media screen and (max-width: 767px) {
-  [data-oob-calendly-panel] {
+  [data-oob-calendly-sheet] {
     width: 100%;
+  }
+
+  [data-oob-calendly-panel] {
     max-height: 92vh;
   }
 
