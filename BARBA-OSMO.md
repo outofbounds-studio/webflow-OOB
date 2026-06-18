@@ -490,6 +490,8 @@ Div [data-oob-calendly-modal]
 
 **Do not** put the Calendly iframe embed in Webflow Designer — `oob.js` mounts it into `[data-oob-calendly-inline]` on first open.
 
+**Common Webflow mistake:** backdrop/panel published as **siblings** of the modal root (empty modal div + separate backdrop/panel below). Nest them in the Navigator: drag backdrop and panel **inside** `[data-oob-calendly-modal]`. `oob.js` auto-repairs sibling markup on init, but correct nesting is more reliable.
+
 ### Open triggers (any page)
 
 Use a **Div Block** or **Button** (not a Link Block) anywhere on the site:

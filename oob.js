@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.7 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.8 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.7');
+console.log('[OOB] Script loaded v2.9.8');
 
 (function () {
     'use strict';
@@ -1941,6 +1941,42 @@ console.log('[OOB] Script loaded v2.9.7');
         console.log('[OOB] Moved [data-oob-calendly-modal] to document.body');
     }
 
+    /** Webflow often publishes backdrop/panel as siblings of the modal root — reparent on init. */
+    function repairCalendlyModalStructure(modal) {
+        if (!modal) return null;
+
+        const backdrop =
+            modal.querySelector('[data-oob-calendly-backdrop]') ||
+            document.querySelector('[data-oob-calendly-backdrop]');
+        const panel =
+            modal.querySelector('[data-oob-calendly-panel]') ||
+            document.querySelector('[data-oob-calendly-panel]');
+
+        if (!backdrop || !panel) return null;
+
+        let repaired = false;
+        if (backdrop.parentElement !== modal) {
+            modal.appendChild(backdrop);
+            repaired = true;
+        }
+        if (panel.parentElement !== modal) {
+            modal.appendChild(panel);
+            repaired = true;
+        }
+
+        const inline = panel.querySelector('[data-oob-calendly-inline]');
+        const closeBtn = panel.querySelector('[data-oob-calendly-close]');
+
+        if (repaired) {
+            console.warn(
+                '[OOB] Calendly modal: moved backdrop/panel inside [data-oob-calendly-modal]. Nest them in Webflow (see BARBA-OSMO.md).'
+            );
+        }
+
+        if (!inline) return null;
+        return { backdrop, panel, inline, closeBtn };
+    }
+
     function waitForCalendlyWidget() {
         if (typeof Calendly !== 'undefined' && typeof Calendly.initInlineWidget === 'function') {
             return Promise.resolve();
@@ -2116,20 +2152,46 @@ console.log('[OOB] Script loaded v2.9.7');
         state.tl.to(els.backdrop, { autoAlpha: 0, duration: closeDuration * 0.85 }, 0.04);
     }
 
+    function repairCalendlyModalStructure(modal) {
+        if (!modal) return null;
+
+        let backdrop = modal.querySelector('[data-oob-calendly-backdrop]');
+        let panel = modal.querySelector('[data-oob-calendly-panel]');
+
+        // Webflow often publishes backdrop/panel as siblings of the modal root — move them inside.
+        const looseBackdrop = document.querySelector('[data-oob-calendly-backdrop]');
+        const loosePanel = document.querySelector('[data-oob-calendly-panel]');
+
+        if (!backdrop && looseBackdrop && !modal.contains(looseBackdrop)) {
+            modal.appendChild(looseBackdrop);
+            backdrop = looseBackdrop;
+            console.log('[OOB] Calendly modal: nested [data-oob-calendly-backdrop] inside modal root');
+        }
+
+        if (!panel && loosePanel && !modal.contains(loosePanel)) {
+            modal.appendChild(loosePanel);
+            panel = loosePanel;
+            console.log('[OOB] Calendly modal: nested [data-oob-calendly-panel] inside modal root');
+        }
+
+        const inline = panel?.querySelector('[data-oob-calendly-inline]');
+        const closeBtn = panel?.querySelector('[data-oob-calendly-close]');
+
+        return { modal, backdrop, panel, inline, closeBtn };
+    }
+
     function initCalendlyModal() {
         if (calendlyModalState?.initialized) return;
 
         const modal = document.querySelector('[data-oob-calendly-modal]');
         if (!modal) return;
 
-        const backdrop = modal.querySelector('[data-oob-calendly-backdrop]');
-        const panel = modal.querySelector('[data-oob-calendly-panel]');
-        const inline = modal.querySelector('[data-oob-calendly-inline]');
-        const closeBtn = modal.querySelector('[data-oob-calendly-close]');
+        const els = repairCalendlyModalStructure(modal);
+        const { backdrop, panel, inline, closeBtn } = els || {};
 
         if (!backdrop || !panel || !inline) {
             console.warn(
-                '[OOB] Calendly modal: needs [data-oob-calendly-backdrop], [data-oob-calendly-panel], and [data-oob-calendly-inline] (see BARBA-OSMO.md)'
+                '[OOB] Calendly modal: needs [data-oob-calendly-backdrop], [data-oob-calendly-panel], and [data-oob-calendly-inline] nested inside [data-oob-calendly-modal] (see BARBA-OSMO.md)'
             );
             return;
         }
@@ -2179,7 +2241,7 @@ console.log('[OOB] Script loaded v2.9.7');
             isOpen: false,
             loadedUrl: '',
             lastTrigger: null,
-            els: { modal, backdrop, panel, inline, closeBtn },
+            els: { modal, backdrop, panel, inline, closeBtn: closeBtn || null },
             tl: null,
             focusTrapHandler: null,
             onOpenClick,
