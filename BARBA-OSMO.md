@@ -29,6 +29,13 @@ Based on [Overlapping Parallax Page Transition](https://www.osmo.supply/resource
 
 **Button 065** (`[data-button-065]`): requires [GSAP SplitText](https://gsap.com/docs/v3/Plugins/SplitText/) (Club). Load your SplitText build in Head **after** `gsap.min.js` and **before** `oob.js`.
 
+**Calendly modal** (`[data-oob-calendly-modal]`): add Calendly’s widget assets in Head **before** `oob.js`:
+
+```html
+<link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
+```
+
 ### Lenis smooth scroll
 
 Based on [Osmo Lenis Smooth Scroll Setup](https://www.osmo.supply/resource/lenis-smooth-scroll-setup). Lenis CSS + JS in Head above; init runs in `oob.js` on first load.
@@ -454,6 +461,89 @@ Wrap each link in `[data-nav-menu-item]` (`overflow: hidden`) so link text revea
 - Put `[data-nav-menu]` inside `[data-barba="container"]`
 - Use Webflow’s native Navbar (`w-nav`) — conflicts with Barba/custom JS
 - Animate blur/background on the fixed header bar — only `[data-nav-menu-bg]` animates
+
+---
+
+## Calendly booking modal
+
+Inline Calendly inside a centered overlay (Series Eight–style). Modal lives **outside** `[data-barba="container"]` on the site template — same as nav overlay.
+
+### Head code
+
+See **Calendly modal** in [Webflow custom code](#webflow-custom-code) above (`widget.css` + `widget.js`).
+
+### Webflow structure (site template)
+
+Place **after** nav / `[data-nav-menu]`, **before** `[data-barba="container"]`:
+
+```
+Div [data-oob-calendly-modal]
+├── Custom attribute: data-calendly-url = https://calendly.com/YOUR-ACCOUNT/YOUR-EVENT
+├── aria-label = Book a call (optional — set on root div)
+├── Div [data-oob-calendly-backdrop]
+└── Div [data-oob-calendly-panel]
+    ├── Custom attribute: data-lenis-prevent
+    ├── Button [data-oob-calendly-close]
+    │   └── Text: Close (or × icon)
+    └── Div [data-oob-calendly-inline]
+```
+
+**Do not** put the Calendly iframe embed in Webflow Designer — `oob.js` mounts it into `[data-oob-calendly-inline]` on first open.
+
+### Open triggers (any page)
+
+Use a **Div Block** or **Button** (not a Link Block) anywhere on the site:
+
+```
+Div.footer-cta [data-oob-calendly-open]
+├── role = button
+├── tabindex = 0
+├── aria-label = Check availability (if label isn’t visible text)
+└── Text: Check availability
+```
+
+Optional per-trigger URL override:
+
+```
+data-calendly-url = https://calendly.com/YOUR-ACCOUNT/OTHER-EVENT
+```
+
+(on the same element as `data-oob-calendly-open`)
+
+### Custom attributes
+
+| Element | Attribute | Notes |
+|---------|-----------|--------|
+| Modal root | `data-oob-calendly-modal` | Fixed overlay; moved to `document.body` on init |
+| Default booking URL | `data-calendly-url` | On modal root (or on each trigger to override) |
+| Backdrop | `data-oob-calendly-backdrop` | Click to close |
+| Panel | `data-oob-calendly-panel` | Scrollable; add `data-lenis-prevent` |
+| Inline mount | `data-oob-calendly-inline` | Calendly widget injected here |
+| Close | `data-oob-calendly-close` | Button inside panel |
+| Open trigger | `data-oob-calendly-open` | Div/button anywhere; event delegation survives Barba |
+
+### Behaviour (`oob.js`)
+
+- GSAP fade/slide open; backdrop blur
+- `lenis.stop()` while open (or `html.is-calendly-open` scroll lock on touch)
+- `Escape` / backdrop / close button dismiss
+- Focus trap while open; focus returns to trigger on close
+- Closes on Barba `beforeEnter`
+- Widget loads once per URL; remounts if URL changes
+
+### Styling (`oob.css`)
+
+Tune on `:root`:
+
+| Variable | Default |
+|----------|---------|
+| `--calendly-modal-z` | `120` |
+| `--calendly-backdrop` | `rgb(28 27 27 / 72%)` |
+| `--calendly-panel-bg` | `#f8f4f0` |
+| `--calendly-panel-max-width` | `56rem` |
+| `--calendly-inline-min-height` | `40rem` (36rem mobile) |
+
+Style the close button and panel chrome in Webflow if you prefer — layout/z-index/scroll lock are in `oob.css`.
 
 ---
 

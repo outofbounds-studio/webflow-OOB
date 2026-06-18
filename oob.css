@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.8 */
+/* Version: 1.7.9 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -779,6 +779,109 @@ html.is-nav-menu-open [data-nav-menu-bg] {
   padding: 0;
   transform-origin: 50% 0%;
   will-change: transform;
+}
+
+/* ------------ Calendly booking modal ------------- */
+:root {
+  --calendly-modal-z: 120;
+  --calendly-backdrop: rgb(28 27 27 / 72%);
+  --calendly-panel-bg: #f8f4f0;
+  --calendly-panel-radius: 0.5rem;
+  --calendly-panel-max-width: 56rem;
+  --calendly-panel-max-height: min(90vh, 52rem);
+  --calendly-inline-min-height: 40rem;
+}
+
+[data-oob-calendly-modal] {
+  position: fixed;
+  inset: 0;
+  z-index: var(--calendly-modal-z);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+[data-oob-calendly-backdrop] {
+  position: absolute;
+  inset: 0;
+  background: var(--calendly-backdrop);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+[data-oob-calendly-panel] {
+  position: relative;
+  z-index: 1;
+  width: min(100%, var(--calendly-panel-max-width));
+  max-height: var(--calendly-panel-max-height);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--calendly-panel-bg);
+  border-radius: var(--calendly-panel-radius);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 28%);
+}
+
+[data-oob-calendly-close] {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: #1c1b1b;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-oob-calendly-close]:focus-visible {
+  outline: 2px solid #ff4802;
+  outline-offset: 2px;
+}
+
+[data-oob-calendly-inline] {
+  min-height: var(--calendly-inline-min-height);
+}
+
+[data-oob-calendly-inline] .calendly-inline-widget,
+[data-oob-calendly-inline] iframe {
+  min-width: 100%;
+  min-height: var(--calendly-inline-min-height);
+}
+
+html.is-calendly-open {
+  overflow: hidden;
+}
+
+html.is-calendly-open body {
+  overflow: hidden;
+}
+
+@media screen and (max-width: 767px) {
+  [data-oob-calendly-modal] {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  [data-oob-calendly-panel] {
+    width: 100%;
+    max-height: 92vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  :root {
+    --calendly-inline-min-height: 36rem;
+  }
 }
 
 /* ------------ Copy URL buttons (footer contact) ------------- */

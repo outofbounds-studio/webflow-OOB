@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.6 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.7 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.6');
+console.log('[OOB] Script loaded v2.9.7');
 
 (function () {
     'use strict';
@@ -378,6 +378,7 @@ console.log('[OOB] Script loaded v2.9.6');
         syncNavActiveFromContainer(document);
         initNavHighlightBlob();
         initMobileNavMenu();
+        initCalendlyModal();
         scheduleButton038(document);
         scheduleButton065(document);
         initCopyButtons(document);
@@ -391,6 +392,7 @@ console.log('[OOB] Script loaded v2.9.6');
         // Route changes can interrupt close animation; clear Safari chrome immediately.
         setNavMenuSafariChrome(false);
         closeMobileNavMenu({ immediate: true, restoreScroll: false });
+        closeCalendlyModal({ immediate: true });
     }
 
     function initAfterEnterFunctions(next, options = {}) {
@@ -1909,6 +1911,283 @@ console.log('[OOB] Script loaded v2.9.6');
         console.log('[OOB] Mobile nav menu initialized', {
             links: els.links.length,
             items: els.linkItems.length,
+        });
+    }
+
+    // -----------------------------------------
+    // CALENDLY MODAL — inline booking overlay
+    // Webflow: see BARBA-OSMO.md § Calendly modal
+    // -----------------------------------------
+
+    const CALENDLY_OPEN_CLASS = 'is-calendly-open';
+    const CALENDLY_OPEN_DURATION = 0.45;
+    const CALENDLY_CLOSE_DURATION = 0.32;
+    const CALENDLY_WIDGET_POLL_MS = 100;
+    const CALENDLY_WIDGET_POLL_MAX = 50;
+
+    let calendlyModalState = null;
+
+    function getCalendlyUrl(sourceEl) {
+        const fromTrigger = sourceEl?.getAttribute('data-calendly-url')?.trim();
+        if (fromTrigger) return fromTrigger;
+
+        const modal = calendlyModalState?.els?.modal;
+        return modal?.getAttribute('data-calendly-url')?.trim() || '';
+    }
+
+    function placeCalendlyModalOnBody(modal) {
+        if (!modal || modal.parentElement === document.body) return;
+        document.body.appendChild(modal);
+        console.log('[OOB] Moved [data-oob-calendly-modal] to document.body');
+    }
+
+    function waitForCalendlyWidget() {
+        if (typeof Calendly !== 'undefined' && typeof Calendly.initInlineWidget === 'function') {
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const timer = setInterval(() => {
+                attempts += 1;
+                if (typeof Calendly !== 'undefined' && typeof Calendly.initInlineWidget === 'function') {
+                    clearInterval(timer);
+                    resolve();
+                    return;
+                }
+                if (attempts >= CALENDLY_WIDGET_POLL_MAX) {
+                    clearInterval(timer);
+                    reject(new Error('Calendly widget script not loaded'));
+                }
+            }, CALENDLY_WIDGET_POLL_MS);
+        });
+    }
+
+    function mountCalendlyWidget(url) {
+        const inline = calendlyModalState?.els?.inline;
+        if (!inline || !url) return;
+
+        inline.innerHTML = '';
+        Calendly.initInlineWidget({
+            url,
+            parentElement: inline,
+        });
+        calendlyModalState.loadedUrl = url;
+    }
+
+    function setCalendlyScrollLock(active) {
+        document.documentElement.classList.toggle(CALENDLY_OPEN_CLASS, active);
+        if (active) {
+            if (lenis && typeof lenis.stop === 'function') lenis.stop();
+            return;
+        }
+        if (lenis && typeof lenis.start === 'function') lenis.start();
+        else unlockNativeScroll();
+    }
+
+    function trapCalendlyFocus() {
+        const state = calendlyModalState;
+        if (!state?.els?.panel) return;
+
+        const panel = state.els.panel;
+        const focusable = [
+            ...panel.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            ),
+        ].filter((el) => el.offsetParent !== null || el === document.activeElement);
+
+        state.focusTrapHandler = (event) => {
+            if (event.key !== 'Tab' || !state.isOpen) return;
+
+            const items = focusable.length
+                ? focusable
+                : [
+                      ...panel.querySelectorAll(
+                          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                      ),
+                  ];
+            if (!items.length) return;
+
+            const first = items[0];
+            const last = items[items.length - 1];
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        document.addEventListener('keydown', state.focusTrapHandler);
+        state.els.closeBtn?.focus();
+    }
+
+    function releaseCalendlyFocus() {
+        const state = calendlyModalState;
+        if (!state?.focusTrapHandler) return;
+        document.removeEventListener('keydown', state.focusTrapHandler);
+        state.focusTrapHandler = null;
+        state.lastTrigger?.focus?.();
+    }
+
+    function openCalendlyModal(trigger) {
+        const state = calendlyModalState;
+        if (!state?.initialized || state.isOpen) return;
+
+        const url = getCalendlyUrl(trigger);
+        if (!url) {
+            console.warn('[OOB] Calendly modal: missing data-calendly-url on modal or trigger');
+            return;
+        }
+
+        const { els } = state;
+        state.lastTrigger = trigger;
+        state.isOpen = true;
+        state.tl?.kill();
+
+        setCalendlyScrollLock(true);
+        els.modal.setAttribute('aria-hidden', 'false');
+        gsap.set(els.modal, { visibility: 'visible', pointerEvents: 'auto' });
+
+        const openDuration = reducedMotion ? 0 : CALENDLY_OPEN_DURATION;
+
+        const showModal = () => {
+            if (reducedMotion) {
+                gsap.set([els.backdrop, els.panel], { autoAlpha: 1 });
+                trapCalendlyFocus();
+                return;
+            }
+
+            state.tl = gsap.timeline({
+                defaults: { ease: 'power3.out' },
+                onComplete: () => trapCalendlyFocus(),
+            });
+            state.tl.fromTo(els.backdrop, { autoAlpha: 0 }, { autoAlpha: 1, duration: openDuration }, 0);
+            state.tl.fromTo(
+                els.panel,
+                { autoAlpha: 0, y: 24, scale: 0.98 },
+                { autoAlpha: 1, y: 0, scale: 1, duration: openDuration },
+                0.04
+            );
+        };
+
+        waitForCalendlyWidget()
+            .then(() => {
+                if (!state.isOpen) return;
+                if (state.loadedUrl !== url) mountCalendlyWidget(url);
+                showModal();
+            })
+            .catch((err) => {
+                console.warn('[OOB] Calendly modal:', err.message);
+                closeCalendlyModal({ immediate: true });
+            });
+    }
+
+    function closeCalendlyModal(options = {}) {
+        const { immediate = false } = options;
+        const state = calendlyModalState;
+        if (!state?.initialized || !state.isOpen) return;
+
+        const { els } = state;
+        state.tl?.kill();
+        state.isOpen = false;
+        releaseCalendlyFocus();
+
+        const finishClose = () => {
+            gsap.set(els.modal, { visibility: 'hidden', pointerEvents: 'none', autoAlpha: 1 });
+            gsap.set([els.backdrop, els.panel], { autoAlpha: 0, y: 0, scale: 1 });
+            els.modal.setAttribute('aria-hidden', 'true');
+            setCalendlyScrollLock(false);
+        };
+
+        if (immediate || reducedMotion) {
+            finishClose();
+            return;
+        }
+
+        const closeDuration = CALENDLY_CLOSE_DURATION;
+        state.tl = gsap.timeline({
+            defaults: { ease: 'power3.in' },
+            onComplete: finishClose,
+        });
+        state.tl.to(els.panel, { autoAlpha: 0, y: 16, scale: 0.98, duration: closeDuration }, 0);
+        state.tl.to(els.backdrop, { autoAlpha: 0, duration: closeDuration * 0.85 }, 0.04);
+    }
+
+    function initCalendlyModal() {
+        if (calendlyModalState?.initialized) return;
+
+        const modal = document.querySelector('[data-oob-calendly-modal]');
+        if (!modal) return;
+
+        const backdrop = modal.querySelector('[data-oob-calendly-backdrop]');
+        const panel = modal.querySelector('[data-oob-calendly-panel]');
+        const inline = modal.querySelector('[data-oob-calendly-inline]');
+        const closeBtn = modal.querySelector('[data-oob-calendly-close]');
+
+        if (!backdrop || !panel || !inline) {
+            console.warn(
+                '[OOB] Calendly modal: needs [data-oob-calendly-backdrop], [data-oob-calendly-panel], and [data-oob-calendly-inline] (see BARBA-OSMO.md)'
+            );
+            return;
+        }
+
+        placeCalendlyModalOnBody(modal);
+
+        if (!modal.id) modal.id = 'oob-calendly-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-hidden', 'true');
+        if (!modal.getAttribute('aria-label')) modal.setAttribute('aria-label', 'Book a call');
+
+        gsap.set(modal, { visibility: 'hidden', pointerEvents: 'none' });
+        gsap.set([backdrop, panel], { autoAlpha: 0 });
+
+        const onOpenClick = (event) => {
+            const trigger = event.target.closest('[data-oob-calendly-open]');
+            if (!trigger) return;
+            event.preventDefault();
+            openCalendlyModal(trigger);
+        };
+
+        const onOpenKeydown = (event) => {
+            const trigger = event.target.closest('[data-oob-calendly-open]');
+            if (!trigger || (event.key !== 'Enter' && event.key !== ' ')) return;
+            event.preventDefault();
+            openCalendlyModal(trigger);
+        };
+
+        document.addEventListener('click', onOpenClick);
+        document.addEventListener('keydown', onOpenKeydown);
+
+        closeBtn?.addEventListener('click', () => closeCalendlyModal());
+        backdrop.addEventListener('click', () => closeCalendlyModal());
+
+        panel.addEventListener('click', (event) => event.stopPropagation());
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && calendlyModalState?.isOpen) {
+                event.preventDefault();
+                closeCalendlyModal();
+            }
+        });
+
+        calendlyModalState = {
+            initialized: true,
+            isOpen: false,
+            loadedUrl: '',
+            lastTrigger: null,
+            els: { modal, backdrop, panel, inline, closeBtn },
+            tl: null,
+            focusTrapHandler: null,
+            onOpenClick,
+            onOpenKeydown,
+        };
+
+        console.log('[OOB] Calendly modal initialized', {
+            url: getCalendlyUrl() || '(set data-calendly-url on modal or triggers)',
         });
     }
 
