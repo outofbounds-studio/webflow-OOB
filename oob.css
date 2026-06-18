@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.7.9 */
+/* Version: 1.8.0 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -796,10 +796,7 @@ html.is-nav-menu-open [data-nav-menu-bg] {
   position: fixed;
   inset: 0;
   z-index: var(--calendly-modal-z);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.25rem;
+  overflow: clip;
   visibility: hidden;
   pointer-events: none;
 }
@@ -813,33 +810,33 @@ html.is-nav-menu-open [data-nav-menu-bg] {
 }
 
 [data-oob-calendly-panel] {
-  position: relative;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 1;
   width: min(100%, var(--calendly-panel-max-width));
   max-height: var(--calendly-panel-max-height);
+  margin-inline: auto;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--calendly-panel-bg);
-  border-radius: var(--calendly-panel-radius);
-  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 28%);
+  border-radius: var(--calendly-panel-radius) var(--calendly-panel-radius) 0 0;
+  box-shadow: 0 -0.5rem 3rem rgb(0 0 0 / 22%);
+  transform-origin: bottom center;
+  will-change: transform;
 }
 
+/* Outside panel — style position/size/colours in Webflow */
 [data-oob-calendly-close] {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: #1c1b1b;
+  background: none;
   cursor: pointer;
+  pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -867,16 +864,9 @@ html.is-calendly-open body {
 }
 
 @media screen and (max-width: 767px) {
-  [data-oob-calendly-modal] {
-    padding: 0;
-    align-items: flex-end;
-  }
-
   [data-oob-calendly-panel] {
     width: 100%;
     max-height: 92vh;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
   }
 
   :root {

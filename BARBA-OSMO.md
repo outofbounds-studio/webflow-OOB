@@ -483,10 +483,10 @@ Div [data-oob-calendly-modal]
 ├── Custom attribute: data-calendly-url = https://calendly.com/YOUR-ACCOUNT/YOUR-EVENT
 ├── aria-label = Book a call (optional — set on root div)
 ├── Div [data-oob-calendly-backdrop]
+├── Button [data-oob-calendly-close]          ← sibling of panel (style in Webflow)
+│   └── SVG / icon
 └── Div [data-oob-calendly-panel]
     ├── Custom attribute: data-lenis-prevent
-    ├── Button [data-oob-calendly-close]
-    │   └── Text: Close (or × icon)
     └── Div [data-oob-calendly-inline]
 ```
 
@@ -523,12 +523,13 @@ data-calendly-url = https://calendly.com/YOUR-ACCOUNT/OTHER-EVENT
 | Backdrop | `data-oob-calendly-backdrop` | Click to close |
 | Panel | `data-oob-calendly-panel` | Scrollable; add `data-lenis-prevent` |
 | Inline mount | `data-oob-calendly-inline` | Calendly widget injected here |
-| Close | `data-oob-calendly-close` | Button inside panel |
+| Close | `data-oob-calendly-close` | **Outside** `[data-oob-calendly-panel]` — style position/size in Webflow |
 | Open trigger | `data-oob-calendly-open` | Div/button anywhere; event delegation survives Barba |
 
 ### Behaviour (`oob.js`)
 
-- GSAP fade/slide open; backdrop blur
+- Backdrop fades in with blur; panel **scaleY from bottom** (same motion as mobile nav `[data-nav-menu-bg]`)
+- Close button fades in with backdrop; lives outside panel for Webflow styling
 - `lenis.stop()` while open (or `html.is-calendly-open` scroll lock on touch)
 - `Escape` / backdrop / close button dismiss
 - Focus trap while open; focus returns to trigger on close
