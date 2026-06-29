@@ -629,6 +629,7 @@ Add attributes to any heading (H1–H6, paragraph, etc.) inside `[data-barba="co
 - FOUC prevention: headings are `visibility: hidden` in `oob.css` until JS runs; visible in Webflow Designer.
 - `prefers-reduced-motion`: text shows immediately (no split animation).
 - Re-inits on Barba `afterEnter` / `once`; reverted on `afterLeave`.
+- `[data-underline-link]` inside a split heading is supported — line masks include padding so hover underlines are not clipped.
 
 Console: `[OOB] Mask text reveal initialized`.
 

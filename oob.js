@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.21 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.22 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.21');
+console.log('[OOB] Script loaded v2.9.22');
 
 (function () {
     'use strict';
@@ -3497,9 +3497,9 @@ console.log('[OOB] Script loaded v2.9.21');
                     type: typesToSplit.join(', '),
                     mask: 'lines',
                     autoSplit: true,
-                    linesClass: 'line',
-                    wordsClass: 'word',
-                    charsClass: 'letter',
+                    linesClass: 'mask-line',
+                    wordsClass: 'mask-word',
+                    charsClass: 'mask-letter',
                     onSplit(instance) {
                         heading._oobMaskTween?.scrollTrigger?.kill();
                         heading._oobMaskTween?.kill();
