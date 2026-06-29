@@ -72,7 +72,25 @@ If your Figma desktop frame is not 1440px wide, change `--size-container-ideal` 
 - Nested scroll areas (modals, overflow panels): add `[data-lenis-prevent]`
 - Pause scroll: `lenis.stop()` (e.g. modal open) — global `window.lenis` is set after init
 - Resume: `lenis.start()`
-- Anchor scroll: see Osmo [Lenis Scroll-To Anchor Target](https://www.osmo.supply/resource/lenis-scroll-to-anchor-target)
+- **Anchor scroll** (Osmo [Lenis Scroll-To Anchor Target](https://www.osmo.supply/resource/lenis-scroll-to-anchor-target)) — wired in `oob.js`
+
+#### Scroll-to section
+
+Give the target section an **element ID** in Webflow (e.g. `work`).
+
+| Approach | Webflow setup |
+|----------|----------------|
+| **Link to section** (recommended) | Hero link → Link settings → Section → pick target. Works on desktop (Lenis smooth scroll) and mobile (native). |
+| **`data-anchor-target`** | Custom attribute on any clickable element: `data-anchor-target="#work"` (Osmo pattern; use on spans/buttons without an `href`). |
+
+| Optional attribute | Default | Purpose |
+|--------------------|---------|---------|
+| `data-anchor-offset` | fixed nav height (negative) | Extra scroll offset in px — e.g. `-80` to clear a shorter bar |
+| `data-anchor-skip` | — | On a wrapper to opt out of Lenis anchor handling |
+
+Offset auto-measures fixed/sticky `.nav` height. Mobile/touch and `prefers-reduced-motion` use native hash jump (Lenis off).
+
+Console: `[OOB] Lenis anchor scroll initialized`.
 
 ### Head code — transition CSS
 
@@ -759,6 +777,7 @@ Console on Barba navigation: `[OOB] Webflow forms reset (preview + Turnstile)`.
 
 - [ ] Head CDNs load (Network: barba, gsap, lenis before `oob.js`)
 - [ ] Console: `[OOB] Script loaded`, `[OOB] Barba initialized`, `[OOB] Lenis initialized`
+- [ ] Anchor scroll: `[OOB] Lenis anchor scroll initialized`; same-page `#section` links smooth-scroll on desktop
 - [ ] No `[OOB] Barba structure error` (nav must be outside container)
 - [ ] Nav blob: `[OOB] Nav highlight blob initialized` (if `.nav-links-wrap` present)
 - [ ] Mobile nav: `[OOB] Mobile nav menu initialized` (if `[data-nav-menu]` present; test <768px)

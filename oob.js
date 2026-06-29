@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.22 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.23 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.22');
+console.log('[OOB] Script loaded v2.9.23');
 
 (function () {
     'use strict';
@@ -372,6 +372,7 @@ console.log('[OOB] Script loaded v2.9.22');
         ensureTranslucentSafariChrome();
         watchTranslucentSafariChrome();
         initLenis();
+        initScrollToAnchorLenis();
         if (onceFunctionsInitialized) return;
         onceFunctionsInitialized = true;
         ensureNavStacking();
@@ -1073,6 +1074,96 @@ console.log('[OOB] Script loaded v2.9.22');
         }
 
         window.lenis = lenis;
+    }
+
+    // -----------------------------------------
+    // LENIS — scroll-to anchor (Osmo)
+    // https://www.osmo.supply/resource/lenis-scroll-to-anchor-target
+    // -----------------------------------------
+
+    const ANCHOR_SCROLL_DURATION = 1.2;
+    const ANCHOR_SCROLL_EASE = (x) =>
+        x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2;
+
+    let anchorScrollBound = false;
+
+    function getAnchorTargetSelector(trigger) {
+        const attr = trigger.getAttribute('data-anchor-target');
+        if (attr) {
+            const trimmed = attr.trim();
+            if (!trimmed) return null;
+            return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+        }
+
+        const href = trigger.getAttribute('href');
+        if (!href?.startsWith('#') || href === '#') return null;
+
+        try {
+            const url = new URL(href, window.location.href);
+            const samePath =
+                url.pathname.replace(/\/$/, '') ===
+                window.location.pathname.replace(/\/$/, '');
+            if (!samePath) return null;
+            if (!url.hash || url.hash === '#') return null;
+            return url.hash;
+        } catch {
+            return href.length > 1 ? href : null;
+        }
+    }
+
+    function getAnchorScrollOffset(trigger) {
+        const custom = trigger.getAttribute('data-anchor-offset');
+        if (custom !== null && custom !== '') {
+            const parsed = parseFloat(custom);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        const nav = document.querySelector('.nav, .navbar_wrap, .navbar, .nav-bar');
+        if (!nav) return 0;
+
+        const style = getComputedStyle(nav);
+        if (style.position !== 'fixed' && style.position !== 'sticky') return 0;
+
+        return -nav.getBoundingClientRect().height;
+    }
+
+    function onAnchorScrollClick(event) {
+        if (!lenis || event.defaultPrevented) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const trigger = event.target.closest('[data-anchor-target], a[href*="#"]');
+        if (!trigger || trigger.closest('[data-anchor-skip]')) return;
+        if (trigger.matches('a[target="_blank"]')) return;
+
+        const targetSelector = getAnchorTargetSelector(trigger);
+        if (!targetSelector) return;
+
+        let targetEl;
+        try {
+            targetEl = document.querySelector(targetSelector);
+        } catch {
+            return;
+        }
+        if (!targetEl) return;
+
+        event.preventDefault();
+
+        if (mobileNavState?.isOpen) {
+            closeMobileNavMenu({ restoreScroll: false });
+        }
+
+        lenis.scrollTo(targetSelector, {
+            easing: ANCHOR_SCROLL_EASE,
+            duration: reducedMotion ? 0 : ANCHOR_SCROLL_DURATION,
+            offset: getAnchorScrollOffset(trigger),
+        });
+    }
+
+    function initScrollToAnchorLenis() {
+        if (anchorScrollBound) return;
+        anchorScrollBound = true;
+        document.addEventListener('click', onAnchorScrollClick);
+        console.log('[OOB] Lenis anchor scroll initialized');
     }
 
     function scrollToTop() {
