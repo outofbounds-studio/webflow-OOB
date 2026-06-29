@@ -653,6 +653,42 @@ Console: `[OOB] Mask text reveal initialized`.
 
 ---
 
+## Scroll fade-in (supporting blocks)
+
+Subtle scroll-triggered fade + lift — same feel as the **homepage hero intro** (`initHeroIntro`: `autoAlpha` + `y`, `power3.out`) but triggered on scroll instead of after the preloader.
+
+**Requires:** ScrollTrigger in Head.
+
+Use on paragraphs, cards, images, CTAs — **not** on the same element as `[data-split="heading"]` or `[data-hero-intro]`.
+
+### Webflow markup
+
+| Attribute | Required | Default | Purpose |
+|-----------|----------|---------|---------|
+| `data-oob-fade-in` | Yes | — | Enables scroll fade-in |
+| `data-oob-fade-offset` | No | `18` (px) | Starting `y` offset — hero intro uses `28` |
+| `data-oob-fade-duration` | No | `0.65` | Animation duration (seconds) |
+| `data-oob-fade-scroll-start` | No | `clamp(top 88%)` | ScrollTrigger `start` |
+
+### Example
+
+```html
+<h2 data-split="heading">Section title</h2>
+<p data-oob-fade-in>Supporting copy fades in below the masked heading.</p>
+<div data-oob-fade-in data-oob-fade-offset="24">Card or image block</div>
+```
+
+### Behaviour
+
+- FOUC prevention: `visibility: hidden` until JS runs; visible in Webflow Designer.
+- `prefers-reduced-motion`: shows immediately (no animation).
+- Re-inits on Barba `afterEnter` / `once`; reverted on `afterLeave`.
+- Skipped inside `[data-believe-wrap]`.
+
+Console: `[OOB] Scroll fade-in initialized`.
+
+---
+
 ## About — What We Believe (pinned scroll statements)
 
 Scroll-pinned section on the About page. Cycles **3 statements** as the user scrolls: each scroll step **triggers** a time-based line-reveal (Osmo [Line Reveal Testimonials](https://www.osmo.supply/resource/line-reveal-testimonials)) that plays to completion, holds on screen, then advances on the next step. Animations are **not** scrubbed — stopping mid-scroll never leaves half-visible text.
@@ -786,6 +822,7 @@ Console on Barba navigation: `[OOB] Webflow forms reset (preview + Turnstile)`.
 - [ ] Nav `data-barba-update` syncs active state
 - [ ] Webflow forms / native interactions work after 2+ page transitions
 - [ ] Mask text reveal: `[OOB] Mask text reveal initialized` (if `[data-split="heading"]` present)
+- [ ] Scroll fade-in: `[OOB] Scroll fade-in initialized` (if `[data-oob-fade-in]` present)
 - [ ] No `[OOB] Missing [data-transition-wrap]` warning
 
 ---

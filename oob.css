@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.8.8 */
+/* Version: 1.8.9 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -974,6 +974,16 @@ a[data-copy-url]:focus-visible {
 [data-split="heading"] [data-underline-link] {
   position: relative;
   z-index: 1;
+}
+
+/* ── Scroll fade-in (hero-intro style on scroll) ── */
+[data-oob-fade-in] {
+  visibility: hidden;
+}
+
+.wf-design-mode [data-oob-fade-in],
+.w-editor [data-oob-fade-in] {
+  visibility: visible !important;
 }
 
 /* ── About: What We Believe (pinned scroll statements) ── */

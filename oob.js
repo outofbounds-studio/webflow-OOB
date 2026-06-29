@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.24 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.25 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.24');
+console.log('[OOB] Script loaded v2.9.25');
 
 (function () {
     'use strict';
@@ -414,6 +414,7 @@ console.log('[OOB] Script loaded v2.9.24');
         refreshPostScrollProgress(nextPage);
         refreshBelieveScroll(nextPage);
         refreshMaskTextScrollReveal(nextPage);
+        refreshFadeInScroll(nextPage);
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
         }
@@ -896,6 +897,7 @@ console.log('[OOB] Script loaded v2.9.24');
             revertButton065(current);
             revertBelieveScroll(current);
             revertMaskTextScrollReveal(current);
+            revertFadeInScroll(current);
             revertFooterLogotypeScroll(current);
             finalizeHomeNavDockAfterLeave();
             revertAdvancedFormValidation(current);
@@ -949,6 +951,7 @@ console.log('[OOB] Script loaded v2.9.24');
                         }
                         refreshBelieveScroll(container);
                         refreshMaskTextScrollReveal(container);
+                        refreshFadeInScroll(container);
                         if (!container.querySelector(BELIEVE_SELECTOR)) {
                             refreshFooterLogotypeScroll();
                         }
@@ -985,6 +988,7 @@ console.log('[OOB] Script loaded v2.9.24');
         scheduleDisplayReadTimeAfterWebflow(fallbackContainer);
         refreshAdvancedFormValidation(fallbackContainer);
         refreshMaskTextScrollReveal(fallbackContainer);
+        refreshFadeInScroll(fallbackContainer);
     }
 
     checkBarbaDom();
@@ -3646,6 +3650,99 @@ console.log('[OOB] Script loaded v2.9.24');
     function refreshMaskTextScrollReveal(root = document) {
         revertMaskTextScrollReveal(root);
         initMaskTextScrollReveal(root);
+    }
+
+    // -----------------------------------------
+    // SCROLL FADE-IN — hero-intro style, ScrollTrigger once
+    // Complements [data-split="heading"]; use on supporting blocks
+    // -----------------------------------------
+
+    const FADE_IN_SELECTOR = '[data-oob-fade-in]';
+    const FADE_IN_Y_DEFAULT = 18;
+    const FADE_IN_DURATION_DEFAULT = 0.65;
+    const FADE_IN_EASE = 'power3.out';
+    const FADE_IN_SCROLL_START_DEFAULT = 'clamp(top 88%)';
+
+    function shouldSkipFadeInScroll(el) {
+        if (el.hasAttribute('data-hero-intro')) return true;
+        if (el.matches('[data-split="heading"]')) return true;
+        if (el.closest('[data-believe-wrap]')) return true;
+        return false;
+    }
+
+    function revertFadeInScroll(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        scope.querySelectorAll(FADE_IN_SELECTOR).forEach((el) => {
+            el._oobFadeTween?.scrollTrigger?.kill();
+            el._oobFadeTween?.kill();
+            delete el._oobFadeTween;
+            gsap.set(el, { clearProps: 'opacity,transform,visibility' });
+            delete el.dataset.oobFadeInit;
+        });
+    }
+
+    function initFadeInScroll(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const elements = scope.querySelectorAll(FADE_IN_SELECTOR);
+        if (!elements.length) return;
+
+        if (!hasScrollTrigger) {
+            console.warn(
+                '[OOB] ScrollTrigger not loaded — [data-oob-fade-in] skipped. Add ScrollTrigger to Head.'
+            );
+            return;
+        }
+
+        let count = 0;
+
+        elements.forEach((el) => {
+            if (el.dataset.oobFadeInit === 'true') return;
+            if (shouldSkipFadeInScroll(el)) return;
+
+            const y = parseFloat(el.getAttribute('data-oob-fade-offset'));
+            const yOffset = Number.isFinite(y) ? y : FADE_IN_Y_DEFAULT;
+            const durationAttr = parseFloat(el.getAttribute('data-oob-fade-duration'));
+            const duration = Number.isFinite(durationAttr) ? durationAttr : FADE_IN_DURATION_DEFAULT;
+            const scrollStart =
+                el.getAttribute('data-oob-fade-scroll-start') || FADE_IN_SCROLL_START_DEFAULT;
+
+            gsap.set(el, { autoAlpha: 1 });
+
+            if (reducedMotion) {
+                gsap.set(el, { y: 0 });
+                el.dataset.oobFadeInit = 'true';
+                count += 1;
+                return;
+            }
+
+            const tween = gsap.fromTo(
+                el,
+                { autoAlpha: 0, y: yOffset },
+                {
+                    autoAlpha: 1,
+                    y: 0,
+                    duration,
+                    ease: FADE_IN_EASE,
+                    clearProps: 'transform',
+                    scrollTrigger: {
+                        trigger: el,
+                        start: scrollStart,
+                        once: true,
+                    },
+                }
+            );
+
+            el._oobFadeTween = tween;
+            el.dataset.oobFadeInit = 'true';
+            count += 1;
+        });
+
+        if (count) console.log('[OOB] Scroll fade-in initialized', { count });
+    }
+
+    function refreshFadeInScroll(root = document) {
+        revertFadeInScroll(root);
+        initFadeInScroll(root);
     }
 
     // -----------------------------------------
