@@ -85,10 +85,10 @@ Give the target section an **element ID** in Webflow (e.g. `work`).
 
 | Optional attribute | Default | Purpose |
 |--------------------|---------|---------|
-| `data-anchor-offset` | fixed nav height (negative) | Extra scroll offset in px — e.g. `-80` to clear a shorter bar |
+| `data-anchor-offset` | `0` (Osmo default — section top aligns with viewport top) | Scroll offset in px, e.g. `-80` to clear a fixed nav. Use `nav` to auto-measure top overlap (skipped when home nav is docked at bottom). |
 | `data-anchor-skip` | — | On a wrapper to opt out of Lenis anchor handling |
 
-Offset auto-measures fixed/sticky `.nav` height. Mobile/touch and `prefers-reduced-motion` use native hash jump (Lenis off).
+Default offset is **0** (same as Osmo). Add `scroll-margin-top` on the target section in Webflow/CSS if you always want clearance under a fixed nav. Mobile/touch and `prefers-reduced-motion` use native hash jump (Lenis off).
 
 Console: `[OOB] Lenis anchor scroll initialized`.
 

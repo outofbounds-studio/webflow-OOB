@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.23 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.24 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.23');
+console.log('[OOB] Script loaded v2.9.24');
 
 (function () {
     'use strict';
@@ -1111,20 +1111,32 @@ console.log('[OOB] Script loaded v2.9.23');
         }
     }
 
-    function getAnchorScrollOffset(trigger) {
-        const custom = trigger.getAttribute('data-anchor-offset');
-        if (custom !== null && custom !== '') {
-            const parsed = parseFloat(custom);
-            return Number.isFinite(parsed) ? parsed : 0;
-        }
-
+    function measureFixedNavAnchorOffset() {
         const nav = document.querySelector('.nav, .navbar_wrap, .navbar, .nav-bar');
         if (!nav) return 0;
 
         const style = getComputedStyle(nav);
         if (style.position !== 'fixed' && style.position !== 'sticky') return 0;
 
-        return -nav.getBoundingClientRect().height;
+        if (document.documentElement.classList.contains('is-home-nav-docked')) return 0;
+
+        const moveEl =
+            nav.querySelector('[data-oob-nav-dock-move], .nav-bar, .nav-inner') || nav;
+        const rect = moveEl.getBoundingClientRect();
+        const overlap = Math.max(0, Math.min(rect.bottom, rect.height));
+        return overlap > 0 ? -overlap : 0;
+    }
+
+    function getAnchorScrollOffset(trigger) {
+        const custom = trigger.getAttribute('data-anchor-offset');
+        if (custom !== null && custom !== '') {
+            const trimmed = custom.trim().toLowerCase();
+            if (trimmed === 'nav') return measureFixedNavAnchorOffset();
+            const parsed = parseFloat(custom);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        return 0;
     }
 
     function onAnchorScrollClick(event) {
