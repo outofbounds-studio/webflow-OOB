@@ -1,5 +1,5 @@
 /* oob.css - Out of Bounds Webflow custom styles */
-/* Version: 1.8.6 */
+/* Version: 1.8.7 */
 /* https://outofbounds-studio.github.io/webflow-OOB/oob.css */
 
 /* ── Osmo Scaling System ── */
@@ -952,6 +952,17 @@ a[data-copy-url]:focus-visible {
   [data-copy-button][data-url]:hover {
     opacity: 1;
   }
+}
+
+/* ── Masked Text Reveal (Osmo) ── */
+/* FOUC: hidden until oob.js sets autoAlpha before split */
+[data-split="heading"] {
+  visibility: hidden;
+}
+
+.wf-design-mode [data-split="heading"],
+.w-editor [data-split="heading"] {
+  visibility: visible !important;
 }
 
 /* ── About: What We Believe (pinned scroll statements) ── */

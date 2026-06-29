@@ -1,8 +1,8 @@
 // oob.js - Out of Bounds Webflow
-// Version: 2.9.20 — Osmo overlapping parallax + Barba boilerplate
+// Version: 2.9.21 — Osmo overlapping parallax + Barba boilerplate
 // Requires CDN scripts in Webflow Head (see BARBA-OSMO.md)
 
-console.log('[OOB] Script loaded v2.9.20');
+console.log('[OOB] Script loaded v2.9.21');
 
 (function () {
     'use strict';
@@ -412,6 +412,7 @@ console.log('[OOB] Script loaded v2.9.20');
         scheduleDisplayReadTimeAfterWebflow(nextPage);
         refreshPostScrollProgress(nextPage);
         refreshBelieveScroll(nextPage);
+        refreshMaskTextScrollReveal(nextPage);
         if (!nextPage.querySelector(BELIEVE_SELECTOR)) {
             refreshFooterLogotypeScroll();
         }
@@ -893,6 +894,7 @@ console.log('[OOB] Script loaded v2.9.20');
         if (current) {
             revertButton065(current);
             revertBelieveScroll(current);
+            revertMaskTextScrollReveal(current);
             revertFooterLogotypeScroll(current);
             finalizeHomeNavDockAfterLeave();
             revertAdvancedFormValidation(current);
@@ -945,6 +947,7 @@ console.log('[OOB] Script loaded v2.9.20');
                             await runPageOnceAnimation(container);
                         }
                         refreshBelieveScroll(container);
+                        refreshMaskTextScrollReveal(container);
                         if (!container.querySelector(BELIEVE_SELECTOR)) {
                             refreshFooterLogotypeScroll();
                         }
@@ -980,6 +983,7 @@ console.log('[OOB] Script loaded v2.9.20');
         const fallbackContainer = document.querySelector('[data-barba="container"]') || document;
         scheduleDisplayReadTimeAfterWebflow(fallbackContainer);
         refreshAdvancedFormValidation(fallbackContainer);
+        refreshMaskTextScrollReveal(fallbackContainer);
     }
 
     checkBarbaDom();
@@ -3402,6 +3406,143 @@ console.log('[OOB] Script loaded v2.9.20');
     /** Footer ST must init after believe pin spacer exists (About page layout). */
     function onBelieveScrollReady() {
         refreshFooterLogotypeScroll();
+    }
+
+    // -----------------------------------------
+    // MASKED TEXT REVEAL — Osmo scroll-triggered SplitText
+    // https://www.osmo.supply/resource/masked-text-reveal
+    // -----------------------------------------
+
+    const MASK_TEXT_SELECTOR = '[data-split="heading"]';
+    const MASK_TEXT_SPLIT_CONFIG = {
+        lines: { duration: 0.8, stagger: 0.08 },
+        words: { duration: 0.6, stagger: 0.06 },
+        chars: { duration: 0.4, stagger: 0.01 },
+    };
+
+    function getMaskTextRevealType(heading) {
+        const raw = (heading.getAttribute('data-split-reveal') || 'lines').trim().toLowerCase();
+        if (raw === 'chars' || raw === 'characters' || raw === 'char') return 'chars';
+        if (raw === 'words' || raw === 'word') return 'words';
+        return 'lines';
+    }
+
+    function getMaskTextSplitTypes(revealType) {
+        if (revealType === 'words') return ['lines', 'words'];
+        if (revealType === 'chars') return ['lines', 'words', 'chars'];
+        return ['lines'];
+    }
+
+    function revertMaskTextScrollReveal(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        scope.querySelectorAll(MASK_TEXT_SELECTOR).forEach((heading) => {
+            heading._oobMaskTween?.scrollTrigger?.kill();
+            heading._oobMaskTween?.kill();
+            delete heading._oobMaskTween;
+
+            if (heading._oobMaskSplit) {
+                try {
+                    heading._oobMaskSplit.revert();
+                } catch (_) {
+                    /* ignore */
+                }
+                delete heading._oobMaskSplit;
+            }
+
+            gsap.set(heading, { clearProps: 'visibility,opacity' });
+            delete heading.dataset.oobMaskInit;
+        });
+    }
+
+    function initMaskTextScrollReveal(root = document) {
+        const scope = root?.querySelectorAll ? root : document;
+        const headings = scope.querySelectorAll(MASK_TEXT_SELECTOR);
+        if (!headings.length) return;
+
+        if (!hasScrollTrigger) {
+            console.warn(
+                '[OOB] ScrollTrigger not loaded — [data-split="heading"] skipped. Add ScrollTrigger to Head.'
+            );
+            return;
+        }
+
+        if (!hasSplitText) {
+            console.warn(
+                '[OOB] SplitText not loaded — [data-split="heading"] skipped. Add SplitText to Head before oob.js.'
+            );
+            return;
+        }
+
+        const runInit = () => {
+            let count = 0;
+
+            headings.forEach((heading) => {
+                if (heading.dataset.oobMaskInit === 'true') return;
+                if (heading.closest(BELIEVE_SELECTOR)) return;
+
+                gsap.set(heading, { autoAlpha: 1 });
+
+                if (reducedMotion) {
+                    heading.dataset.oobMaskInit = 'true';
+                    count += 1;
+                    return;
+                }
+
+                const revealType = getMaskTextRevealType(heading);
+                const typesToSplit = getMaskTextSplitTypes(revealType);
+                const scrollStart =
+                    heading.getAttribute('data-split-scroll-start') || 'clamp(top 80%)';
+
+                const split = SplitText.create(heading, {
+                    type: typesToSplit.join(', '),
+                    mask: 'lines',
+                    autoSplit: true,
+                    linesClass: 'line',
+                    wordsClass: 'word',
+                    charsClass: 'letter',
+                    onSplit(instance) {
+                        heading._oobMaskTween?.scrollTrigger?.kill();
+                        heading._oobMaskTween?.kill();
+
+                        const targets = instance[revealType];
+                        if (!targets?.length) return;
+
+                        const config = MASK_TEXT_SPLIT_CONFIG[revealType];
+                        const tween = gsap.from(targets, {
+                            yPercent: 110,
+                            duration: config.duration,
+                            stagger: config.stagger,
+                            ease: 'expo.out',
+                            scrollTrigger: {
+                                trigger: heading,
+                                start: scrollStart,
+                                once: true,
+                            },
+                        });
+
+                        heading._oobMaskTween = tween;
+                        return tween;
+                    },
+                });
+
+                heading._oobMaskSplit = split;
+                heading.dataset.oobMaskInit = 'true';
+                count += 1;
+            });
+
+            if (count) console.log('[OOB] Mask text reveal initialized', { count });
+        };
+
+        if (document.fonts?.ready) {
+            document.fonts.ready.then(runInit);
+        } else {
+            runInit();
+        }
+    }
+
+    function refreshMaskTextScrollReveal(root = document) {
+        revertMaskTextScrollReveal(root);
+        initMaskTextScrollReveal(root);
     }
 
     // -----------------------------------------

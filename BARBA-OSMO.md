@@ -598,6 +598,42 @@ Style the close button **colour, size, and icon** in Webflow. Layout, offset, z-
 
 ---
 
+## Masked Text Reveal (scroll-triggered headings)
+
+Osmo [Masked Text Reveal](https://www.osmo.supply/resource/masked-text-reveal) — GSAP SplitText + ScrollTrigger. Each heading masks and animates into view once when scrolled into the viewport.
+
+**Requires:** ScrollTrigger + SplitText in Head (same as Button 065).
+
+### Webflow markup
+
+Add attributes to any heading (H1–H6, paragraph, etc.) inside `[data-barba="container"]`:
+
+| Attribute | Required | Values | Notes |
+|-----------|----------|--------|-------|
+| `data-split` | Yes | `heading` | Marks element for reveal |
+| `data-split-reveal` | No | `lines` (default), `words`, `chars` | What animates |
+| `data-split-scroll-start` | No | ScrollTrigger `start` | Default `clamp(top 80%)` |
+
+**Do not** use on copy inside `[data-believe-wrap]` — that section has its own pinned line reveals (`data-believe-split`).
+
+### Example
+
+```html
+<h2 data-split="heading" data-split-reveal="lines">Out of bounds thinking.</h2>
+<p data-split="heading" data-split-reveal="words">We build brands that stand apart.</p>
+```
+
+### Behaviour
+
+- Waits for `document.fonts.ready` before splitting (accurate line breaks).
+- FOUC prevention: headings are `visibility: hidden` in `oob.css` until JS runs; visible in Webflow Designer.
+- `prefers-reduced-motion`: text shows immediately (no split animation).
+- Re-inits on Barba `afterEnter` / `once`; reverted on `afterLeave`.
+
+Console: `[OOB] Mask text reveal initialized`.
+
+---
+
 ## About — What We Believe (pinned scroll statements)
 
 Scroll-pinned section on the About page. Cycles **3 statements** as the user scrolls: each scroll step **triggers** a time-based line-reveal (Osmo [Line Reveal Testimonials](https://www.osmo.supply/resource/line-reveal-testimonials)) that plays to completion, holds on screen, then advances on the next step. Animations are **not** scrubbed — stopping mid-scroll never leaves half-visible text.
@@ -729,6 +765,7 @@ Console on Barba navigation: `[OOB] Webflow forms reset (preview + Turnstile)`.
 - [ ] Internal link: parallax leave/enter (or instant if reduced motion)
 - [ ] Nav `data-barba-update` syncs active state
 - [ ] Webflow forms / native interactions work after 2+ page transitions
+- [ ] Mask text reveal: `[OOB] Mask text reveal initialized` (if `[data-split="heading"]` present)
 - [ ] No `[OOB] Missing [data-transition-wrap]` warning
 
 ---
